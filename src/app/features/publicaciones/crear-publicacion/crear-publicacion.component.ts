@@ -30,27 +30,29 @@ export class CrearPublicacionComponent implements OnInit {
   ];
 
   publicacion = {
-    tipo_publicacion: 'busco_oficina', // Ajustado exactamente al CHECK de la BD
+    tipo_publicacion: 'busco_oficina', 
     titulo: '',
     descripcion: '',
     cantidad_piezas: null as number | null,
     pago_por_pieza: null as number | null,
     maquinas_requeridas: [] as string[],
-    zona: 'São Paulo - SP'
+    zona: 'São Paulo - SP' // (Solo visual para el usuario, no va a la BD)
   };
 
   constructor(
     private supabaseService: SupabaseService, 
     private router: Router,
-    private cdr: ChangeDetectorRef // Inyección clave para sincronizar vistas
+    private cdr: ChangeDetectorRef
   ) {}
 
   async ngOnInit() {
     const { data: { user } } = await this.supabaseService.supabase.auth.getUser();
     if (user) {
       this.usuarioId = user.id;
+      console.log('👤 Usuario autenticado detectado:', this.usuarioId);
       await this.obtenerRolYConfigurarTipo(user.id);
     } else {
+      console.warn('⚠️ No hay sesión activa, redirigiendo a login...');
       this.router.navigate(['/login']);
     }
   }
@@ -67,11 +69,12 @@ export class CrearPublicacionComponent implements OnInit {
 
       if (data) {
         this.rolUsuario = data.rol;
-        // Si es tienda asigna 'busco_oficina', si es oficina asigna 'busco_funcionario' (Validado en BD)
         this.publicacion.tipo_publicacion = this.rolUsuario === 'tienda' ? 'busco_oficina' : 'busco_funcionario';
+        console.log('🛠️ Rol obtenido de la BD:', this.rolUsuario);
+        console.log('📌 Tipo de publicación asignado:', this.publicacion.tipo_publicacion);
       }
     } catch (e) {
-      console.error('Error al obtener rol:', e);
+      console.error('❌ Error al obtener el rol del perfil:', e);
     } finally {
       this.cdr.detectChanges();
     }
@@ -86,6 +89,7 @@ export class CrearPublicacionComponent implements OnInit {
     } else {
       this.publicacion.maquinas_requeridas = this.publicacion.maquinas_requeridas.filter(m => m !== valor);
     }
+    console.log('🧵 Máquinas requeridas actualizadas:', this.publicacion.maquinas_requeridas);
   }
 
   async onSubmit() {
@@ -99,32 +103,39 @@ export class CrearPublicacionComponent implements OnInit {
     this.mensajeError = '';
     this.cdr.detectChanges();
 
-    try {
-      const payload = {
-        creador_id: this.usuarioId,
-        tipo_publicacion: this.publicacion.tipo_publicacion,
-        titulo: this.publicacion.titulo,
-        descripcion: this.publicacion.descripcion,
-        cantidad_piezas: Number(this.publicacion.cantidad_piezas),
-        pago_por_pieza: Number(this.publicacion.pago_por_pieza),
-        maquinas_requeridas: this.publicacion.maquinas_requeridas,
-        estado: 'Activo'
-      };
+    // Armamos el payload exacto para depuración en consola (F12)
+    const payload = {
+      creador_id: this.usuarioId,
+      tipo_publicacion: this.publicacion.tipo_publicacion,
+      titulo: this.publicacion.titulo,
+      descripcion: this.publicacion.descripcion || '',
+      cantidad_piezas: Number(this.publicacion.cantidad_piezas),
+      pago_por_pieza: Number(this.publicacion.pago_por_pieza),
+      maquinas_requeridas: this.publicacion.maquinas_requeridas,
+      estado: 'Activo'
+    };
 
+    console.log('🚀 Payload listo para enviar a Supabase:', payload);
+
+    try {
       const { data, error } = await this.supabaseService.supabase
         .from('publicaciones')
         .insert([payload])
         .select('id')
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error devuelto por Supabase:', error);
+        throw error;
+      }
 
+      console.log('✅ Publicación creada con éxito. ID:', data.id);
       this.generarTextoFacebook(data.id);
       this.publicacionExitosa = true;
 
     } catch (error: any) {
-      this.mensajeError = 'Hubo un error al publicar. Verifica los datos.';
-      console.error(error);
+      this.mensajeError = `Hubo un error al publicar: ${error?.message || 'Revisa los datos.'}`;
+      console.error('💥 Excepción atrapada en onSubmit:', error);
     } finally {
       this.cargando = false;
       this.cdr.detectChanges();
