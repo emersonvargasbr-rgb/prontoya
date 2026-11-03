@@ -26,6 +26,7 @@ export class LoginComponent {
   async onSubmit() {
     this.cargando = true;
     this.mensajeError = '';
+    this.cdr.detectChanges();
 
     try {
       const authData = await this.authService.login(this.credenciales.email, this.credenciales.password);
@@ -40,6 +41,11 @@ export class LoginComponent {
         .single();
 
       if (error) throw error;
+
+      if (perfil?.rol) {
+        // 🚀 Guardamos el rol en localStorage para que el sidebar cargue al instante sin parpadear
+        localStorage.setItem('rol_usuario', perfil.rol);
+      }
 
       // Redirección inteligente basada en el rol de la BD
       switch (perfil?.rol) {
