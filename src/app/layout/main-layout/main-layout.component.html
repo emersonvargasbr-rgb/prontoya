@@ -1,0 +1,9 @@
+<div class="min-h-screen bg-gray-50 flex">
+  <!-- Sidebar Fijo a la Izquierda -->
+  <app-sidebar-dashboard></app-sidebar-dashboard>
+
+  <!-- Contenido Principal a la Derecha (con margen izquierdo para dejar espacio al sidebar) -->
+  <main class="flex-1 ml-64 p-8 overflow-y-auto">
+    <router-outlet></router-outlet>
+  </main>
+</div>

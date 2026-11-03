@@ -1,0 +1,29 @@
+<div class="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-4xl mx-auto">
+    
+    <div class="text-center mb-10">
+      <h1 class="text-3xl font-black text-gray-900 tracking-tight">Marketplace Textil</h1>
+      <p class="text-gray-500 mt-2">Encuentra los mejores cortes y vacantes en tu zona.</p>
+    </div>
+
+    <!-- Estado de carga -->
+    <div *ngIf="cargando" class="flex justify-center items-center py-20">
+      <p class="text-lg text-gray-500 font-medium animate-pulse">Buscando ofertas disponibles...</p>
+    </div>
+
+    <!-- Mensaje si no hay publicaciones -->
+    <div *ngIf="!cargando && listaTrabajos.length === 0" class="bg-white rounded-2xl p-10 text-center border border-gray-200 border-dashed">
+      <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+      <h3 class="text-xl font-bold text-gray-900 mb-1">Aún no hay cortes activos</h3>
+      <p class="text-gray-500">Vuelve más tarde o publica el tuyo si necesitas personal.</p>
+    </div>
+
+    <!-- Lista de tarjetas -->
+    <div *ngIf="!cargando && listaTrabajos.length > 0" class="space-y-6">
+      <div *ngFor="let trabajo of listaTrabajos" class="cursor-pointer" [routerLink]="['/trabajo', trabajo.id]">
+        <app-tarjeta-trabajo [trabajo]="trabajo"></app-tarjeta-trabajo>
+      </div>
+    </div>
+
+  </div>
+</div>

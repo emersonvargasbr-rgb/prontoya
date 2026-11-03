@@ -1,0 +1,95 @@
+<div class="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-4xl mx-auto">
+    
+    <!-- Skeleton / Cargando -->
+    <div *ngIf="cargando" class="text-center py-20 text-gray-400 animate-pulse font-medium">
+      Cargando tu panel profesional...
+    </div>
+
+    <div *ngIf="!cargando && perfil" class="space-y-8">
+      
+      <!-- ENCABEZADO DE BIENVENIDA Y ESTADO LABORAL -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="text-center md:text-left">
+          <div class="flex items-center justify-center md:justify-start gap-2 mb-1">
+            <span class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+              Operario Textil
+            </span>
+            <span class="text-xs text-gray-500 font-medium">📍 {{ perfil.zona_ubicacion || 'São Paulo, SP' }}</span>
+          </div>
+          <h1 class="text-3xl font-black text-gray-900">Hola, {{ perfil.nombre_completo.split(' ')[0] }} 👋</h1>
+          <p class="text-gray-500 text-sm mt-1">Tu perfil está activo en el polo de confección.</p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+          <!-- Botón Cambiar Estado Rápido -->
+          <button (click)="toggleEstadoLaboral()" [disabled]="cambiandoEstado"
+            [ngClass]="perfil.estado_laboral === 'Disponible' ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'"
+            class="w-full sm:w-auto px-4 py-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-2 shadow-xs">
+            <span class="w-2.5 h-2.5 rounded-full" [ngClass]="perfil.estado_laboral === 'Disponible' ? 'bg-green-500 animate-pulse' : 'bg-amber-500'"></span>
+            {{ perfil.estado_laboral === 'Disponible' ? 'Disponible para Contratar' : 'Actualmente Ocupado' }}
+          </button>
+
+          <a routerLink="/feed" class="w-full sm:w-auto bg-gray-900 text-white font-bold py-3 px-6 rounded-xl hover:bg-gray-800 transition shadow-md text-center text-sm">
+            Buscar Vacantes 🔍
+          </a>
+        </div>
+      </div>
+      
+      <!-- GRID DE SECCIONES -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- TARJETA DE REPUTACIÓN Y PERFIL PÚBLICO -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex flex-col justify-between">
+          <div>
+            <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+              <svg class="w-5 h-5 mr-2 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+              Mi Reputación y Reseñas
+            </h2>
+            <div class="flex items-baseline space-x-2 mb-2">
+              <div class="text-4xl font-black text-gray-900">{{ perfil.promedio_estrellas | number:'1.1-1' }}</div>
+              <div class="text-gray-400 text-xs font-semibold">Basado en {{ perfil.total_evaluaciones || 0 }} talleres</div>
+            </div>
+          </div>
+          
+          <div class="mt-6 pt-4 border-t border-gray-100">
+            <a [routerLink]="['/perfil', usuarioId]" class="inline-flex items-center text-sm font-bold text-blue-600 hover:text-blue-800 transition">
+              Ver cómo ven mi perfil los talleres
+              <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- TARJETA DE MÁQUINAS Y ESPECIALIDADES (CV DIGITAL) -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-lg font-bold text-gray-900">Mis Máquinas y Roles</h2>
+              <a routerLink="/editar-perfil" class="text-xs font-bold text-blue-600 hover:underline bg-blue-50 px-2.5 py-1 rounded-lg">
+                Editar CV ✏️
+              </a>
+            </div>
+            
+            <div *ngIf="perfil.especialidades?.length > 0; else sinMaquinas" class="flex flex-wrap gap-2">
+              <span *ngFor="let maq of perfil.especialidades" class="bg-gray-50 border border-gray-200 text-gray-800 text-xs font-bold px-3 py-1.5 rounded-lg">
+                {{ maq }}
+              </span>
+            </div>
+            
+            <ng-template #sinMaquinas>
+              <div class="bg-gray-50 rounded-xl p-4 text-center border border-dashed border-gray-200">
+                <p class="text-gray-500 text-xs mb-2">Aún no has seleccionado las máquinas u operaciones que dominas.</p>
+                <a routerLink="/editar-perfil" class="text-xs font-bold text-blue-600 hover:underline">Configurar ahora</a>
+              </div>
+            </ng-template>
+          </div>
+
+          <div class="mt-6 pt-4 border-t border-gray-100 text-xs text-gray-400 font-medium">
+            💡 Mantén tus máquinas actualizadas para aparecer en las búsquedas de las oficinas.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

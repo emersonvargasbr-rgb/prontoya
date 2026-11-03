@@ -1,0 +1,53 @@
+<div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+  
+  <div class="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+    <div>
+      <h2 class="text-xl font-bold text-gray-900">Control de Producción</h2>
+      <p class="text-sm text-gray-500">Lotes actualmente en confección</p>
+    </div>
+    <span class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full">
+      {{ lotes.length }} Activos
+    </span>
+  </div>
+
+  <div *ngIf="cargando" class="p-10 text-center text-gray-500 animate-pulse">
+    Cargando inventario...
+  </div>
+
+  <div *ngIf="!cargando && lotes.length === 0" class="p-10 text-center">
+    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+    </div>
+    <h3 class="text-lg font-bold text-gray-900">Sin lotes en producción</h3>
+    <p class="text-gray-500 text-sm mt-1">No hay piezas asignadas actualmente.</p>
+  </div>
+
+  <div *ngIf="!cargando && lotes.length > 0" class="divide-y divide-gray-100">
+    <!-- Fila de Lote -->
+    <div *ngFor="let lote of lotes" class="p-6 hover:bg-gray-50 transition flex flex-col md:flex-row md:items-center justify-between gap-4">
+      
+      <div class="flex-1">
+        <div class="flex items-center gap-3 mb-1">
+          <h4 class="text-lg font-bold text-gray-900">{{ lote.publicaciones.titulo }}</h4>
+          <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-0.5 rounded border border-yellow-200">
+            En Proceso
+          </span>
+        </div>
+        <div class="text-sm text-gray-500 flex items-center gap-4">
+          <span><strong class="text-gray-700">Cant:</strong> {{ lote.cantidad_asignada }} pz</span>
+          <span><strong class="text-gray-700">Pago Est.:</strong> R$ {{ lote.cantidad_asignada * lote.publicaciones.pago_por_pieza | number:'1.2-2' }}</span>
+        </div>
+      </div>
+
+      <div class="text-left md:text-right">
+        <p class="text-sm font-bold text-gray-900">Entrega Acordada</p>
+        <p class="text-sm text-gray-600 mb-2">{{ lote.fecha_entrega | date:'longDate' }}</p>
+        
+        <button (click)="marcarComoEntregado(lote.id)" class="text-sm bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition shadow-sm">
+          Marcar Finalizado
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
