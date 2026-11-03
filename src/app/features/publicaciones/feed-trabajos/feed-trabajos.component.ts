@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router'; // Para que funcionen los enlaces a los detalles
 import { TarjetaTrabajoComponent } from '../../../shared/components/tarjeta-trabajo/tarjeta-trabajo.component';
@@ -14,7 +14,10 @@ export class FeedTrabajosComponent implements OnInit {
   listaTrabajos: any[] = [];
   cargando = true;
 
-  constructor(private supabaseService: SupabaseService) {}
+  constructor(
+    private supabaseService: SupabaseService,
+    private cdr: ChangeDetectorRef // 👈 Inyección clave para renderizar el feed de inmediato
+  ) {}
 
   ngOnInit() {
     this.cargarFeed();
@@ -40,7 +43,7 @@ export class FeedTrabajosComponent implements OnInit {
       if (error) throw error;
 
       // Agregamos (pub: any) para quitar la restricción estricta de TypeScript
-      this.listaTrabajos = data.map((pub: any) => {
+      this.listaTrabajos = (data || []).map((pub: any) => {
         // Truco de seguridad: Si Supabase lo envía como array, tomamos el primer elemento [0]. Si no, lo usamos normal.
         const datosCreador = Array.isArray(pub.creador) ? pub.creador[0] : pub.creador;
 
@@ -61,6 +64,7 @@ export class FeedTrabajosComponent implements OnInit {
       console.error('Error al cargar el marketplace', error);
     } finally {
       this.cargando = false;
+      this.cdr.detectChanges(); // 👈 Rompe el bloqueo y muestra los trabajos en el feed al instante
     }
   }
 }

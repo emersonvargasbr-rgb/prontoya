@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { SupabaseService } from '../../../core/services/supabase.service';
@@ -16,7 +16,10 @@ export class LotesActivosComponent implements OnInit {
   lotes: any[] = [];
   cargando = true;
 
-  constructor(private supabaseService: SupabaseService) {}
+  constructor(
+    private supabaseService: SupabaseService,
+    private cdr: ChangeDetectorRef // 👈 Inyección clave para el renderizado inmediato
+  ) {}
 
   async ngOnInit() {
     const { data: { user } } = await this.supabaseService.supabase.auth.getUser();
@@ -28,19 +31,23 @@ export class LotesActivosComponent implements OnInit {
   }
 
   async obtenerRolUsuario() {
-    const { data } = await this.supabaseService.supabase
-      .from('perfiles')
-      .select('rol')
-      .eq('id', this.usuarioId)
-      .single();
-    if (data) {
-      this.rolUsuario = data.rol;
+    try {
+      const { data } = await this.supabaseService.supabase
+        .from('perfiles')
+        .select('rol')
+        .eq('id', this.usuarioId)
+        .single();
+      if (data) {
+        this.rolUsuario = data.rol;
+      }
+    } catch (error) {
+      console.error('Error al obtener el rol:', error);
     }
   }
 
   async cargarLotes() {
+    this.cargando = true;
     try {
-      this.cargando = true;
       // Filtramos dependiendo de si es tienda u oficina
       const columnaFiltro = this.rolUsuario === 'tienda' ? 'tienda_id' : 'oficina_id';
 
@@ -60,11 +67,12 @@ export class LotesActivosComponent implements OnInit {
       console.error('Error al cargar los lotes:', error);
     } finally {
       this.cargando = false;
+      this.cdr.detectChanges(); // 👈 Actualiza la vista de lotes al instante
     }
   }
 
   async marcarComoEntregado(loteId: string) {
-    if(!confirm('¿Confirmas que este lote ha sido finalizado y entregado?')) return;
+    if (!confirm('¿Confirmas que este lote ha sido finalizado y entregado?')) return;
 
     try {
       const { error } = await this.supabaseService.supabase
@@ -78,6 +86,8 @@ export class LotesActivosComponent implements OnInit {
       await this.cargarLotes();
     } catch (error) {
       alert('Hubo un error al actualizar el estado.');
+    } finally {
+      this.cdr.detectChanges(); // 👈 Refresco inmediato tras la acción
     }
   }
 }
