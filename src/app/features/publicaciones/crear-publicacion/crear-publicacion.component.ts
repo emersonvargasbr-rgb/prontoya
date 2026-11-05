@@ -19,7 +19,6 @@ export class CrearPublicacionComponent implements OnInit {
   publicacionExitosa = false;
   textoGenerado = '';
 
-  // Catálogo oficial industrial textil (São Paulo standards)
   maquinariaOficial = [
     { id: 'RETA', nombre: 'Máquina Reta (Recta)' },
     { id: 'OVERLOCK', nombre: 'Overlock (Remalladora)' },
@@ -30,13 +29,22 @@ export class CrearPublicacionComponent implements OnInit {
   ];
 
   publicacion = {
-    tipo_publicacion: 'busco_oficina', 
+    tipo_publicacion: 'busco_corte',
     titulo: '',
     descripcion: '',
     cantidad_piezas: null as number | null,
     pago_por_pieza: null as number | null,
     maquinas_requeridas: [] as string[],
-    zona: 'São Paulo - SP' // (Solo visual para el usuario, no va a la BD)
+    zona_ubicacion: 'Brás',
+    logistica_entrega: 'acuerdo_mutuo',
+    
+    // Campos específicos para Empleo y Funcionarios (Cama dentro/fuera, Casal, etc.)
+    puesto_trabajo: 'Costurero(a) Overlock/Reta',
+    modalidad_pago: 'por_pieza',
+    modalidad_alojamiento: 'cama_fuera',
+    modalidad_contratacion: 'individual',
+    ofrece_alojamiento: false,
+    ofrece_comida: false
   };
 
   constructor(
@@ -49,10 +57,8 @@ export class CrearPublicacionComponent implements OnInit {
     const { data: { user } } = await this.supabaseService.supabase.auth.getUser();
     if (user) {
       this.usuarioId = user.id;
-      console.log('👤 Usuario autenticado detectado:', this.usuarioId);
       await this.obtenerRolYConfigurarTipo(user.id);
     } else {
-      console.warn('⚠️ No hay sesión activa, redirigiendo a login...');
       this.router.navigate(['/login']);
     }
   }
@@ -61,7 +67,7 @@ export class CrearPublicacionComponent implements OnInit {
     try {
       const { data, error } = await this.supabaseService.supabase
         .from('perfiles')
-        .select('rol')
+        .select('rol, zona_ubicacion')
         .eq('id', userId)
         .single();
 
@@ -69,12 +75,20 @@ export class CrearPublicacionComponent implements OnInit {
 
       if (data) {
         this.rolUsuario = data.rol;
-        this.publicacion.tipo_publicacion = this.rolUsuario === 'tienda' ? 'busco_oficina' : 'busco_funcionario';
-        console.log('🛠️ Rol obtenido de la BD:', this.rolUsuario);
-        console.log('📌 Tipo de publicación asignado:', this.publicacion.tipo_publicacion);
+        if (data.zona_ubicacion) {
+          this.publicacion.zona_ubicacion = data.zona_ubicacion;
+        }
+
+        if (this.rolUsuario === 'tienda') {
+          this.publicacion.tipo_publicacion = 'busco_oficina';
+        } else if (this.rolUsuario === 'oficina') {
+          this.publicacion.tipo_publicacion = 'busco_corte';
+        } else if (this.rolUsuario === 'funcionario') {
+          this.publicacion.tipo_publicacion = 'busco_trabajo';
+        }
       }
     } catch (e) {
-      console.error('❌ Error al obtener el rol del perfil:', e);
+      console.error('Error al obtener el rol del perfil:', e);
     } finally {
       this.cdr.detectChanges();
     }
@@ -89,12 +103,11 @@ export class CrearPublicacionComponent implements OnInit {
     } else {
       this.publicacion.maquinas_requeridas = this.publicacion.maquinas_requeridas.filter(m => m !== valor);
     }
-    console.log('🧵 Máquinas requeridas actualizadas:', this.publicacion.maquinas_requeridas);
   }
 
   async onSubmit() {
     if (this.publicacion.maquinas_requeridas.length === 0) {
-      this.mensajeError = 'Debes seleccionar al menos una máquina requerida.';
+      this.mensajeError = 'Debes seleccionar al menos una máquina requerida/utilizada.';
       this.cdr.detectChanges();
       return;
     }
@@ -103,19 +116,31 @@ export class CrearPublicacionComponent implements OnInit {
     this.mensajeError = '';
     this.cdr.detectChanges();
 
-    // Armamos el payload exacto para depuración en consola (F12)
-    const payload = {
+    // Armamos el payload con todos los campos nuevos adaptados
+    const payload: any = {
       creador_id: this.usuarioId,
       tipo_publicacion: this.publicacion.tipo_publicacion,
       titulo: this.publicacion.titulo,
       descripcion: this.publicacion.descripcion || '',
-      cantidad_piezas: Number(this.publicacion.cantidad_piezas),
-      pago_por_pieza: Number(this.publicacion.pago_por_pieza),
+      cantidad_piezas: Number(this.publicacion.cantidad_piezas) || 0,
+      pago_por_pieza: Number(this.publicacion.pago_por_pieza) || 0,
       maquinas_requeridas: this.publicacion.maquinas_requeridas,
+      zona_ubicacion: this.publicacion.zona_ubicacion,
       estado: 'Activo'
     };
 
-    console.log('🚀 Payload listo para enviar a Supabase:', payload);
+    // Si es oferta de empleo, incluimos los campos específicos de personal
+    if (this.publicacion.tipo_publicacion === 'busco_funcionario') {
+      payload.puesto_trabajo = this.publicacion.puesto_trabajo;
+      payload.modalidad_pago = this.publicacion.modalidad_pago;
+      payload.modalidad_alojamiento = this.publicacion.modalidad_alojamiento;
+      payload.modalidad_contratacion = this.publicacion.modalidad_contratacion;
+      payload.ofrece_alojamiento = this.publicacion.ofrece_alojamiento;
+      payload.ofrece_comida = this.publicacion.ofrece_comida;
+      payload.logistica_entrega = 'No aplica';
+    } else {
+      payload.logistica_entrega = this.publicacion.logistica_entrega;
+    }
 
     try {
       const { data, error } = await this.supabaseService.supabase
@@ -124,42 +149,58 @@ export class CrearPublicacionComponent implements OnInit {
         .select('id')
         .single();
 
-      if (error) {
-        console.error('❌ Error devuelto por Supabase:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log('✅ Publicación creada con éxito. ID:', data.id);
-      this.generarTextoFacebook(data.id);
+      this.generarTextoAnuncio(data.id);
       this.publicacionExitosa = true;
 
     } catch (error: any) {
-      this.mensajeError = `Hubo un error al publicar: ${error?.message || 'Revisa los datos.'}`;
-      console.error('💥 Excepción atrapada en onSubmit:', error);
+      this.mensajeError = `Error al publicar: ${error?.message || 'Revisa los datos.'}`;
+      console.error(error);
     } finally {
       this.cargando = false;
       this.cdr.detectChanges();
     }
   }
 
-  generarTextoFacebook(idPublicacion: string) {
+  generarTextoAnuncio(idPublicacion: string) {
     const baseUrl = window.location.origin;
     const enlace = `${baseUrl}/trabajo/${idPublicacion}`;
     const maquinas = this.publicacion.maquinas_requeridas.join(', ');
-    const rolTexto = this.rolUsuario === 'tienda' ? '🏪 Tienda busca Taller / Oficina' : '✂️ Oficina busca Costurero';
+    
+    if (this.publicacion.tipo_publicacion === 'busco_funcionario') {
+      const alojamientoTexto = this.publicacion.modalidad_alojamiento === 'cama_dentro' ? '🏠 Cama Dentro (Con vivienda)' : '🚶‍♂️ Cama Fuera';
+      const contratacionTexto = this.publicacion.modalidad_contratacion === 'casal' ? '👥 Acepta Casal (Pareja)' : '👤 Individual';
+      const beneficios = [
+        this.publicacion.ofrece_alojamiento ? '🏠 Vivienda' : '',
+        this.publicacion.ofrece_comida ? '🍲 Comida' : ''
+      ].filter(Boolean).join(' | ');
 
-    this.textoGenerado = `🚀 NUEVO CORTE DISPONIBLE (${rolTexto}) 🚀\n` +
-      `👕 Prenda: ${this.publicacion.titulo}\n` +
-      `📦 Cantidad: ${this.publicacion.cantidad_piezas} piezas\n` +
-      `🧵 Maquinaria: ${maquinas}\n` +
-      `💰 Pago: R$ ${this.publicacion.pago_por_pieza} / pieza\n\n` +
-      `📲 Revisa los detalles y contáctanos aquí:\n${enlace}`;
+      this.textoGenerado = `👥 SE BUSCA PERSONAL DE COSTURA (${this.publicacion.zona_ubicacion}) 🚀\n` +
+        `💼 Puesto: ${this.publicacion.puesto_trabajo}\n` +
+        `🏠 Modalidad: ${alojamientoTexto} | ${contratacionTexto}\n` +
+        `👕 Prenda: ${this.publicacion.titulo}\n` +
+        `🧵 Máquinas: ${maquinas}\n` +
+        `💰 Pago: R$ ${this.publicacion.pago_por_pieza}\n` +
+        (beneficios ? `✨ Beneficios: ${beneficios}\n` : '') +
+        `\n📲 Postúlate y revisa detalles aquí:\n${enlace}`;
+    } else {
+      let tipoTexto = this.publicacion.tipo_publicacion === 'busco_oficina' ? '🏪 TIENDA BUSCA TALLER' : '✂️ TALLER BUSCA CORTE';
+      this.textoGenerado = `${tipoTexto} (${this.publicacion.zona_ubicacion}) 🚀\n` +
+        `👕 Prenda: ${this.publicacion.titulo}\n` +
+        `📦 Cantidad: ${this.publicacion.cantidad_piezas} piezas\n` +
+        `🧵 Maquinaria: ${maquinas}\n` +
+        `💰 Pago: R$ ${this.publicacion.pago_por_pieza} / pieza\n` +
+        `🚚 Transporte: ${this.publicacion.logistica_entrega}\n\n` +
+        `📲 Ver detalles aquí:\n${enlace}`;
+    }
   }
 
   copiarAlPortapapeles() {
     navigator.clipboard.writeText(this.textoGenerado).then(() => {
-      alert('¡Anuncio copiado para Facebook/WhatsApp!');
-      const rutaPanel = this.rolUsuario === 'tienda' ? '/panel-tienda' : '/panel-oficina';
+      alert('¡Anuncio copiado para redes sociales!');
+      const rutaPanel = this.rolUsuario === 'tienda' ? '/panel-tienda' : 
+                        this.rolUsuario === 'oficina' ? '/panel-oficina' : '/panel-funcionario';
       this.router.navigate([rutaPanel]);
     });
   }

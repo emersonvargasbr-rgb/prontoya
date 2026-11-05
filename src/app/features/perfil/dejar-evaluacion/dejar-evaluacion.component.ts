@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -12,76 +12,126 @@ import { SupabaseService } from '../../../core/services/supabase.service';
 })
 export class DejarEvaluacionComponent implements OnInit {
   evaluadorId: string = '';
-  evaluadoId: string = ''; // ID de la Oficina o Tienda que estamos calificando
-  
-  // Datos del formulario
-  estrellasSeleccionadas: number = 0;
+  evaluadoId: string = '';
+  evaluadoNombre: string = 'Usuario';
+  cargando = false;
+  mensajeError = '';
+
+  estrellas: number = 5;
   comentario: string = '';
   
-  // Opciones predefinidas de etiquetas
-  etiquetasDisponibles = ['Entrega Puntual', 'Excelente Costura', 'Faltó Mercancía', 'Paga a Tiempo', 'Buena Comunicación', 'Problemas con Tela'];
+  etiquetasDisponibles: string[] = [
+    'Puntual en la entrega',
+    'Excelente calidad de costura',
+    'Cuidado impecable del material',
+    'Buena comunicación',
+    'Recomendado 100%'
+  ];
   etiquetasSeleccionadas: string[] = [];
 
-  cargando = false;
-  mensaje = '';
-
   constructor(
-    private supabase: SupabaseService,
     private route: ActivatedRoute,
-    private router: Router
+    private supabaseService: SupabaseService,
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   async ngOnInit() {
-    // Obtenemos a quién vamos a calificar desde la URL (ej: /evaluar/UUID_DE_LA_OFICINA)
     this.evaluadoId = this.route.snapshot.paramMap.get('id') || '';
     
-    // Obtenemos quién está calificando (Usuario logueado)
-    const { data: { user } } = await this.supabase.supabase.auth.getUser();
-    if (user) this.evaluadorId = user.id;
-  }
-
-  // Lógica para marcar estrellas al hacer clic
-  seleccionarEstrella(valor: number) {
-    this.estrellasSeleccionadas = valor;
-  }
-
-  // Lógica para elegir etiquetas tipo "Chips"
-  toggleEtiqueta(etiqueta: string) {
-    const index = this.etiquetasSeleccionadas.indexOf(etiqueta);
-    if (index === -1) {
-      this.etiquetasSeleccionadas.push(etiqueta);
+    const { data: { user } } = await this.supabaseService.supabase.auth.getUser();
+    if (user) {
+      this.evaluadorId = user.id;
+      await this.cargarDatosEvaluado();
     } else {
-      this.etiquetasSeleccionadas.splice(index, 1);
+      this.router.navigate(['/login']);
     }
   }
 
+  async cargarDatosEvaluado() {
+    try {
+      const { data, error } = await this.supabaseService.supabase
+        .from('perfiles')
+        .select('nombre_completo')
+        .eq('id', this.evaluadoId)
+        .single();
+
+      if (error) throw error;
+      if (data) this.evaluadoNombre = data.nombre_completo;
+    } catch (e) {
+      console.error('Error cargando usuario a evaluar:', e);
+    } finally {
+      this.cdr.detectChanges();
+    }
+  }
+
+  seleccionarEstrellas(n: number) {
+    this.estrellas = n;
+    this.cdr.detectChanges();
+  }
+
+  toggleEtiqueta(etiqueta: string) {
+    if (this.etiquetasSeleccionadas.includes(etiqueta)) {
+      this.etiquetasSeleccionadas = this.etiquetasSeleccionadas.filter(e => e !== etiqueta);
+    } else {
+      this.etiquetasSeleccionadas.push(etiqueta);
+    }
+    this.cdr.detectChanges();
+  }
+
   async enviarEvaluacion() {
-    if (this.estrellasSeleccionadas === 0) {
-      this.mensaje = 'Por favor, selecciona una calificación de estrellas.';
+    if (!this.evaluadoId || !this.evaluadorId) {
+      this.mensajeError = 'Datos de evaluación incompletos.';
       return;
     }
 
     this.cargando = true;
+    this.mensajeError = '';
+    this.cdr.detectChanges();
+
     try {
-      const { error } = await this.supabase.supabase
+      // 1. Insertar la evaluación en la tabla
+      const { error: errEval } = await this.supabaseService.supabase
         .from('evaluaciones')
         .insert([{
           evaluador_id: this.evaluadorId,
           evaluado_id: this.evaluadoId,
-          estrellas: this.estrellasSeleccionadas,
+          estrellas: this.estrellas,
           etiquetas: this.etiquetasSeleccionadas,
           comentario: this.comentario
         }]);
 
-      if (error) throw error;
+      if (errEval) throw errEval;
 
-      alert('¡Evaluación registrada! Gracias por mantener segura la comunidad.');
-      this.router.navigate(['/panel-tienda']); // Regresamos al panel
+      // 2. Recalcular promedio de estrellas y total de evaluaciones del perfil evaluado
+      const { data: todasEval, error: errQuery } = await this.supabaseService.supabase
+        .from('evaluaciones')
+        .select('estrellas')
+        .eq('evaluado_id', this.evaluadoId);
 
-    } catch (error) {
-      this.mensaje = 'Error al enviar la evaluación. Intenta nuevamente.';
+      if (!errQuery && todasEval && todasEval.length > 0) {
+        const total = todasEval.length;
+        const suma = todasEval.reduce((acc, curr) => acc + curr.estrellas, 0);
+        const promedio = Number((suma / total).toFixed(2));
+
+        await this.supabaseService.supabase
+          .from('perfiles')
+          .update({
+            promedio_estrellas: promedio,
+            total_evaluaciones: total
+          })
+          .eq('id', this.evaluadoId);
+      }
+
+      alert('¡Evaluación enviada con éxito! Gracias por calificar la reputación de la red.');
+      this.router.navigate(['/feed']);
+
+    } catch (e: any) {
+      this.mensajeError = 'Error al enviar la evaluación: ' + (e?.message || 'Intente de nuevo');
+      console.error(e);
     } finally {
       this.cargando = false;
+      this.cdr.detectChanges();
     }
   }
 }

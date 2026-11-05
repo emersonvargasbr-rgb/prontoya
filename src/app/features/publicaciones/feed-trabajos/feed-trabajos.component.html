@@ -1,9 +1,62 @@
-<div class="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
+<div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
   <div class="max-w-4xl mx-auto">
     
-    <div class="text-center mb-10">
+    <div class="text-center mb-8">
       <h1 class="text-3xl font-black text-gray-900 tracking-tight">Marketplace Textil</h1>
-      <p class="text-gray-500 mt-2">Encuentra los mejores cortes y vacantes en tu zona.</p>
+      <p class="text-gray-500 mt-2">Encuentra cortes, talleres y vacantes cerca de ti en São Paulo.</p>
+    </div>
+
+    <!-- PANEL DE BÚSQUEDA Y FILTROS AVANZADOS -->
+    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 mb-6 space-y-4">
+      
+      <!-- Buscador por Texto Libre -->
+      <div class="relative">
+        <span class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </span>
+        <input type="text" [(ngModel)]="busquedaTexto" (input)="aplicarFiltros()" placeholder="Busca por prenda (ej: Regatas, Vestidos) o palabra clave..." 
+          class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+
+      <!-- Filtros en Paralelo (Zona, Tipo y Maquinaria) -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        
+        <!-- Filtro por Zona -->
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase mb-1">📍 Zona</label>
+          <select [(ngModel)]="filtroZona" (change)="aplicarFiltros()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Todas las zonas</option>
+            <option *ngFor="let zona of zonasDisponibles" [value]="zona">{{ zona }}</option>
+          </select>
+        </div>
+
+        <!-- Filtro por Tipo de Anuncio -->
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase mb-1">📋 Tipo</label>
+          <select [(ngModel)]="filtroTipo" (change)="aplicarFiltros()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Todos</option>
+            <option value="busco_oficina">🏪 Tiendas (Cortes)</option>
+            <option value="busco_corte">✂️ Talleres (Buscan Corte)</option>
+            <option value="busco_funcionario">👥 Talleres (Buscan Personal)</option>
+            <option value="busco_trabajo">👤 Operarios (CV)</option>
+          </select>
+        </div>
+
+        <!-- Filtro por Maquinaria -->
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase mb-1">🧵 Máquina</label>
+          <select [(ngModel)]="filtroMaquina" (change)="aplicarFiltros()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Cualquier máquina</option>
+            <option value="RETA">Reta (Recta)</option>
+            <option value="OVERLOCK">Overlock</option>
+            <option value="GALONEIRA">Galoneira</option>
+            <option value="BOTONEIRA">Botoneira</option>
+            <option value="CASEADEIRA">Caseadeira</option>
+          </select>
+        </div>
+
+      </div>
+
     </div>
 
     <!-- Estado de carga -->
@@ -11,16 +64,16 @@
       <p class="text-lg text-gray-500 font-medium animate-pulse">Buscando ofertas disponibles...</p>
     </div>
 
-    <!-- Mensaje si no hay publicaciones -->
-    <div *ngIf="!cargando && listaTrabajos.length === 0" class="bg-white rounded-2xl p-10 text-center border border-gray-200 border-dashed">
+    <!-- Mensaje si no hay resultados -->
+    <div *ngIf="!cargando && trabajosFiltrados.length === 0" class="bg-white rounded-2xl p-10 text-center border border-gray-200 border-dashed">
       <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
-      <h3 class="text-xl font-bold text-gray-900 mb-1">Aún no hay cortes activos</h3>
-      <p class="text-gray-500">Vuelve más tarde o publica el tuyo si necesitas personal.</p>
+      <h3 class="text-xl font-bold text-gray-900 mb-1">No se encontraron resultados</h3>
+      <p class="text-gray-500">Prueba cambiando los términos de búsqueda o los filtros.</p>
     </div>
 
-    <!-- Lista de tarjetas -->
-    <div *ngIf="!cargando && listaTrabajos.length > 0" class="space-y-6">
-      <div *ngFor="let trabajo of listaTrabajos" class="cursor-pointer" [routerLink]="['/trabajo', trabajo.id]">
+    <!-- Lista de tarjetas filtradas -->
+    <div *ngIf="!cargando && trabajosFiltrados.length > 0" class="space-y-6">
+      <div *ngFor="let trabajo of trabajosFiltrados" class="cursor-pointer" [routerLink]="['/trabajo', trabajo.id]">
         <app-tarjeta-trabajo [trabajo]="trabajo"></app-tarjeta-trabajo>
       </div>
     </div>
