@@ -1,57 +1,64 @@
-<div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-  <div class="max-w-xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden p-8">
+<div class="min-h-screen bg-slate-50/70 py-10 px-4 flex justify-center items-center">
+  <div class="w-full max-w-md bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden p-6 sm:p-8 space-y-6">
     
-    <div class="text-center mb-8">
-      <h1 class="text-2xl font-black text-gray-900">Calificar a {{ evaluadoNombre }}</h1>
-      <p class="text-gray-500 text-sm mt-1">Tu opinión ayuda a mantener la confianza y calidad en la comunidad textil.</p>
+    <!-- Encabezado -->
+    <div class="text-center space-y-2">
+      <span class="text-xs font-bold uppercase tracking-wider text-amber-600 bg-amber-50 px-3 py-1 rounded-full">Sistema de Reputación</span>
+      <h2 class="text-2xl font-black text-slate-900">Calificar Experiencia</h2>
+      <p class="text-xs text-slate-500">Tu opinión genera confianza en el mercado textil de São Paulo.</p>
     </div>
 
-    <div *ngIf="mensajeError" class="bg-red-50 text-red-600 p-3 rounded-xl text-sm font-medium mb-6 border border-red-100 text-center">
-      {{ mensajeError }}
+    <!-- Estado de Carga / Error -->
+    <div *ngIf="cargandoPerfil" class="text-center py-8">
+      <div class="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
     </div>
 
-    <div class="space-y-6">
+    <div *ngIf="error" class="bg-rose-50 text-rose-600 p-4 rounded-2xl text-xs font-semibold text-center border border-rose-100">
+      {{ error }}
+    </div>
+
+    <!-- Contenido cuando carga el perfil a evaluar -->
+    <div *ngIf="!cargandoPerfil && usuarioEvaluado" class="space-y-6">
       
-      <!-- Selector de Estrellas -->
+      <!-- Mini Tarjeta del Usuario Evaluado -->
+      <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/60 flex items-center gap-3">
+        <div class="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-xl shadow-sm">
+          {{ usuarioEvaluado.nombre_completo?.charAt(0) | uppercase }}
+        </div>
+        <div>
+          <h4 class="font-bold text-slate-900 text-sm">{{ usuarioEvaluado.nombre_completo }}</h4>
+          <p class="text-xs text-blue-600 font-semibold capitalize">Rol: {{ usuarioEvaluado.rol }} | 📍 {{ usuarioEvaluado.zona_ubicacion || 'São Paulo' }}</p>
+        </div>
+      </div>
+
+      <!-- Selector Táctil de Estrellas (1 a 5) -->
       <div class="text-center space-y-2">
-        <label class="block text-sm font-bold text-gray-700 uppercase tracking-wider">Puntuación General</label>
+        <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">Calificación General</label>
         <div class="flex justify-center gap-2">
-          <button *ngFor="let star of [1, 2, 3, 4, 5]" (click)="seleccionarEstrellas(star)" type="button"
-            class="text-4xl transition transform hover:scale-110 focus:outline-none"
-            [class.text-yellow-400]="star <= estrellas"
-            [class.text-gray-300]="star > estrellas">
-            ★
+          <button type="button" *ngFor="let star of [1,2,3,4,5]" 
+            (click)="seleccionarEstrellas(star)"
+            class="p-2 text-3xl transition transform active:scale-90 focus:outline-none">
+            <span [class.text-amber-400]="star <= estrellas" [class.text-slate-200]="star > estrellas">★</span>
           </button>
         </div>
-        <p class="text-xs font-bold text-gray-500">{{ estrellas }} de 5 estrellas</p>
+        <p class="text-xs font-extrabold text-amber-600">{{ estrellas }} de 5 estrellas</p>
       </div>
 
-      <!-- Etiquetas Rápidas -->
-      <div>
-        <label class="block text-sm font-bold text-gray-700 mb-2">Destaca aspectos positivos (Opcional)</label>
-        <div class="flex flex-wrap gap-2">
-          <button *ngFor="let etiqueta of etiquetasDisponibles" (click)="toggleEtiqueta(etiqueta)" type="button"
-            [class.bg-blue-600]="etiquetasSeleccionadas.includes(etiqueta)"
-            [class.text-white]="etiquetasSeleccionadas.includes(etiqueta)"
-            [class.bg-gray-100]="!etiquetasSeleccionadas.includes(etiqueta)"
-            [class.text-gray-700]="!etiquetasSeleccionadas.includes(etiqueta)"
-            class="text-xs font-bold px-3 py-2 rounded-xl transition">
-            {{ etiqueta }}
-          </button>
-        </div>
+      <!-- Comentario / Reseña -->
+      <div class="space-y-1">
+        <label class="block text-xs font-bold text-slate-600 uppercase">Comentario sobre el trabajo o trato</label>
+        <textarea [(ngModel)]="comentario" rows="3" placeholder="Ej: Excelente taller, cumplió con los plazos de entrega y la calidad de costura impecable..."
+          class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition"></textarea>
       </div>
 
-      <!-- Comentario Opcional -->
-      <div>
-        <label class="block text-sm font-bold text-gray-700 mb-1">Comentario detallado</label>
-        <textarea [(ngModel)]="comentario" rows="4" placeholder="Escribe tu experiencia trabajando con este taller o tienda..."
-          class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
-      </div>
-
-      <!-- Botón de Envío -->
+      <!-- Botón Enviar -->
       <button (click)="enviarEvaluacion()" [disabled]="cargando"
-        class="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-4 rounded-xl transition shadow-lg disabled:opacity-50">
-        {{ cargando ? 'Enviando...' : 'Enviar Calificación' }}
+        class="w-full bg-slate-900 active:scale-[0.98] text-white font-black py-4 px-6 rounded-2xl shadow-xl shadow-slate-900/20 hover:bg-slate-800 transition duration-200 disabled:opacity-50">
+        {{ cargando ? 'Enviando calificación...' : 'Publicar Calificación' }}
+      </button>
+
+      <button routerLink="/feed" class="w-full text-center text-xs font-bold text-slate-500 hover:text-slate-800 pt-2">
+        Cancelar y volver
       </button>
 
     </div>

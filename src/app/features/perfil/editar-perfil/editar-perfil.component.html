@@ -1,109 +1,158 @@
-<div class="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
-  <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+<div class="min-h-screen bg-slate-50/70 py-8 px-4 flex justify-center items-start">
+  <div class="w-full max-w-2xl bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
     
-    <!-- Header Minimalista -->
-    <div class="p-8 border-b border-gray-100 bg-gray-900 text-white flex justify-between items-center">
-      <div>
-        <h2 class="text-2xl font-black tracking-tight">Configuración de Perfil</h2>
-        <p class="text-gray-400 mt-1 text-sm">Optimiza tus datos para destacar en el polo textil de São Paulo.</p>
-      </div>
-      <button routerLink="/feed" class="text-xs bg-gray-800 text-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-700 transition">
-        Volver al Feed
-      </button>
-    </div>
-
-    <div *ngIf="cargando" class="p-12 text-center text-gray-400 animate-pulse font-medium">
-      Cargando información...
-    </div>
-
-    <div *ngIf="!cargando" class="p-8">
-      
-      <!-- Alertas -->
-      <div *ngIf="mensajeExito" class="bg-green-50 text-green-700 p-4 rounded-xl mb-6 font-semibold border border-green-200 text-sm flex items-center">
-        ✅ {{ mensajeExito }}
-      </div>
-      <div *ngIf="mensajeError" class="bg-red-50 text-red-600 p-4 rounded-xl mb-6 font-semibold border border-red-200 text-sm">
-        ⚠️ {{ mensajeError }}
+    <div class="p-6 sm:p-8 space-y-6">
+      <div class="border-b border-slate-100 pb-4 flex justify-between items-center">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">Configuración</span>
+          <h2 class="text-2xl font-black text-slate-900 mt-1">Editar Perfil Pro</h2>
+        </div>
+        <button (click)="volverAlPanel()" class="text-xs font-bold text-slate-500 hover:text-slate-800 bg-slate-100 px-3 py-2 rounded-xl">
+          ← Volver
+        </button>
       </div>
 
-      <form (ngSubmit)="guardarCambios()" class="space-y-6">
+      <form (ngSubmit)="guardarPerfil()" class="space-y-6">
         
-        <!-- Teléfono / WhatsApp -->
-        <div>
-          <label class="block text-sm font-bold text-gray-900 mb-1">WhatsApp de Contacto</label>
-          <input type="text" [(ngModel)]="perfil.telefono" name="telefono" placeholder="Ej: 11987654321" 
-            class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none font-medium">
-        </div>
+        <!-- SECCIÓN 1: PERSONALIZACIÓN VISUAL (COLOR Y AVATAR ANIMAL) -->
+        <div class="space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-200/60">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
+            Personalización de Portada y Avatar
+          </h3>
 
-        <!-- Zona / Ubicación -->
-        <div>
-          <label class="block text-sm font-bold text-gray-900 mb-1">Barrio o Zona (Brás, Bom Retiro, etc.)</label>
-          <input type="text" [(ngModel)]="perfil.zona_ubicacion" name="zona" placeholder="Ej: Brás, SP" 
-            class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none font-medium">
-        </div>
-
-        <!-- OPCIÓN EXCLUSIVA PARA TIENDAS: Firma vs Ferinha -->
-        <div *ngIf="rolUsuario === 'tienda'" class="bg-purple-50 p-5 rounded-xl border border-purple-100">
-          <label class="block text-sm font-bold text-purple-900 mb-2">Modelo Comercial de la Tienda</label>
-          <div class="grid grid-cols-2 gap-4">
-            <label class="flex items-center space-x-3 p-3 bg-white rounded-lg border border-purple-200 cursor-pointer shadow-xs">
-              <input type="radio" [(ngModel)]="perfil.tipo_tienda" name="tipo_tienda" value="firma" class="text-purple-600 focus:ring-purple-500">
-              <span class="text-sm font-bold text-gray-800">🏪 Tienda Firma</span>
-            </label>
-            <label class="flex items-center space-x-3 p-3 bg-white rounded-lg border border-purple-200 cursor-pointer shadow-xs">
-              <input type="radio" [(ngModel)]="perfil.tipo_tienda" name="tipo_tienda" value="ferinha" class="text-purple-600 focus:ring-purple-500">
-              <span class="text-sm font-bold text-gray-800">🛍️ Tienda Ferinha</span>
-            </label>
+          <!-- Vista Previa Portada -->
+          <div class="h-24 rounded-2xl p-4 flex items-center justify-between transition-colors shadow-inner" [style.backgroundColor]="perfil.color_portada">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center text-2xl border border-white/30">
+                <span [innerHTML]="getAvatarSvg(perfil.avatar_svg_id)"></span>
+              </div>
+              <span class="font-extrabold text-sm" [style.color]="perfil.color_texto_portada">
+                {{ perfil.nombre_completo || 'Nombre de tu Oficina' }}
+              </span>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-black/20 text-white">Vista previa</span>
           </div>
-        </div>
 
-        <!-- OPCIÓN EXCLUSIVA PARA OFICINAS: Cantidad de Funcionarios -->
-        <div *ngIf="rolUsuario === 'oficina'" class="bg-amber-50 p-5 rounded-xl border border-amber-100">
-          <label class="block text-sm font-bold text-amber-900 mb-1">Cantidad de Funcionarios / Operarios en Taller</label>
-          <p class="text-xs text-amber-700 mb-3">Indica cuántas personas trabajan activamente en tu taller.</p>
-          <input type="number" [(ngModel)]="perfil.cantidad_funcionarios" name="funcionarios" min="1" 
-            class="w-full px-4 py-2.5 bg-white border border-amber-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none font-bold text-gray-800">
-        </div>
-
-        <!-- OPCIÓN EXCLUSIVA PARA FUNCIONARIOS: Estado Laboral -->
-        <div *ngIf="rolUsuario === 'funcionario'" class="bg-blue-50 p-5 rounded-xl border border-blue-100">
-          <label class="block text-sm font-bold text-blue-900 mb-2">Estado Laboral Actual</label>
-          <div class="grid grid-cols-2 gap-4">
-            <label class="flex items-center space-x-3 p-3 bg-white rounded-lg border border-blue-200 cursor-pointer shadow-xs">
-              <input type="radio" [(ngModel)]="perfil.estado_laboral" name="estado_laboral" value="Disponible" class="text-blue-600">
-              <span class="text-sm font-bold text-green-700">🟢 Libre / Disponible</span>
-            </label>
-            <label class="flex items-center space-x-3 p-3 bg-white rounded-lg border border-blue-200 cursor-pointer shadow-xs">
-              <input type="radio" [(ngModel)]="perfil.estado_laboral" name="estado_laboral" value="Ocupado" class="text-blue-600">
-              <span class="text-sm font-bold text-amber-700">🟠 Ocupado en Taller</span>
-            </label>
+          <!-- Selector de Colores de Fondo -->
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Color de Portada</label>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" *ngFor="let col of coloresDisponibles" 
+                (click)="seleccionarColor(col.hex)"
+                [style.backgroundColor]="col.hex"
+                [class.ring-4]="perfil.color_portada === col.hex"
+                class="w-8 h-8 rounded-xl ring-blue-500 transition-all transform active:scale-90 shadow-sm"></button>
+            </div>
           </div>
-        </div>
 
-        <!-- SELECTOR ESTRIBIRO / CHECKBOXES DE MAQUINARIA Y ROLES -->
-        <div class="bg-gray-50 p-5 rounded-xl border border-gray-200">
-          <label class="block text-sm font-bold text-gray-900 mb-1">Máquinas y Roles del Rubro Textil</label>
-          <p class="text-xs text-gray-500 mb-4">Selecciona las máquinas que manejas o los puestos que desempeñas.</p>
-          
-          <div class="space-y-4" *ngFor="let grupo of catalogoMaquinasRoles">
-            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">{{ grupo.categoria }}</h4>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <label *ngFor="let item of grupo.items" 
-                     class="flex items-center space-x-3 p-2.5 bg-white rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition">
-                <input type="checkbox" 
-                       [checked]="isMaquinaSeleccionada(item)" 
-                       (change)="onMaquinaCheckboxChange($event, item)"
-                       class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
-                <span class="text-xs font-bold text-gray-700">{{ item }}</span>
-              </label>
+          <!-- Selector de Avatares Animales SVG -->
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Icono / Avatar de Taller (Animal SVG)</label>
+            <div class="grid grid-cols-6 gap-2">
+              <button type="button" *ngFor="let animal of animalesSvg"
+                (click)="perfil.avatar_svg_id = animal.id"
+                [class.bg-blue-600]="perfil.avatar_svg_id === animal.id"
+                [class.text-white]="perfil.avatar_svg_id === animal.id"
+                [class.bg-white]="perfil.avatar_svg_id !== animal.id"
+                class="p-2.5 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-xl transition active:scale-95 shadow-sm">
+                <span>{{ animal.emoji }}</span>
+              </button>
             </div>
           </div>
         </div>
 
-        <!-- Botón Guardar -->
+        <!-- SECCIÓN 2: INFORMACIÓN TÉCNICA Y OPERATIVA DE LA OFICINA -->
+        <div class="space-y-4">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700">Capacidad e Infraestructura Textil</h3>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Nombre Comercial / Oficina</label>
+              <input type="text" [(ngModel)]="perfil.nombre_completo" name="nombre" required
+                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Especialidad Principal</label>
+              <select [(ngModel)]="perfil.especialidad_principal" name="especialidad"
+                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none">
+                <option value="Costura y Confeccion Completa">Costura & Confección Completa</option>
+                <option value="Oficina de Corte">Oficina de Corte</option>
+                <option value="Caseadeira y Botoneira">Caseadeira & Botoneira</option>
+                <option value="Estampado y Sublimacion">Estampado & Sublimación</option>
+                <option value="Acabados y Plancha">Acabados & Plancha</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Nº Máquinas</label>
+              <input type="number" [(ngModel)]="perfil.cantidad_maquinas" name="maquinas" placeholder="Ej: 8"
+                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Nº Operarios</label>
+              <input type="number" [(ngModel)]="perfil.cantidad_operarios" name="operarios" placeholder="Ej: 6"
+                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none">
+            </div>
+            <div class="col-span-2 sm:col-span-1">
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">CEP (Zona)</label>
+              <input type="text" [(ngModel)]="perfil.cep" name="cep" placeholder="03001-000"
+                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none">
+            </div>
+          </div>
+        </div>
+
+        <!-- SECCIÓN 3: CONTROL DE PRIVACIDAD DE DATOS (PÚBLICO / CONECTADOS / PRIVADO) -->
+        <div class="space-y-4 bg-blue-50/50 p-5 rounded-2xl border border-blue-100">
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-blue-900 flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            Privacidad y Visibilidad de Datos Sensibles
+          </h3>
+
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs font-bold text-slate-800">Número de WhatsApp</p>
+                <p class="text-[10px] text-slate-500">¿Quién puede ver tu número directo?</p>
+              </div>
+              <select [(ngModel)]="perfil.visibilidad_whatsapp" name="visWhatsapp" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none">
+                <option value="publico">🌐 Público (Todos)</option>
+                <option value="conectados">👥 Solo Conectados</option>
+                <option value="privado">🔒 Solo yo</option>
+              </select>
+            </div>
+
+            <div class="flex items-center justify-between border-t border-slate-200/60 pt-3">
+              <div>
+                <p class="text-xs font-bold text-slate-800">Dirección Exacta y CEP</p>
+                <p class="text-[10px] text-slate-500">¿Quién puede ver la ubicación exacta?</p>
+              </div>
+              <select [(ngModel)]="perfil.visibilidad_direccion" name="visDireccion" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none">
+                <option value="publico">🌐 Público</option>
+                <option value="conectados">👥 Solo Conectados / Lotes asignados</option>
+                <option value="privado">🔒 Solo yo</option>
+              </select>
+            </div>
+
+            <div class="flex items-center justify-between border-t border-slate-200/60 pt-3">
+              <div>
+                <p class="text-xs font-bold text-slate-800">Registro CNPJ</p>
+                <p class="text-[10px] text-slate-500">Número de identificación tributaria</p>
+              </div>
+              <select [(ngModel)]="perfil.visibilidad_cnpj" name="visCnpj" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none">
+                <option value="conectados">👥 Solo Conectados</option>
+                <option value="privado">🔒 Privado</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
         <button type="submit" [disabled]="guardando"
-          class="w-full bg-gray-900 text-white font-bold py-4 px-4 rounded-xl hover:bg-gray-800 transition shadow-md disabled:opacity-50">
-          {{ guardando ? 'Guardando cambios...' : 'Actualizar Perfil Profesional' }}
+          class="w-full bg-slate-900 active:scale-[0.98] text-white font-black py-4 px-6 rounded-2xl shadow-xl shadow-slate-900/20 hover:bg-slate-800 transition duration-200">
+          {{ guardando ? 'Guardando Perfil Pro...' : 'Guardar Cambios' }}
         </button>
 
       </form>

@@ -12,122 +12,101 @@ import { SupabaseService } from '../../../core/services/supabase.service';
 })
 export class EditarPerfilComponent implements OnInit {
   usuarioId: string = '';
-  rolUsuario: string = '';
-  cargando = true;
   guardando = false;
-  mensajeExito = '';
-  mensajeError = '';
 
-  perfil = {
-    telefono: '',
-    zona_ubicacion: '',
-    tipo_tienda: 'firma', // 'firma' o 'ferinha'
-    estado_laboral: 'Disponible', // 'Disponible' o 'Ocupado'
-    cantidad_funcionarios: 0,
-    especialidades: [] as string[]
-  };
-
-  // Catálogo oficial industrial textil (São Paulo standards)
-  catalogoMaquinasRoles = [
-    { categoria: 'Costura y Acabado', items: ['RETA', 'OVERLOCK', 'GALONEIRA', 'ELASTIQUEIRA', 'BOTONEIRA', 'CASEADEIRA', 'TRAVETE'] },
-    { categoria: 'Corte y Producción', items: ['CORTADOR (Corte con sierra)', 'ENFESTADOR (Estendedor de telas)', 'AYUDANTE / AUXILIAR'] }
+  coloresDisponibles = [
+    { hex: '#0f172a', nombre: 'Slate Dark' },
+    { hex: '#1e3a8a', nombre: 'Azul Real' },
+    { hex: '#047857', nombre: 'Verde Esmeralda' },
+    { hex: '#7c3aed', nombre: 'Púrpura' },
+    { hex: '#c2410c', nombre: 'Terracota' },
+    { hex: '#be123c', nombre: 'Bordó' }
   ];
 
+  animalesSvg = [
+    { id: 'tigre', emoji: '🐯' },
+    { id: 'leon', emoji: '🦁' },
+    { id: 'oso', emoji: '🐻' },
+    { id: 'zorro', emoji: '🦊' },
+    { id: 'aguila', emoji: '🦅' },
+    { id: 'buho', emoji: '🦉' }
+  ];
+
+  perfil: any = {
+    nombre_completo: '',
+    especialidad_principal: 'Costura y Confeccion Completa',
+    color_portada: '#0f172a',
+    color_texto_portada: '#ffffff',
+    avatar_svg_id: 'tigre',
+    cantidad_maquinas: 0,
+    cantidad_operarios: 0,
+    cep: '',
+    cnpj: '',
+    visibilidad_whatsapp: 'publico',
+    visibilidad_direccion: 'conectados',
+    visibilidad_cnpj: 'privado'
+  };
+
   constructor(
-    private supabaseService: SupabaseService, 
+    private supabaseService: SupabaseService,
     private router: Router,
-    private cdr: ChangeDetectorRef // 👈 Inyección clave para romper el bloqueo de renderizado
+    private cdr: ChangeDetectorRef
   ) {}
 
   async ngOnInit() {
     const { data: { user } } = await this.supabaseService.supabase.auth.getUser();
     if (user) {
       this.usuarioId = user.id;
-      await this.cargarPerfilActual();
+      await this.cargarPerfil();
     } else {
       this.router.navigate(['/login']);
     }
   }
 
-  async cargarPerfilActual() {
-    try {
-      const { data, error } = await this.supabaseService.supabase
-        .from('perfiles')
-        .select('rol, telefono, zona_ubicacion, tipo_tienda, estado_laboral, cantidad_funcionarios, especialidades')
-        .eq('id', this.usuarioId)
-        .single();
+  async cargarPerfil() {
+    const { data } = await this.supabaseService.supabase
+      .from('perfiles')
+      .select('*')
+      .eq('id', this.usuarioId)
+      .single();
 
-      if (error) throw error;
-      
-      if (data) {
-        this.rolUsuario = data.rol;
-        this.perfil.telefono = data.telefono || '';
-        this.perfil.zona_ubicacion = data.zona_ubicacion || '';
-        this.perfil.tipo_tienda = data.tipo_tienda || 'firma';
-        this.perfil.estado_laboral = data.estado_laboral || 'Disponible';
-        this.perfil.cantidad_funcionarios = data.cantidad_funcionarios || 0;
-        this.perfil.especialidades = data.especialidades || [];
-      }
-    } catch (error) {
-      this.mensajeError = 'No se pudo cargar tu información actual.';
-    } finally {
-      this.cargando = false;
-      this.cdr.detectChanges(); // 👈 Refresco inmediato de la vista al terminar la carga
+    if (data) {
+      this.perfil = { ...this.perfil, ...data };
     }
+    this.cdr.detectChanges();
   }
 
-  // --- Lógica de Selección mediante Checkboxes (Evita duplicados) ---
-  onMaquinaCheckboxChange(event: any, item: string) {
-    if (event.target.checked) {
-      if (!this.perfil.especialidades.includes(item)) {
-        this.perfil.especialidades.push(item);
-      }
-    } else {
-      this.perfil.especialidades = this.perfil.especialidades.filter(m => m !== item);
-    }
+  seleccionarColor(hex: string) {
+    this.perfil.color_portada = hex;
+    // Cálculo automático de contraste del texto
+    this.perfil.color_texto_portada = '#ffffff';
   }
 
-  isMaquinaSeleccionada(item: string): boolean {
-    return this.perfil.especialidades.includes(item);
+  getAvatarSvg(id: string): string {
+    const mapa: any = { tigre: '🐯', leon: '🦁', oso: '🐻', zorro: '🦊', aguila: '🦅', buho: '🦉' };
+    return mapa[id] || '🧵';
   }
 
-  // --- Guardar en Base de Datos ---
-  async guardarCambios() {
+  async guardarPerfil() {
     this.guardando = true;
-    this.mensajeExito = '';
-    this.mensajeError = '';
-
     try {
-      const datosUpdate: any = {
-        telefono: this.perfil.telefono,
-        zona_ubicacion: this.perfil.zona_ubicacion,
-        especialidades: this.perfil.especialidades
-      };
-
-      if (this.rolUsuario === 'tienda') {
-        datosUpdate.tipo_tienda = this.perfil.tipo_tienda;
-      }
-      if (this.rolUsuario === 'funcionario') {
-        datosUpdate.estado_laboral = this.perfil.estado_laboral;
-      }
-      if (this.rolUsuario === 'oficina') {
-        datosUpdate.cantidad_funcionarios = Number(this.perfil.cantidad_funcionarios);
-      }
-
       const { error } = await this.supabaseService.supabase
         .from('perfiles')
-        .update(datosUpdate)
+        .update(this.perfil)
         .eq('id', this.usuarioId);
 
       if (error) throw error;
-
-      this.mensajeExito = '¡Perfil profesional actualizado con éxito!';
-      
-    } catch (error) {
-      this.mensajeError = 'Hubo un error al guardar los cambios en la base de datos.';
+      alert('¡Perfil Pro actualizado con éxito!');
+      this.volverAlPanel();
+    } catch (e: any) {
+      alert('Error al guardar: ' + e?.message);
     } finally {
       this.guardando = false;
-      this.cdr.detectChanges(); // 👈 Muestra el mensaje de éxito/error al instante sin demoras
+      this.cdr.detectChanges();
     }
+  }
+
+  volverAlPanel() {
+    this.router.navigate(['/panel-oficina']);
   }
 }

@@ -14,6 +14,7 @@ export class PanelOficinaComponent implements OnInit {
   cargando = true;
   pestanaActiva: 'lotes_asignados' | 'candidatos_empleo' | 'mis_publicaciones' | 'mis_postulaciones' = 'lotes_asignados';
 
+  perfil: any = null;
   lotesAsignados: any[] = [];
   misPublicaciones: any[] = [];
   misPostulaciones: any[] = [];
@@ -38,7 +39,18 @@ export class PanelOficinaComponent implements OnInit {
   async cargarDatosOficina() {
     this.cargando = true;
     try {
-      // 1. Cargar lotes asignados a esta oficina por las tiendas
+      // 1. Cargar perfil pro completo de la oficina (portada, avatar, máquinas, cep, etc.)
+      const { data: perfData, error: errPerf } = await this.supabaseService.supabase
+        .from('perfiles')
+        .select('*')
+        .eq('id', this.usuarioId)
+        .single();
+
+      if (!errPerf && perfData) {
+        this.perfil = perfData;
+      }
+
+      // 2. Cargar lotes asignados a esta oficina por las tiendas
       const { data: lotes, error: errLotes } = await this.supabaseService.supabase
         .from('lotes_asignados')
         .select(`
@@ -58,7 +70,7 @@ export class PanelOficinaComponent implements OnInit {
         tienda_info: Array.isArray(l.tienda) ? l.tienda[0] : l.tienda
       }));
 
-      // 2. Cargar publicaciones creadas por la oficina
+      // 3. Cargar publicaciones creadas por la oficina
       const { data: pubs, error: errPubs } = await this.supabaseService.supabase
         .from('publicaciones')
         .select('*')
@@ -68,7 +80,7 @@ export class PanelOficinaComponent implements OnInit {
       if (errPubs) throw errPubs;
       this.misPublicaciones = pubs || [];
 
-      // 3. Cargar postulaciones de operarios a las vacantes de empleo de esta oficina
+      // 4. Cargar postulaciones de operarios a las vacantes de empleo de esta oficina
       const misPubsIds = this.misPublicaciones
         .filter(p => p.tipo_publicacion === 'busco_funcionario')
         .map(p => p.id);
@@ -95,14 +107,14 @@ export class PanelOficinaComponent implements OnInit {
         }
       }
 
-      // 4. Cargar postulaciones de la oficina a lotes de tiendas
+      // 5. Cargar postulaciones de la oficina a lotes de tiendas
       const { data: posts, error: errPosts } = await this.supabaseService.supabase
         .from('postulaciones_lotes')
         .select(`
           id,
           estado,
           created_at,
-          publicacion:publicacion_id (id, titulo, cantidad_piezas, pago_por_pieza, creador:creador_id (nombre_completo, zona_ubicacion))
+          publicacion:publicacion_id (id, titulo, cantidad_piezas, pago_por_pieza, creador:creador_id (id, nombre_completo, zona_ubicacion))
         `)
         .eq('taller_id', this.usuarioId);
 
@@ -121,7 +133,32 @@ export class PanelOficinaComponent implements OnInit {
     }
   }
 
-  // ACCIONES DE GESTIÓN PARA CANDIDATOS DE EMPLEO
+  // Helper para mostrar emojis de avatares animales SVG
+  getAvatarEmoji(id: string): string {
+    const mapa: any = { tigre: '🐯', leon: '🦁', oso: '🐻', zorro: '🦊', aguila: '🦅', buho: '🦉' };
+    return mapa[id] || '🧵';
+  }
+
+  // Validación de Privacidad de Dirección (Solo si es público o si hay lotes asignados activos)
+  puedeVerDireccion(): boolean {
+    if (!this.perfil) return false;
+    if (this.perfil.visibilidad_direccion === 'publico') return true;
+    if (this.perfil.visibilidad_direccion === 'conectados' && this.lotesAsignados.length > 0) return true;
+    return false;
+  }
+
+  // Manejo del acordeón táctil en dispositivos móviles
+  toggleAcordeon(pestana: 'lotes_asignados' | 'candidatos_empleo' | 'mis_publicaciones' | 'mis_postulaciones') {
+    if (this.pestanaActiva === pestana) {
+      // Si ya está activa, la podemos colapsar o mantener
+      this.pestanaActiva = pestana;
+    } else {
+      this.pestanaActiva = pestana;
+    }
+    this.cdr.detectChanges();
+  }
+
+  // Responder Postulación de Candidatos
   async responderPostulacion(idPostulacion: string, nuevoEstado: 'Aceptado' | 'Rechazado') {
     try {
       const { error } = await this.supabaseService.supabase
@@ -137,7 +174,7 @@ export class PanelOficinaComponent implements OnInit {
     }
   }
 
-  // ACCIONES DE GESTIÓN DE MIS PUBLICACIONES
+  // Gestión de Anuncios Propios
   async cambiarEstadoAnuncio(pub: any) {
     const nuevoEstado = pub.estado === 'Activo' ? 'Pausado' : 'Activo';
     try {
@@ -149,14 +186,14 @@ export class PanelOficinaComponent implements OnInit {
       if (error) throw error;
       pub.estado = nuevoEstado;
     } catch (e: any) {
-      alert('Error al cambiar estado del anuncio: ' + (e?.message || 'Intente de nuevo'));
+      alert('Error al cambiar estado: ' + e?.message);
     } finally {
       this.cdr.detectChanges();
     }
   }
 
   async eliminarAnuncio(idAnuncio: string) {
-    if (!confirm('¿Estás seguro de que deseas eliminar este anuncio de forma permanente?')) return;
+    if (!confirm('¿Deseas eliminar este anuncio permanentemente?')) return;
 
     try {
       const { error } = await this.supabaseService.supabase
@@ -168,19 +205,24 @@ export class PanelOficinaComponent implements OnInit {
       this.misPublicaciones = this.misPublicaciones.filter(p => p.id !== idAnuncio);
       alert('Anuncio eliminado con éxito.');
     } catch (e: any) {
-      alert('Error al eliminar anuncio: ' + (e?.message || 'Intente de nuevo'));
+      alert('Error al eliminar: ' + e?.message);
     } finally {
       this.cdr.detectChanges();
     }
   }
 
+  // Redirigir al sistema de evaluación tipo Uber (de 1 a 5 estrellas)
+  irAEvaluacion(usuarioIdObjetivo: string) {
+    this.router.navigate(['/dejar-evaluacion', usuarioIdObjetivo]);
+  }
+
   contactarWhatsApp(telefono: string, nombre: string, concepto: string) {
     if (!telefono) {
-      alert('El usuario no tiene un teléfono registrado.');
+      alert('El usuario no posee un teléfono público registrado.');
       return;
     }
     const limpio = telefono.replace(/\D/g, '');
-    const mensaje = `Hola ${nombre}, me pongo en contacto desde CosturaPronta respecto al anuncio/postulación de "${concepto}".`;
+    const mensaje = `Hola ${nombre}, me pongo en contacto desde CosturaPronta respecto a: "${concepto}".`;
     window.open(`https://wa.me/${limpio}?text=${encodeURIComponent(mensaje)}`, '_blank');
   }
 }

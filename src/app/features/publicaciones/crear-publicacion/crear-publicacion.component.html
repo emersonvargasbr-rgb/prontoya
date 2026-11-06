@@ -1,173 +1,149 @@
-<div class="min-h-screen bg-gray-50 py-8 px-4">
-  <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+<div class="min-h-screen bg-slate-50/70 py-6 px-3 sm:px-6 flex justify-center items-start">
+  <div class="w-full max-w-xl bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden transition-all">
     
-    <div class="p-6 md:p-8">
-      <h2 class="text-2xl font-bold text-gray-900 mb-6">Publicar Anuncio Textil</h2>
+    <!-- HEADER ESTILO MOBILE APP -->
+    <div class="px-6 pt-6 pb-4 border-b border-slate-100 flex items-center justify-between bg-white">
+      <div>
+        <span class="text-xs font-bold tracking-wider uppercase text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">CosturaPronta ERP</span>
+        <h2 class="text-2xl font-black text-slate-900 mt-1 tracking-tight">Nuevo Anuncio</h2>
+      </div>
+      <div class="w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-sm">
+        ✨
+      </div>
+    </div>
 
-      <!-- PANTALLA DE ÉXITO -->
-      <div *ngIf="publicacionExitosa" class="text-center py-8">
-        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
-          <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+    <div class="p-6">
+      <!-- PANTALLA DE ÉXITO ESTILO MOBILE -->
+      <div *ngIf="publicacionExitosa" class="text-center py-6 space-y-4 animate-fadeIn">
+        <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-emerald-50 text-emerald-500 ring-8 ring-emerald-50/50">
+          <svg class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h3 class="text-xl font-bold text-gray-900 mb-2">¡Anuncio Publicado con Éxito!</h3>
-        <p class="text-gray-500 mb-6">Copia este anuncio estratégico y compártelo en WhatsApp o Facebook.</p>
+        <div>
+          <h3 class="text-xl font-black text-slate-900">¡Anuncio Publicado!</h3>
+          <p class="text-sm text-slate-500 mt-1">Listo para compartir en redes sociales y grupos de WhatsApp.</p>
+        </div>
         
-        <div class="bg-gray-50 p-4 rounded-lg text-left text-sm text-gray-700 whitespace-pre-line border border-gray-200 mb-6">
+        <div class="bg-slate-50 p-4 rounded-2xl text-left text-xs text-slate-700 font-mono border border-slate-200/80 whitespace-pre-line shadow-inner max-h-60 overflow-y-auto">
           {{ textoGenerado }}
         </div>
 
-        <button (click)="copiarAlPortapapeles()" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-blue-700 transition">
-          Copiar Anuncio y Volver al Panel
+        <button (click)="copiarAlPortapapeles()" 
+          class="w-full bg-slate-900 active:scale-[0.98] text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition duration-200 flex items-center justify-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+          Copiar Texto y Volver
         </button>
       </div>
 
-      <!-- FORMULARIO DE PUBLICACIÓN -->
+      <!-- FORMULARIO PRINCIPAL -->
       <form *ngIf="!publicacionExitosa" (ngSubmit)="onSubmit()" #pubForm="ngForm" class="space-y-6">
         
-        <div *ngIf="mensajeError" class="bg-red-100 text-red-700 p-3 rounded-lg text-sm font-medium">
-          {{ mensajeError }}
+        <div *ngIf="mensajeError" class="bg-rose-50 text-rose-600 p-4 rounded-2xl text-xs font-semibold border border-rose-100 flex items-center gap-2">
+          <span>⚠️</span> {{ mensajeError }}
         </div>
 
-        <!-- SELECTOR DE TIPO DE PUBLICACIÓN -->
-        <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
-          <label class="block text-sm font-bold text-blue-900 mb-2">¿Qué deseas publicar hoy?</label>
+        <!-- SELECTOR DE ROL / OBJETIVO (CARDS SELECCIONABLES ESTILO ANDROID) -->
+        <div class="space-y-2">
+          <label class="text-xs font-bold uppercase tracking-wider text-slate-400">¿Qué buscas publicar?</label>
           
-          <!-- Rol TIENDA -->
-          <div *ngIf="rolUsuario === 'tienda'" class="text-sm font-medium text-blue-800">
-            🏪 <strong>Rol Tienda:</strong> Publicando lote de corte para encomendar a talleres u oficinas.
+          <!-- Si es OFICINA: Selector táctil con Tabs -->
+          <div *ngIf="rolUsuario === 'oficina'" class="grid grid-cols-2 gap-2 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/60">
+            <button type="button" 
+              (click)="publicacion.tipo_publicacion = 'busco_corte'"
+              [class.bg-white]="publicacion.tipo_publicacion === 'busco_corte'"
+              [class.shadow-md]="publicacion.tipo_publicacion === 'busco_corte'"
+              [class.text-blue-700]="publicacion.tipo_publicacion === 'busco_corte'"
+              class="py-3 px-3 rounded-xl font-bold text-xs text-slate-600 transition duration-200 flex flex-col items-center justify-center gap-1">
+              <span class="text-base">✂️</span>
+              <span>Taller Libre (Busco Corte)</span>
+            </button>
+
+            <button type="button" 
+              (click)="publicacion.tipo_publicacion = 'busco_funcionario'"
+              [class.bg-white]="publicacion.tipo_publicacion === 'busco_funcionario'"
+              [class.shadow-md]="publicacion.tipo_publicacion === 'busco_funcionario'"
+              [class.text-blue-700]="publicacion.tipo_publicacion === 'busco_funcionario'"
+              class="py-3 px-3 rounded-xl font-bold text-xs text-slate-600 transition duration-200 flex flex-col items-center justify-center gap-1">
+              <span class="text-base">👥</span>
+              <span>Contratar Costureros</span>
+            </button>
           </div>
 
-          <!-- Rol OFICINA: Elige entre buscar trabajo de corte o contratar personal -->
-          <select *ngIf="rolUsuario === 'oficina'" [(ngModel)]="publicacion.tipo_publicacion" name="tipo" required
-            class="w-full px-4 py-3 bg-white border border-blue-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium text-gray-800">
-            <option value="busco_corte">✂️ Tengo taller libre (Busco corte de tienda)</option>
-            <option value="busco_funcionario">👥 Busco personal / costureros para mi taller</option>
-          </select>
+          <!-- Si es TIENDA u OPERARIO -->
+          <div *ngIf="rolUsuario === 'tienda'" class="p-4 bg-blue-50/60 rounded-2xl border border-blue-100/80 text-xs font-semibold text-blue-900 flex items-center gap-3">
+            <span class="text-xl">🏪</span>
+            <span><strong>Modo Tienda:</strong> Publica un lote para adjudicar a un taller calificado.</span>
+          </div>
 
-          <!-- Rol FUNCIONARIO -->
-          <div *ngIf="rolUsuario === 'funcionario'" class="text-sm font-medium text-blue-800">
-            👤 <strong>Rol Operario:</strong> Ofreciendo servicios o disponibilidad laboral.
+          <div *ngIf="rolUsuario === 'funcionario'" class="p-4 bg-purple-50/60 rounded-2xl border border-purple-100/80 text-xs font-semibold text-purple-900 flex items-center gap-3">
+            <span class="text-xl">👤</span>
+            <span><strong>Modo Operario:</strong> Publica tu disponibilidad para talleres textiles.</span>
           </div>
         </div>
 
         <!-- ========================================================================= -->
-        <!-- CASO 1: FORMULARIO EXCLUSIVO PARA CONTRATAR FUNCIONARIOS / EMPLEO        -->
+        <!-- CASO A: OFICINA OFRECE TALLER LIBRE (BUSCO CORTE DE TIENDA)              -->
         <!-- ========================================================================= -->
-        <div *ngIf="publicacion.tipo_publicacion === 'busco_funcionario'" class="space-y-4 border-t pt-4 border-gray-100">
+        <div *ngIf="publicacion.tipo_publicacion === 'busco_corte'" class="space-y-4 animate-fadeIn">
           
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Puesto Requerido</label>
-              <select [(ngModel)]="publicacion.puesto_trabajo" name="puesto" required
-                class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                <option value="Costurero(a) Overlock/Reta">Costurero(a) Overlock / Reta</option>
-                <option value="Costurero(a) Galoneira">Costurero(a) Galoneira</option>
-                <option value="Casal de Costura">Casal de Costura (Pareja)</option>
-                <option value="Planchador / Acabados">Planchador / Acabados</option>
-                <option value="Empaque y Ventas">Empaque y Ventas</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Prenda Principales a Coser</label>
-              <input type="text" [(ngModel)]="publicacion.titulo" name="prendaFunc" placeholder="Ej: Regatas, Modinha, Camisetas" required
-                class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-            </div>
-          </div>
-
-          <!-- Alojamiento y Tipo de Contratación (Cama Dentro / Fuera y Casal) -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-amber-50 p-4 rounded-xl border border-amber-200">
-            <div>
-              <label class="block text-sm font-bold text-amber-900 mb-1">🏠 Modalidad de Alojamiento</label>
-              <select [(ngModel)]="publicacion.modalidad_alojamiento" name="alojamiento" required
-                class="w-full px-4 py-3 bg-white border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-sm font-medium">
-                <option value="cama_fuera">Cama Fuera (Turno diario / Vive fuera)</option>
-                <option value="cama_dentro">Cama Dentro (Vive / Duerme en el taller)</option>
-                <option value="opcional">A convenir / Ambas opciones</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-sm font-bold text-amber-900 mb-1">👥 Personal Buscado</label>
-              <select [(ngModel)]="publicacion.modalidad_contratacion" name="contratacion" required
-                class="w-full px-4 py-3 bg-white border border-amber-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-sm font-medium">
-                <option value="individual">Costurero(a) Individual</option>
-                <option value="casal">Famoso "Casal" (Pareja de costura)</option>
-                <option value="equipo">Grupo / Equipo Completo</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Modalidad de Pago y Monto -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Pago</label>
-              <select [(ngModel)]="publicacion.modalidad_pago" name="modPago" required
-                class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                <option value="por_pieza">Por Pieza Confeccionada</option>
-                <option value="salario_semanal">Salario Semanal</option>
-                <option value="salario_mensual">Salario Mensual Fijo</option>
-                <option value="jornal_diario">Jornal Diario</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Pago Estimado / Sueldo (R$)</label>
-              <input type="number" step="0.01" [(ngModel)]="publicacion.pago_por_pieza" name="pagoFunc" placeholder="Ej: 1.50 por pieza o 1800 semanal" required
-                class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-            </div>
-          </div>
-
-          <!-- Ubicación del Taller -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">📍 Zona / Barrio del Taller</label>
-            <select [(ngModel)]="publicacion.zona_ubicacion" name="zonaFunc" required
-              class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-              <option value="Brás">Brás</option>
-              <option value="Bom Retiro">Bom Retiro</option>
-              <option value="Pari">Pari</option>
-              <option value="Guarulhos">Guarulhos</option>
-              <option value="Zona Leste">Zona Leste</option>
-              <option value="Zona Norte">Zona Norte</option>
-              <option value="Zona Sul">Zona Sul</option>
-            </select>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Título / Nombre del Servicio</label>
+            <input type="text" [(ngModel)]="publicacion.titulo" name="tituloCorte" placeholder="Ej: Taller disponible para confección de remeras" required
+              class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition">
           </div>
 
-          <!-- Checkboxes de Beneficios -->
-          <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3">
-            <label class="block text-sm font-bold text-gray-700">Beneficios Adicionales del Taller</label>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <label class="flex items-center space-x-2 text-sm text-gray-700 cursor-pointer">
-                <input type="checkbox" [(ngModel)]="publicacion.ofrece_alojamiento" name="alojamientoChk" class="w-4 h-4 text-blue-600 rounded">
-                <span>🏠 Incluye Vivienda / Habitación</span>
-              </label>
-              <label class="flex items-center space-x-2 text-sm text-gray-700 cursor-pointer">
-                <input type="checkbox" [(ngModel)]="publicacion.ofrece_comida" name="comidaChk" class="w-4 h-4 text-blue-600 rounded">
-                <span>🍲 Incluye Alimentación / Comida</span>
-              </label>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- ========================================================================= -->
-        <!-- CASO 2: FORMULARIO EXCLUSIVO PARA LOTES DE CORTE (busco_corte / busco_oficina) -->
-        <!-- ========================================================================= -->
-        <div *ngIf="publicacion.tipo_publicacion !== 'busco_funcionario'" class="space-y-4 border-t pt-4 border-gray-100">
-          
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Especialidad y Tejido -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Prenda / Título del Lote</label>
-              <input type="text" [(ngModel)]="publicacion.titulo" name="tituloLote" placeholder="Ej: Regatas de canelado" [required]="publicacion.tipo_publicacion !== 'busco_funcionario'"
-                class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">🛠️ Especialidad del Taller</label>
+              <select [(ngModel)]="publicacion.especialidad_taller" name="espTaller" required
+                class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition">
+                <option value="Costura y Confeccion Completa">Costura & Confección Completa</option>
+                <option value="Oficina de Corte">Oficina de Corte</option>
+                <option value="Caseadeira y Botoneira">Caseadeira & Botoneira</option>
+                <option value="Estampado y Sublimacion">Estampado & Sublimación</option>
+                <option value="Acabados y Plancha">Acabados & Plancha</option>
+                <option value="Empaque y Etiquetado">Empaque & Etiquetado</option>
+              </select>
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">📍 Zona / Barrio</label>
-              <select [(ngModel)]="publicacion.zona_ubicacion" name="zonaLote" required
-                class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">🧵 Tipo de Tejido</label>
+              <select [(ngModel)]="publicacion.tipo_tejido" name="tipoTejido" required
+                class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition">
+                <option value="Malla (Malharia)">Malla / Malharia (Canelado, Viscose, etc.)</option>
+                <option value="Tejido Plano">Tejido Plano (Jeans, Camisería)</option>
+                <option value="Ambos">Ambos tipos de tejido</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Modalidad (Feirinha / Firma) y Capacidad -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
+            <div>
+              <label class="block text-xs font-bold text-blue-900 uppercase mb-1">📋 Modalidad de Servicio</label>
+              <select [(ngModel)]="publicacion.modalidad_trabajo" name="modTrabajo" required
+                class="w-full px-4 py-3 bg-white border border-blue-200 rounded-xl text-xs font-bold text-blue-900 outline-none">
+                <option value="Feirinha">Solo Feirinha (Lotes rápidos)</option>
+                <option value="Firma">Solo Firma (Producción continua)</option>
+                <option value="Ambos">Ambos (Feirinha y Firma)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-blue-900 uppercase mb-1">⚡ Capacidad Diaria / Lote</label>
+              <input type="text" [(ngModel)]="publicacion.capacidad_produccion" name="capacidad" placeholder="Ej: 500 piezas / día" required
+                class="w-full px-4 py-3 bg-white border border-blue-200 rounded-xl text-xs font-bold text-blue-900 outline-none">
+            </div>
+          </div>
+
+          <!-- Ubicación y Logística Limpia -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">📍 Zona / Barrio</label>
+              <select [(ngModel)]="publicacion.zona_ubicacion" name="zonaCorte" required
+                class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none">
                 <option value="Brás">Brás</option>
                 <option value="Bom Retiro">Bom Retiro</option>
                 <option value="Pari">Pari</option>
@@ -177,55 +153,186 @@
                 <option value="Zona Sul">Zona Sul</option>
               </select>
             </div>
-          </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad de Piezas</label>
-              <input type="number" [(ngModel)]="publicacion.cantidad_piezas" name="cantLote" placeholder="Ej: 1500" [required]="publicacion.tipo_publicacion !== 'busco_funcionario'"
-                class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">🚚 Logística de Transporte</label>
+              <select [(ngModel)]="publicacion.logistica_entrega" name="logisticaCorte" class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none">
+                <option value="oficina_retira">El taller pasa a recoger la carga</option>
+                <option value="tienda_entrega">La tienda entrega en el taller</option>
+                <option value="acuerdo_mutuo">A combinar entre las partes</option>
+              </select>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Pago por pieza (R$)</label>
-              <input type="number" step="0.01" [(ngModel)]="publicacion.pago_por_pieza" name="pagoLote" placeholder="Ej: 1.20" [required]="publicacion.tipo_publicacion !== 'busco_funcionario'"
-                class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-            </div>
-          </div>
-
-          <!-- Logística de Transporte (Solo aparece para lotes de corte) -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">🚚 Logística de Transporte del Tejido</label>
-            <select [(ngModel)]="publicacion.logistica_entrega" name="logistica" class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-              <option value="tienda_entrega">La tienda entrega la carga en el taller</option>
-              <option value="oficina_retira">El taller debe pasar a recoger la carga a la tienda</option>
-              <option value="acuerdo_mutuo">A convenir entre ambas partes</option>
-            </select>
           </div>
 
         </div>
 
-        <!-- SECCIÓN DE MAQUINARIA (COMÚN PARA AMBOS) -->
-        <div class="mb-6 border-t pt-4 border-gray-100">
-          <label class="block text-sm font-bold text-gray-700 mb-2">🧵 Maquinaria Requerida / Disponible</label>
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
-            <label *ngFor="let maquina of maquinariaOficial" class="flex items-center space-x-3 cursor-pointer p-2 hover:bg-gray-100 rounded-lg transition">
-              <input type="checkbox" [value]="maquina.id" (change)="onMaquinaChange($event)" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
-              <span class="text-sm font-medium text-gray-700">{{ maquina.nombre }}</span>
+        <!-- ========================================================================= -->
+        <!-- CASO B: CONTRATAR FUNCIONARIOS / EMPLEO                                  -->
+        <!-- ========================================================================= -->
+        <div *ngIf="publicacion.tipo_publicacion === 'busco_funcionario'" class="space-y-4 animate-fadeIn">
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Puesto Requerido</label>
+              <select [(ngModel)]="publicacion.puesto_trabajo" name="puesto" required
+                class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none">
+                <option value="Costurero(a) Overlock/Reta">Costurero(a) Overlock / Reta</option>
+                <option value="Costurero(a) Galoneira">Costurero(a) Galoneira</option>
+                <option value="Casal de Costura">Casal de Costura (Pareja)</option>
+                <option value="Planchador / Acabados">Planchador / Acabados</option>
+                <option value="Empaque y Ventas">Empaque y Ventas</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Prenda Principal</label>
+              <input type="text" [(ngModel)]="publicacion.titulo" name="prendaFunc" placeholder="Ej: Regatas, Vestidos" required
+                class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none">
+            </div>
+          </div>
+
+          <!-- Cards Alojamiento & Modalidad de Contrato -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-amber-50/60 p-4 rounded-2xl border border-amber-100">
+            <div>
+              <label class="block text-xs font-bold text-amber-900 uppercase mb-1">🏠 Modalidad Alojamiento</label>
+              <select [(ngModel)]="publicacion.modalidad_alojamiento" name="alojamiento" required
+                class="w-full px-4 py-3 bg-white border border-amber-200 rounded-xl text-xs font-bold text-amber-900 outline-none">
+                <option value="cama_fuera">Cama Fuera (Turno diario)</option>
+                <option value="cama_dentro">Cama Dentro (Vive en taller)</option>
+                <option value="opcional">A convenir / Ambas</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-amber-900 uppercase mb-1">👥 Personal Buscado</label>
+              <select [(ngModel)]="publicacion.modalidad_contratacion" name="contratacion" required
+                class="w-full px-4 py-3 bg-white border border-amber-200 rounded-xl text-xs font-bold text-amber-900 outline-none">
+                <option value="individual">Costurero(a) Individual</option>
+                <option value="casal">Casal (Pareja de Costura)</option>
+                <option value="equipo">Grupo / Equipo Completo</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Pago y Zona -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tipo & Pago Estimado (R$)</label>
+              <div class="flex gap-2">
+                <select [(ngModel)]="publicacion.modalidad_pago" name="modPago" class="w-1/2 px-3 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium outline-none">
+                  <option value="por_pieza">x Pieza</option>
+                  <option value="salario_semanal">Semanal</option>
+                  <option value="salario_mensual">Mensual</option>
+                </select>
+                <input type="number" step="0.01" [(ngModel)]="publicacion.pago_por_pieza" name="pagoFunc" placeholder="Ej: 1.50" required
+                  class="w-1/2 px-3 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">📍 Barrio / Taller</label>
+              <select [(ngModel)]="publicacion.zona_ubicacion" name="zonaFunc" required
+                class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none">
+                <option value="Brás">Brás</option>
+                <option value="Bom Retiro">Bom Retiro</option>
+                <option value="Pari">Pari</option>
+                <option value="Guarulhos">Guarulhos</option>
+                <option value="Zona Leste">Zona Leste</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Switches / Checkboxes de Beneficios -->
+          <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-wrap gap-4">
+            <label class="flex items-center gap-2.5 text-xs font-bold text-slate-700 cursor-pointer">
+              <input type="checkbox" [(ngModel)]="publicacion.ofrece_alojamiento" name="alojamientoChk" class="w-4 h-4 rounded text-blue-600 focus:ring-0">
+              <span>🏠 Vivienda Incluida</span>
             </label>
+            <label class="flex items-center gap-2.5 text-xs font-bold text-slate-700 cursor-pointer">
+              <input type="checkbox" [(ngModel)]="publicacion.ofrece_comida" name="comidaChk" class="w-4 h-4 rounded text-blue-600 focus:ring-0">
+              <span>🍲 Comida Incluida</span>
+            </label>
+          </div>
+
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- CASO C: TIENDA BUSCA TALLER (BUSCO_OFICINA)                              -->
+        <!-- ========================================================================= -->
+        <div *ngIf="publicacion.tipo_publicacion === 'busco_oficina'" class="space-y-4 animate-fadeIn">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Prenda / Lote</label>
+              <input type="text" [(ngModel)]="publicacion.titulo" name="tituloLote" placeholder="Ej: Lote 2000 Vestidos Canelados" required
+                class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">📍 Zona Entrega</label>
+              <select [(ngModel)]="publicacion.zona_ubicacion" name="zonaLote" required
+                class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none">
+                <option value="Brás">Brás</option>
+                <option value="Bom Retiro">Bom Retiro</option>
+                <option value="Pari">Pari</option>
+                <option value="Guarulhos">Guarulhos</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Cantidad Piezas</label>
+              <input type="number" [(ngModel)]="publicacion.cantidad_piezas" name="cantLote" placeholder="Ej: 1500" required
+                class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Pago x Pieza (R$)</label>
+              <input type="number" step="0.01" [(ngModel)]="publicacion.pago_por_pieza" name="pagoLote" placeholder="Ej: 1.20" required
+                class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">🚚 Logística Carga</label>
+            <select [(ngModel)]="publicacion.logistica_entrega" name="logisticaTienda" class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none">
+              <option value="tienda_entrega">La tienda entrega la carga en el taller</option>
+              <option value="oficina_retira">El taller pasa a recoger la carga</option>
+              <option value="acuerdo_mutuo">A combinar</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- MAQUINARIA UTILIZADA / REQUERIDA (CHIPS INTERACTIVOS ESTILO MOBILE) -->
+        <div class="space-y-2 pt-2 border-t border-slate-100">
+          <label class="block text-xs font-bold text-slate-600 uppercase">🧵 Maquinaria Requerida</label>
+          
+          <div class="flex flex-wrap gap-2">
+            <button type="button" *ngFor="let maquina of maquinariaOficial"
+              (click)="toggleMaquina(maquina.id)"
+              [class.bg-blue-600]="isMaquinaSelected(maquina.id)"
+              [class.text-white]="isMaquinaSelected(maquina.id)"
+              [class.border-blue-600]="isMaquinaSelected(maquina.id)"
+              [class.bg-slate-50]="!isMaquinaSelected(maquina.id)"
+              [class.text-slate-700]="!isMaquinaSelected(maquina.id)"
+              [class.border-slate-200]="!isMaquinaSelected(maquina.id)"
+              class="px-3.5 py-2.5 rounded-xl text-xs font-bold border transition duration-150 active:scale-95 flex items-center gap-1.5">
+              <span>{{ isMaquinaSelected(maquina.id) ? '✓' : '+' }}</span>
+              <span>{{ maquina.nombre }}</span>
+            </button>
           </div>
         </div>
 
         <!-- DESCRIPCIÓN EXTRA -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Instrucciones o Horarios Adicionales (Opcional)</label>
-          <textarea [(ngModel)]="publicacion.descripcion" name="descripcion" rows="3" placeholder="Información sobre ambiente laboral, empaque, etc."
-            class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+          <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Notas Adicionales (Opcional)</label>
+          <textarea [(ngModel)]="publicacion.descripcion" name="descripcion" rows="2" placeholder="Detalles de empaque, hilos especiales, horarios..."
+            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition"></textarea>
         </div>
 
-        <!-- BOTÓN PUBLICAR -->
-        <button type="submit" [disabled]="!pubForm.form.valid || cargando || publicacion.maquinas_requeridas.length === 0"
-          class="w-full bg-gray-900 text-white font-bold py-4 px-4 rounded-xl hover:bg-gray-800 transition duration-200 disabled:opacity-50 shadow-lg shadow-gray-200">
-          {{ cargando ? 'Guardando en la nube...' : 'Publicar Anuncio' }}
+        <!-- BOTÓN PUBLICAR ESTILO ANDROID FAB / BUTTON -->
+        <button type="submit" 
+          [disabled]="!pubForm.form.valid || cargando || publicacion.maquinas_requeridas.length === 0"
+          class="w-full bg-slate-900 active:scale-[0.98] text-white font-black py-4 px-6 rounded-2xl shadow-xl shadow-slate-900/20 hover:bg-slate-800 transition duration-200 disabled:opacity-40 flex items-center justify-center gap-2">
+          <span>{{ cargando ? 'Guardando en la nube...' : 'Publicar Anuncio Ahora' }}</span>
         </button>
 
       </form>
