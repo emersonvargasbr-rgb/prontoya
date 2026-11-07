@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { SupabaseService } from '../../../core/services/supabase.service';
@@ -19,23 +19,29 @@ export class NavbarComponent implements OnInit {
   constructor(
     private supabaseService: SupabaseService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
   ) {}
 
-  async ngOnInit() {
-    await this.verificarSesion();
+  ngOnInit() {
+    // Usamos setTimeout para evitar el NG0100 al sincronizar el estado asíncrono inicial
+    setTimeout(() => {
+      this.verificarSesion();
+    });
 
     // Escuchador de cambios de autenticación en tiempo real
     this.supabaseService.supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        await this.verificarSesion();
-      } else {
-        this.usuarioLogueado = false;
-        this.rutaPanel = '';
-        this.nombreUsuario = '';
-        this.rolUsuario = '';
-        this.cdr.detectChanges();
-      }
+      this.ngZone.run(async () => {
+        if (session?.user) {
+          await this.verificarSesion();
+        } else {
+          this.usuarioLogueado = false;
+          this.rutaPanel = '';
+          this.nombreUsuario = '';
+          this.rolUsuario = '';
+          this.cdr.detectChanges();
+        }
+      });
     });
   }
 
@@ -44,14 +50,14 @@ export class NavbarComponent implements OnInit {
       const { data: { user } } = await this.supabaseService.supabase.auth.getUser();
       
       if (user) {
-        this.usuarioLogueado = true;
-        
         const { data: perfil } = await this.supabaseService.supabase
           .from('perfiles')
           .select('rol, nombre_completo')
           .eq('id', user.id)
           .single();
 
+        // Actualizamos las variables dentro del ciclo de Angular de forma segura
+        this.usuarioLogueado = true;
         if (perfil) {
           this.rolUsuario = perfil.rol;
           this.nombreUsuario = perfil.nombre_completo || 'Usuario';
@@ -64,7 +70,7 @@ export class NavbarComponent implements OnInit {
       console.error('Error verificando sesión en Navbar:', e);
       this.usuarioLogueado = false;
     } finally {
-      // Fuerza a Angular a repintar el navbar de inmediato al cargar o recargar
+      // Forzamos la detección de cambios de manera segura al finalizar la promesa
       this.cdr.detectChanges();
     }
   }

@@ -107,7 +107,7 @@ export class DetalleTrabajoComponent implements OnInit {
         .from('postulaciones_lotes')
         .insert([{
           publicacion_id: this.trabajoId,
-          taller_id: this.usuarioActualId, // Tienda que propone
+          taller_id: this.usuarioActualId,
           estado: 'Pendiente',
           descripcion_corte: this.datosOferta.descripcion_corte.trim(),
           cantidad_piezas: this.datosOferta.cantidad_piezas,
@@ -131,6 +131,44 @@ export class DetalleTrabajoComponent implements OnInit {
     }
   }
 
+  // Postulación directa de la Oficina al lote de la Tienda
+  // Postulación directa de la Oficina al lote de la Tienda
+  async postularOficinaAlLote() {
+    if (!this.usuarioActualId) {
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    if (!confirm('¿Deseas postular tu taller/oficina a este lote de confección?')) return;
+
+    this.cargandoPostulacion = true;
+    try {
+      const { error } = await this.supabaseService.supabase
+        .from('postulaciones_lotes')
+        .insert([{
+          publicacion_id: this.trabajoId,
+          taller_id: this.usuarioActualId, // Tu ID de oficina
+          estado: 'Pendiente',
+          descripcion_corte: this.trabajo?.titulo || 'Lote de Confección',
+          cantidad_piezas: this.trabajo?.cantidad_piezas || 0,
+          pago_por_pieza: this.trabajo?.pago_por_pieza || 0,
+          tipo_tejido: this.trabajo?.tipo_tejido || 'General',
+          logistica_entrega: 'recolectar'
+        }]);
+
+      if (error) throw error;
+
+      alert('¡Postulación enviada con éxito! Esperando aprobación de la tienda.');
+      this.router.navigate(['/panel-oficina']);
+
+    } catch (e: any) {
+      alert('Error al postularse: ' + (e?.message || 'Intente de nuevo.'));
+      console.error(e);
+    } finally {
+      this.cargandoPostulacion = false;
+      this.cdr.detectChanges();
+    }
+  }
   contactarWhatsApp() {
     const tel = this.trabajo?.creador?.telefono;
     if (!tel) {

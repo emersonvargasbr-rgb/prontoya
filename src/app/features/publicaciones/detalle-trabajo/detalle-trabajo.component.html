@@ -1,154 +1,182 @@
-<div class="min-h-screen bg-slate-50/80 py-6 px-3 sm:px-6 flex justify-center items-start">
-  <div class="w-full max-w-2xl space-y-4">
+<div class="min-h-screen bg-[#FBFBFC] py-8 px-4 sm:px-6 flex justify-center items-start">
+  <div class="w-full max-w-2xl space-y-5">
     
-    <!-- Barra Superior de Navegación -->
+    <!-- Barra de Navegación Superior -->
     <div class="flex items-center justify-between">
-      <button routerLink="/feed" class="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 bg-white px-3.5 py-2 rounded-xl border border-slate-100 shadow-sm transition active:scale-95">
+      <button routerLink="/feed" class="text-xs font-semibold text-slate-500 hover:text-slate-900 flex items-center gap-2 bg-white px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-sm transition active:scale-95">
         ← Volver al Feed
       </button>
-      <span class="text-[10px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full bg-slate-100 text-slate-700">
-        {{ trabajo?.tipo_publicacion || 'Anuncio' }}
-      </span>
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="text-[11px] font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full bg-slate-100/80 text-slate-600 border border-slate-200/60">
+          {{ trabajo?.tipo_publicacion === 'busco_corte' ? 'Oportunidad para Taller' : 'Lote de Producción' }}
+        </span>
+      </div>
     </div>
 
     <!-- ESTADO DE CARGA -->
-    <div *ngIf="cargando" class="text-center py-12 bg-white rounded-3xl border border-slate-100 shadow-sm">
-      <div class="w-7 h-7 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-      <p class="text-xs text-slate-400 font-medium">Cargando detalles...</p>
+    <div *ngIf="cargando" class="text-center py-16 bg-white rounded-3xl border border-slate-100 shadow-sm space-y-3">
+      <div class="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+      <p class="text-xs text-slate-400 font-medium">Cargando detalles de la oportunidad...</p>
     </div>
 
-    <!-- TARJETA DETALLE PRINCIPAL (DISEÑO COMPACTO Y LIMPIO) -->
-    <div *ngIf="!cargando && trabajo" class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden p-5 sm:p-6 space-y-5">
+    <!-- TARJETA PRINCIPAL TIPO LINKEDIN / INSTAGRAM PRO -->
+    <div *ngIf="!cargando && trabajo" class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden">
       
-      <!-- Encabezado Anunciante (Mini Perfil Pro) -->
-      <div class="flex items-center justify-between border-b border-slate-100/80 pb-4">
-        <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-2xl shadow-md shrink-0">
-            {{ getAvatarEmoji(trabajo.creador?.avatar_svg_id) }}
-          </div>
-          <div>
-            <h2 class="text-sm font-black text-slate-900 flex items-center gap-1">
-              {{ trabajo.creador?.nombre_completo || 'Anunciante' }}
-              <svg *ngIf="trabajo.creador?.verificado" class="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-            </h2>
-            <p class="text-[11px] text-slate-400 font-medium flex items-center gap-1 mt-0.5">
-              <span>📍 {{ trabajo.zona_ubicacion || 'São Paulo' }}</span>
-              <span>•</span>
-              <span class="text-amber-500 font-bold">★ {{ trabajo.creador?.promedio_estrellas || '5.0' }}</span>
-            </p>
-          </div>
-        </div>
-
-        <button (click)="contactarWhatsApp()" class="bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-bold py-2 px-3.5 rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition">
-          WhatsApp
-        </button>
+      <!-- Banner decorativo superior cálido -->
+      <div class="h-28 w-full bg-gradient-to-r from-amber-100/60 via-orange-50/40 to-blue-50/50 p-5 flex justify-end items-start border-b border-slate-100">
+        <span class="bg-white/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-slate-600 shadow-xs border border-white">
+          São Paulo / Brás 📍
+        </span>
       </div>
 
-      <!-- Título y Descripción -->
-      <div class="space-y-2">
-        <h1 class="text-base sm:text-lg font-black text-slate-900 leading-snug">{{ trabajo.titulo }}</h1>
-        <p class="text-xs text-slate-600 leading-relaxed bg-slate-50/60 p-3.5 rounded-2xl border border-slate-100">{{ trabajo.descripcion || 'Sin descripción adicional.' }}</p>
-      </div>
-
-      <!-- Cuadrícula de Datos Técnicos Compacta -->
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-center">
-        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-          <p class="text-[9px] font-bold text-slate-400 uppercase">Volumen</p>
-          <p class="text-xs font-black text-slate-900 mt-0.5">{{ trabajo.cantidad_piezas | number }} pz</p>
-        </div>
-        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100" *ngIf="trabajo.pago_por_pieza > 0">
-          <p class="text-[9px] font-bold text-slate-400 uppercase">Pago por Pieza</p>
-          <p class="text-xs font-black text-emerald-600 mt-0.5">R$ {{ trabajo.pago_por_pieza | number:'1.2-2' }}</p>
-        </div>
-        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-          <p class="text-[9px] font-bold text-slate-400 uppercase">Especialidad</p>
-          <p class="text-xs font-black text-slate-900 mt-0.5 truncate">{{ trabajo.especialidad_taller || 'General' }}</p>
-        </div>
-      </div>
-
-      <!-- ACCIÓN DE NEGOCIO SEGÚN ROL -->
-      <div class="pt-2">
+      <div class="px-6 sm:px-8 pb-8 -mt-10 space-y-6">
         
-        <!-- TIENDA OFERTANDO A TALLER LIBRE ('busco_corte') -->
-        <div *ngIf="rolUsuario === 'tienda' && trabajo.tipo_publicacion === 'busco_corte'" class="bg-blue-50/80 p-4 rounded-2xl border border-blue-100 space-y-2.5">
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="text-xs font-black text-blue-900 uppercase">Taller con capacidad disponible</h3>
-              <p class="text-[11px] text-blue-700">Envía tu propuesta de lote directamente a este taller.</p>
+        <!-- Encabezado de Autor (Avatar con SVG animal + Datos de Confianza) -->
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div class="flex items-end gap-4">
+            <div class="w-20 h-20 rounded-3xl bg-slate-900 text-white flex items-center justify-center text-4xl shadow-lg border-4 border-white shrink-0">
+              {{ getAvatarEmoji(trabajo.creador?.avatar_svg_id) }}
+            </div>
+            <div class="pb-1">
+              <h2 class="text-base sm:text-lg font-extrabold text-slate-900 flex items-center gap-1.5">
+                {{ trabajo.creador?.nombre_completo || 'Anunciante Verificado' }}
+                <svg *ngIf="trabajo.creador?.verificado" class="w-4 h-4 text-emerald-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+              </h2>
+              <p class="text-xs text-slate-500 font-medium mt-0.5 flex items-center gap-2">
+                <span class="text-amber-500 font-bold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">
+                  ★ {{ trabajo.creador?.promedio_estrellas || '5.0' }} ({{ trabajo.creador?.total_evaluaciones || 0 }} reseñas)
+                </span>
+                <span>•</span>
+                <span>{{ trabajo.creador?.especialidad_principal || 'Confección Textil' }}</span>
+              </p>
             </div>
           </div>
-          <button (click)="abrirModalOfertar()" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-black py-3 px-4 rounded-xl shadow-md shadow-blue-200 transition text-xs flex items-center justify-center gap-1.5">
-            📦 Ofertar Lote de Confección
+
+          <!-- Botón WhatsApp Rápido -->
+          <button (click)="contactarWhatsApp()" class="bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-bold py-2.5 px-4 rounded-2xl text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20 transition">
+            💬 Contactar WhatsApp
           </button>
         </div>
 
-        <!-- OFICINA POSTULÁNDOSE A LOTE DE TIENDA ('busco_oficina') -->
-        <div *ngIf="rolUsuario === 'oficina' && trabajo.tipo_publicacion === 'busco_oficina'" class="bg-slate-900 text-white p-4 rounded-2xl space-y-2.5">
-          <h3 class="text-xs font-black uppercase tracking-wider text-slate-300">¿Deseas este lote para tu taller?</h3>
-          <button (click)="contactarWhatsApp()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 px-4 rounded-xl transition text-xs">
-            Postular Taller por WhatsApp
-          </button>
+        <!-- Título y Cuerpo del Anuncio -->
+        <div class="space-y-3 pt-2">
+          <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-snug">{{ trabajo.titulo }}</h1>
+          <p class="text-xs sm:text-sm text-slate-600 leading-relaxed bg-[#F8F9FA] p-4.5 rounded-2xl border border-slate-100/80">
+            {{ trabajo.descripcion || 'Sin descripción adicional provista por el anunciante.' }}
+          </p>
+        </div>
+
+        <!-- Tarjetas de Datos Clave (Grid Estilo Financiero / B2B Pro) -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div class="bg-[#F8F9FA] p-3.5 rounded-2xl border border-slate-100">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Volumen Requerido</p>
+            <p class="text-sm sm:text-base font-black text-slate-900 mt-1">{{ trabajo.cantidad_piezas | number }} <span class="text-xs font-semibold text-slate-500">piezas</span></p>
+          </div>
+
+          <div class="bg-[#F8F9FA] p-3.5 rounded-2xl border border-slate-100" *ngIf="trabajo.pago_por_pieza > 0">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tarifa por Pieza</p>
+            <p class="text-sm sm:text-base font-black text-emerald-600 mt-1">R$ {{ trabajo.pago_por_pieza | number:'1.2-2' }}</p>
+          </div>
+
+          <div class="bg-[#F8F9FA] p-3.5 rounded-2xl border border-slate-100 col-span-2 sm:col-span-1">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tejido / Material</p>
+            <p class="text-sm sm:text-base font-black text-slate-900 mt-1 truncate">{{ trabajo.tipo_tejido || 'General' }}</p>
+          </div>
+        </div>
+
+        <!-- ZONA DE ACCIÓN DE NEGOCIO SEGÚN ROL -->
+        <div class="pt-3 border-t border-slate-100">
+          
+          <!-- CASO A: Tienda ofertando a Taller Libre ('busco_corte') -->
+          <div *ngIf="rolUsuario === 'tienda' && trabajo.tipo_publicacion === 'busco_corte'" class="bg-gradient-to-r from-blue-50 to-indigo-50/40 p-4.5 rounded-2xl border border-blue-100/80 space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-xs font-black text-blue-900 uppercase tracking-wider">Capacidad de Taller Abierta</h3>
+                <p class="text-[11px] text-blue-700 mt-0.5">Envía tu propuesta de precio y volumen directamente a este taller asociado.</p>
+              </div>
+            </div>
+            <button (click)="abrirModalOfertar()" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-black py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-500/20 transition text-xs flex items-center justify-center gap-2">
+              📦 Enviar Propuesta de Corte al Taller
+            </button>
+          </div>
+
+          <!-- CASO B: Oficina postulándose a Lote de Tienda ('busco_oficina') -->
+          <div *ngIf="rolUsuario === 'oficina' && trabajo.tipo_publicacion === 'busco_oficina'" class="bg-slate-900 text-white p-5 rounded-2xl space-y-3 shadow-xl">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-xs font-black uppercase tracking-wider text-amber-400">¿Interesado en este lote?</h3>
+                <p class="text-[11px] text-slate-300 mt-0.5">Postula tu taller para iniciar el flujo de producción seguro.</p>
+              </div>
+            </div>
+            
+            <div class="flex gap-2.5 pt-1">
+              <button (click)="postularOficinaAlLote()" [disabled]="cargandoPostulacion" class="flex-1 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black py-3.5 px-4 rounded-xl transition text-xs shadow-md shadow-blue-900/50 flex items-center justify-center gap-2">
+                {{ cargandoPostulacion ? 'Enviando postulación...' : '📥 Postular Mi Taller Ahora' }}
+              </button>
+            </div>
+          </div>
+
         </div>
 
       </div>
-
     </div>
 
     <!-- ========================================================================= -->
-    <!-- MODAL DE OFERTA DE TIENDA A TALLER                                       -->
+    <!-- MODAL DE OFERTA DE TIENDA A TALLER (DISEÑO FLOTANTE PRO)                  -->
     <!-- ========================================================================= -->
-    <div *ngIf="mostrarModalOferta" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 overflow-hidden p-6 space-y-4 animate-in fade-in zoom-in duration-150">
+    <div *ngIf="mostrarModalOferta" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden p-7 space-y-5 animate-in fade-in zoom-in duration-200">
         
-        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <div class="flex justify-between items-center border-b border-slate-100 pb-4">
           <div>
-            <h3 class="text-base font-black text-slate-900">Ofertar Lote a Taller</h3>
-            <p class="text-[11px] text-slate-400">La oficina evaluará tu propuesta de precio y volumen.</p>
+            <h3 class="text-base font-black text-slate-900">Proponer Lote de Confección</h3>
+            <p class="text-[11px] text-slate-400">La oficina evaluará las condiciones de tu lote.</p>
           </div>
-          <button (click)="mostrarModalOferta = false" class="text-slate-400 hover:text-slate-700 font-bold text-sm">✕</button>
+          <button (click)="mostrarModalOferta = false" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 font-bold text-xs">✕</button>
         </div>
 
-        <form (ngSubmit)="enviarOfertaLote()" class="space-y-3">
+        <form (ngSubmit)="enviarOfertaLote()" class="space-y-4">
           <div>
-            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Prenda / Descripción</label>
-            <input type="text" [(ngModel)]="datosOferta.descripcion_corte" name="desc" required placeholder="Ej: Malla / Vestidos de Verano"
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-blue-500">
+            <label class="block text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mb-1.5">Descripción de la Prenda</label>
+            <input type="text" [(ngModel)]="datosOferta.descripcion_corte" name="desc" required placeholder="Ej: Vestidos Malla Canelado"
+              class="w-full px-4 py-3 bg-[#F8F9FA] border border-slate-200/80 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition">
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Piezas</label>
+              <label class="block text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mb-1.5">Cantidad Piezas</label>
               <input type="number" [(ngModel)]="datosOferta.cantidad_piezas" name="piezas" required min="1" placeholder="500"
-                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-blue-500">
+                class="w-full px-4 py-3 bg-[#F8F9FA] border border-slate-200/80 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition">
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Precio (R$ / pz)</label>
+              <label class="block text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mb-1.5">Pago / Pieza (R$)</label>
               <input type="number" step="0.01" [(ngModel)]="datosOferta.pago_por_pieza" name="precio" required min="0.1" placeholder="2.50"
-                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-blue-500">
+                class="w-full px-4 py-3 bg-[#F8F9FA] border border-slate-200/80 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition">
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tejido</label>
+              <label class="block text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mb-1.5">Tipo de Tejido</label>
               <input type="text" [(ngModel)]="datosOferta.tipo_tejido" name="tejido" placeholder="Ej: Canelado"
-                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-blue-500">
+                class="w-full px-4 py-3 bg-[#F8F9FA] border border-slate-200/80 rounded-2xl text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition">
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Logística</label>
-              <select [(ngModel)]="datosOferta.logistica_entrega" name="logistica" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none">
+              <label class="block text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mb-1.5">Logística</label>
+              <select [(ngModel)]="datosOferta.logistica_entrega" name="logistica" class="w-full px-4 py-3 bg-[#F8F9FA] border border-slate-200/80 rounded-2xl text-xs font-bold outline-none">
                 <option value="recolectar">Taller recolecta</option>
                 <option value="entrega_puerta">Entrega en puerta</option>
               </select>
             </div>
           </div>
 
-          <div class="pt-2 flex gap-2">
-            <button type="button" (click)="mostrarModalOferta = false" class="w-1/2 py-3 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-200 transition">
+          <div class="pt-3 flex gap-3">
+            <button type="button" (click)="mostrarModalOferta = false" class="w-1/2 py-3.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-2xl hover:bg-slate-200 transition">
               Cancelar
             </button>
-            <button type="submit" [disabled]="cargandoPostulacion" class="w-1/2 py-3 bg-blue-600 text-white text-xs font-black rounded-xl hover:bg-blue-700 active:scale-95 transition shadow-md shadow-blue-200">
-              {{ cargandoPostulacion ? 'Enviando...' : 'Enviar Propuesta' }}
+            <button type="submit" [disabled]="cargandoPostulacion" class="w-1/2 py-3.5 bg-blue-600 text-white text-xs font-black rounded-2xl hover:bg-blue-700 active:scale-95 transition shadow-lg shadow-blue-500/20">
+              {{ cargandoPostulacion ? 'Enviando...' : 'Confirmar Oferta' }}
             </button>
           </div>
         </form>

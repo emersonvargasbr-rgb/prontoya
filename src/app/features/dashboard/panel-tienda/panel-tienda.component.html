@@ -1,207 +1,245 @@
-<div class="min-h-screen bg-slate-50/80 py-6 px-3 sm:px-6 flex justify-center items-start">
-  <div class="w-full max-w-4xl space-y-5">
+<div class="min-h-screen bg-black/5 py-4 px-3 sm:px-6 flex justify-center items-start font-sans">
+  <div class="w-full max-w-md sm:max-w-xl space-y-4">
     
     <!-- ========================================================================= -->
-    <!-- MINI PERFIL PRO (ESTILO INSTAGRAM BUSINESS / CREATOR)                    -->
+    <!-- MINI PERFIL PRO (ESTILO TIKTOK / INSTAGRAM BUSINESS)                      -->
     <!-- ========================================================================= -->
-    <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+    <div class="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100 flex flex-col items-center text-center relative overflow-hidden">
       
-      <!-- Portada Dinámica con Color Personalizado -->
-      <div class="h-28 px-6 pt-4 flex justify-between items-start transition-colors relative" [style.backgroundColor]="perfil?.color_portada || '#0f172a'">
-        <span class="bg-white/20 backdrop-blur-md text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase border border-white/20 tracking-wider">
-          Tienda / Marca Mayorista Pro
+      <!-- Portada sutil superior -->
+      <div class="absolute top-0 left-0 right-0 h-24 transition-colors" [style.backgroundColor]="perfil()?.color_portada || '#0f172a'"></div>
+      
+      <!-- Botón Editar Perfil -->
+      <button routerLink="/editar-perfil" class="absolute top-3 right-3 bg-black/30 hover:bg-black/50 text-white text-[10px] font-black px-3 py-1.5 rounded-full backdrop-blur-md transition flex items-center gap-1 z-20">
+        ✏️ Editar
+      </button>
+
+      <!-- Avatar TikTok Style (Circular flotante con borde blanco) -->
+      <div class="relative mt-8 z-10">
+        <div class="w-24 h-24 rounded-full bg-slate-900 border-4 border-white shadow-xl flex items-center justify-center text-4xl overflow-hidden ring-2 ring-slate-100">
+          <span>{{ getAvatarEmoji(perfil()?.avatar_svg_id) }}</span>
+        </div>
+        <span *ngIf="perfil()?.verificado" class="absolute bottom-1 right-1 bg-emerald-500 text-white p-1 rounded-full shadow-md">
+          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
         </span>
-        <button routerLink="/editar-perfil" class="bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl backdrop-blur-md border border-white/30 transition flex items-center gap-1.5 shadow-sm">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-          Editar Perfil
-        </button>
       </div>
 
-      <!-- Cabecera Perfil: Avatar Gigante + Métricas Horizontales -->
-      <div class="px-6 pb-6 pt-0 relative">
-        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-10">
-          
-          <div class="flex items-end gap-4">
-            <!-- Avatar Animal SVG Destacado -->
-            <div class="w-24 h-24 rounded-full p-1 bg-white shadow-xl ring-4 ring-blue-600/20 shrink-0 flex items-center justify-center text-4xl bg-gradient-to-br from-slate-50 to-white">
-              <span>{{ getAvatarEmoji(perfil?.avatar_svg_id) }}</span>
-            </div>
+      <!-- Nombre y Usuario -->
+      <h1 class="text-lg font-black text-slate-900 mt-2 flex items-center justify-center gap-1">
+        {{ perfil()?.nombre_completo || 'Tienda Mayorista' }}
+      </h1>
+      <p class="text-xs font-semibold text-slate-400">@{{ (perfil()?.nombre_completo || 'tienda').toLowerCase().replace(' ', '_') }}</p>
 
-            <!-- Métricas Estilo Instagram (Lotes / En Curso / Calificación) -->
-            <div class="flex items-center gap-5 sm:gap-6 mb-1 text-center">
-              <div>
-                <p class="text-base font-black text-slate-900">{{ misPublicaciones.length }}</p>
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Lotes</p>
-              </div>
-              <div class="border-x border-slate-100 px-5 sm:px-6">
-                <p class="text-base font-black text-slate-900">{{ lotesEnProceso.length }}</p>
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">En Curso</p>
-              </div>
-              <div>
-                <p class="text-base font-black text-amber-500 flex items-center justify-center gap-0.5">
-                  ★ {{ perfil?.promedio_estrellas || '5.0' }}
-                </p>
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Reputación</p>
-              </div>
-            </div>
-          </div>
-
-          <a routerLink="/crear-publicacion" class="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-extrabold py-3 px-5 rounded-2xl text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-blue-200 transition">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
-            Nuevo Lote de Corte
-          </a>
+      <!-- Métricas TikTok Style -->
+      <div class="flex items-center justify-center gap-6 my-4 w-full py-2 border-y border-slate-100">
+        <div class="text-center">
+          <p class="text-sm font-black text-slate-900">{{ misPublicaciones().length }}</p>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Lotes</p>
         </div>
-
-        <!-- Biografía de la Tienda -->
-        <div class="mt-4 space-y-1.5 border-t border-slate-100/80 pt-4">
-          <h1 class="text-lg font-black text-slate-900 flex items-center gap-1.5">
-            {{ perfil?.nombre_completo || 'Tienda Mayorista' }}
-            <svg *ngIf="perfil?.verificado" class="w-4 h-4 text-emerald-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-          </h1>
-          <p class="text-xs font-bold text-blue-600 flex items-center gap-1">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-            Comercio Mayorista de Confección (Brás / Bom Retiro)
-          </p>
-          <p class="text-xs text-slate-600 leading-relaxed">{{ perfil?.bio_taller || 'Publicación y asignación directa de lotes de corte para talleres asociados en São Paulo.' }}</p>
-          
-          <div class="flex flex-wrap gap-3 pt-1 text-[11px] text-slate-500 font-semibold">
-            <span class="flex items-center gap-1">📍 {{ perfil?.zona_ubicacion || 'São Paulo - SP' }}</span>
-            <span>•</span>
-            <span class="flex items-center gap-1">📦 CEP: {{ perfil?.cep || '03001-000' }}</span>
-          </div>
+        <div class="w-px h-6 bg-slate-100"></div>
+        <div class="text-center">
+          <p class="text-sm font-black text-slate-900">{{ lotesEnProceso().length }}</p>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">En Curso</p>
         </div>
-
+        <div class="w-px h-6 bg-slate-100"></div>
+        <div class="text-center">
+          <p class="text-sm font-black text-slate-900">⭐ {{ perfil()?.promedio_estrellas || '5.0' }}</p>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Reputación</p>
+        </div>
       </div>
-    </div>
 
-    <!-- ========================================================================= -->
-    <!-- NAVEGACIÓN PESTAÑAS TIPO GRID / TABS                                      -->
-    <!-- ========================================================================= -->
-    <div class="bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm grid grid-cols-3 gap-1 text-center">
-      <button (click)="pestanaActiva = 'solicitudes'" 
-        [class.bg-slate-900]="pestanaActiva === 'solicitudes'" [class.text-white]="pestanaActiva === 'solicitudes'" [class.text-slate-600]="pestanaActiva !== 'solicitudes'"
-        class="py-3 px-3 rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-1.5">
-        <span>Solicitudes</span>
-        <span class="bg-blue-500 text-white px-2 py-0.5 rounded-full text-[10px]">{{ solicitudesPendientes.length }}</span>
-      </button>
+      <!-- Biografía / Ubicación -->
+      <p class="text-xs text-slate-600 max-w-xs font-medium">
+        🏢 {{ perfil()?.bio_taller || 'Comercio mayorista de confección y asignación de lotes en São Paulo.' }}
+      </p>
 
-      <button (click)="pestanaActiva = 'en_proceso'" 
-        [class.bg-slate-900]="pestanaActiva === 'en_proceso'" [class.text-white]="pestanaActiva === 'en_proceso'" [class.text-slate-600]="pestanaActiva !== 'en_proceso'"
-        class="py-3 px-3 rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-1.5">
-        <span>En Producción</span>
-        <span class="bg-emerald-500 text-white px-2 py-0.5 rounded-full text-[10px]">{{ lotesEnProceso.length }}</span>
-      </button>
-
-      <button (click)="pestanaActiva = 'mis_publicaciones'" 
-        [class.bg-slate-900]="pestanaActiva === 'mis_publicaciones'" [class.text-white]="pestanaActiva === 'mis_publicaciones'" [class.text-slate-600]="pestanaActiva !== 'mis_publicaciones'"
-        class="py-3 px-3 rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-1.5">
-        <span>Mis Lotes</span>
-        <span class="bg-slate-200 text-slate-800 px-2 py-0.5 rounded-full text-[10px]">{{ misPublicaciones.length }}</span>
-      </button>
+      <!-- Botón de Creación -->
+      <a routerLink="/crear-publicacion" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black py-3 rounded-2xl text-xs shadow-lg shadow-blue-500/20 transition flex items-center justify-center gap-2">
+        <span>➕ Publicar Nuevo Lote de Corte</span>
+      </a>
     </div>
 
     <!-- ESTADO DE CARGA -->
-    <div *ngIf="cargando" class="text-center py-12 bg-white rounded-3xl border border-slate-100">
+    <div *ngIf="cargando()" class="text-center py-10 bg-white rounded-3xl border border-slate-100">
       <div class="w-7 h-7 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-      <p class="text-xs text-slate-400 font-medium">Actualizando panel de tienda...</p>
+      <p class="text-xs font-semibold text-slate-400">Cargando panel...</p>
     </div>
 
     <!-- ========================================================================= -->
-    <!-- CONTENIDO DE LAS PESTAÑAS                                                -->
+    <!-- SISTEMA DE ACORDEONES (ESTILO OFICINA)                                    -->
     <!-- ========================================================================= -->
-    <div *ngIf="!cargando" class="space-y-3">
+    <div *ngIf="!cargando()" class="space-y-3">
       
-      <!-- Pestaña 1: Solicitudes Entrantes de Talleres -->
-      <div *ngIf="pestanaActiva === 'solicitudes'" class="space-y-3">
-        <div *ngIf="solicitudesPendientes.length === 0" class="bg-white p-8 rounded-3xl text-center border border-slate-100">
-          <p class="text-xs text-slate-400 font-medium">No hay talleres postulados a tus lotes por el momento.</p>
-        </div>
-
-        <div *ngFor="let sol of solicitudesPendientes" class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-3">
-          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div>
-              <span class="bg-blue-50 text-blue-700 text-[10px] font-extrabold px-2.5 py-1 rounded-md uppercase">Lote: {{ sol.publicacion?.titulo }}</span>
-              <p class="text-[10px] text-slate-400 mt-1">Postulado el {{ sol.created_at | date:'dd/MM/yyyy HH:mm' }}</p>
-            </div>
-            <span class="text-xs font-black text-slate-900">{{ sol.publicacion?.cantidad_piezas | number }} piezas</span>
-          </div>
-
-          <div class="flex items-center justify-between gap-3">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-sm shadow-inner">
-                {{ sol.taller?.nombre_completo?.charAt(0) | uppercase }}
-              </div>
-              <div>
-                <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-1">
-                  {{ sol.taller?.nombre_completo }}
-                  <svg *ngIf="sol.taller?.verificado" class="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                </h4>
-                <p class="text-xs text-slate-500">📍 {{ sol.taller?.zona_ubicacion || 'São Paulo' }} | ⭐ {{ sol.taller?.promedio_estrellas || '5.0' }}</p>
-              </div>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <button (click)="contactarWhatsApp(sol.taller?.telefono, sol.taller?.nombre_completo, sol.publicacion?.titulo)" class="px-3 py-2.5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white text-xs font-bold rounded-xl transition shadow-sm">
-                WhatsApp
-              </button>
-              <button (click)="aceptarSolicitud(sol)" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-extrabold rounded-xl transition shadow-md shadow-emerald-200">
-                Aprobar Lote
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Pestaña 2: Talleres en Producción / En Curso -->
-      <div *ngIf="pestanaActiva === 'en_proceso'" class="space-y-3">
-        <div *ngIf="lotesEnProceso.length === 0" class="bg-white p-8 rounded-3xl text-center border border-slate-100">
-          <p class="text-xs text-slate-400 font-medium">No tienes cortes activos en talleres actualmente.</p>
-        </div>
-
-        <div *ngFor="let lote of lotesEnProceso" class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <span class="bg-emerald-50 text-emerald-700 text-[10px] font-extrabold px-2.5 py-1 rounded-lg uppercase border border-emerald-100">{{ lote.estado }}</span>
-            <h3 class="text-base font-extrabold text-slate-900 mt-2">{{ lote.descripcion_corte }}</h3>
-            <p class="text-xs text-slate-500 mt-0.5">Taller / Oficina: <strong>{{ lote.oficina_info?.nombre_completo }}</strong> (⭐ {{ lote.oficina_info?.promedio_estrellas || '5.0' }})</p>
-            <p class="text-xs font-bold text-blue-600 mt-1">Volumen: {{ lote.cantidad_piezas | number }} piezas</p>
+      <!-- ACORDEÓN 1: PRODUCCIÓN ACTIVA / EN CURSO -->
+      <div class="bg-white rounded-3xl border border-emerald-100 shadow-sm overflow-hidden transition-all">
+        <button (click)="toggleAcordeon('produccion')" class="w-full p-4 font-extrabold text-xs flex justify-between items-center bg-emerald-50/40 hover:bg-emerald-50/70 transition text-slate-900">
+          <span class="flex items-center gap-2.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            🏭 Talleres en Producción ({{ lotesEnProceso().length }})
+          </span>
+          <span class="text-slate-500 text-xs transition-transform" [class.rotate-180]="acordeonActivo() === 'produccion'">▼</span>
+        </button>
+        
+        <div *ngIf="acordeonActivo() === 'produccion'" class="p-4 bg-white border-t border-slate-100 space-y-3">
+          <div *ngIf="lotesEnProceso().length === 0" class="text-center py-6 text-xs text-slate-400 font-medium">
+            No tienes cortes activos en talleres actualmente.
           </div>
           
-          <div class="flex items-center gap-2">
-            <button (click)="contactarWhatsApp(lote.oficina_info?.telefono, lote.oficina_info?.nombre_completo, lote.descripcion_corte)" class="px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl transition">
-              WhatsApp
-            </button>
-            <button (click)="irAEvaluacion(lote.oficina_info?.id)" class="px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold rounded-xl border border-amber-200 transition">
-              ★ Calificar
-            </button>
+          <div *ngFor="let lote of lotesEnProceso()" class="bg-slate-50/80 p-4 rounded-2xl border border-emerald-100 shadow-sm space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+              <span class="text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase" 
+                    [class.bg-amber-50]="lote.estado === 'Terminado'" [class.text-amber-700]="lote.estado === 'Terminado'"
+                    [class.bg-emerald-50]="lote.estado !== 'Terminado'" [class.text-emerald-700]="lote.estado !== 'Terminado'">
+                {{ lote.estado === 'Terminado' ? '🏁 Terminado por Taller (Listo para retiro)' : '⚙️ En Confección' }}
+              </span>
+              <span class="text-[10px] font-black text-slate-800">{{ lote.cantidad_piezas | number }} pzas</span>
+            </div>
+
+            <div>
+              <h3 class="text-xs font-black text-slate-900">{{ lote.descripcion_corte }}</h3>
+              <p class="text-[11px] text-slate-500 mt-0.5">Taller / Oficina: <strong>{{ lote.oficina_info?.nombre_completo }}</strong></p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 pt-1">
+              <button (click)="contactarWhatsApp(lote.oficina_info?.telefono, lote.oficina_info?.nombre_completo, lote.descripcion_corte)" class="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl transition text-center">
+                💬 WhatsApp
+              </button>
+
+              <!-- Botón P2P para cerrar el lote cuando el taller lo marca como terminado -->
+              <!-- Botón P2P para cerrar el lote cuando el taller lo marca como terminado -->
+<button *ngIf="lote.estado === 'Terminado'" (click)="confirmarCierreYRecepcion(lote)" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold rounded-xl transition shadow-md">
+  ✅ Confirmar Recepción y Cerrar
+</button>
+
+              <button (click)="irAEvaluacion(lote.oficina_info?.id)" class="px-3 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold rounded-xl border border-amber-200 transition">
+                ★ Calificar
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Pestaña 3: Mis Lotes Publicados -->
-      <div *ngIf="pestanaActiva === 'mis_publicaciones'" class="space-y-3">
-        <div *ngIf="misPublicaciones.length === 0" class="bg-white p-8 rounded-3xl text-center border border-slate-100">
-          <p class="text-xs text-slate-400 font-medium">No has publicado ningún lote de corte aún.</p>
-        </div>
-
-        <div *ngFor="let pub of misPublicaciones" class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-3">
-          <div class="flex items-center justify-between">
+      <!-- ACORDEÓN 2: SOLICITUDES ENTRANTES DE TALLERES -->
+      <div class="bg-white rounded-3xl border border-blue-100 shadow-sm overflow-hidden transition-all">
+        <button (click)="toggleAcordeon('solicitudes')" class="w-full p-4 font-extrabold text-xs flex justify-between items-center bg-blue-50/40 hover:bg-blue-50/70 transition text-slate-900">
+          <span class="flex items-center gap-2.5">
+            📥 Solicitudes de Talleres ({{ solicitudesPendientes().length }})
+          </span>
+          <span class="text-slate-500 text-xs transition-transform" [class.rotate-180]="acordeonActivo() === 'solicitudes'">▼</span>
+        </button>
+        
+        <div *ngIf="acordeonActivo() === 'solicitudes'" class="p-4 bg-white border-t border-slate-100 space-y-3">
+          <div *ngIf="solicitudesPendientes().length === 0" class="text-center py-6 text-xs text-slate-400 font-medium">
+            No hay talleres postulados a tus lotes por el momento.
+          </div>
+          
+          <div *ngFor="let sol of solicitudesPendientes()" class="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/60 shadow-sm space-y-3">
             <div>
-              <span class="bg-slate-100 text-slate-700 text-[10px] font-extrabold px-2.5 py-1 rounded-md uppercase">Lote Corte</span>
-              <h4 class="font-extrabold text-slate-900 text-sm mt-1">{{ pub.titulo }}</h4>
-              <p class="text-xs text-slate-500 mt-0.5">Volumen: <strong>{{ pub.cantidad_piezas | number }} piezas</strong> | Pago: <strong>R$ {{ pub.pago_por_pieza | number:'1.2-2' }}</strong></p>
+              <span class="bg-blue-600 text-white text-[9px] font-extrabold px-2.5 py-0.5 rounded-md uppercase">Lote: {{ sol.publicacion?.titulo }}</span>
+              <h4 class="font-black text-slate-900 text-xs sm:text-sm mt-1.5">{{ sol.taller?.nombre_completo }}</h4>
+              <p class="text-[11px] text-slate-500">📍 {{ sol.taller?.zona_ubicacion || 'São Paulo' }} | ⭐ {{ sol.taller?.promedio_estrellas || '5.0' }}</p>
             </div>
             
-            <button (click)="cambiarEstadoAnuncio(pub)" class="text-[10px] font-extrabold px-3 py-1.5 rounded-xl transition" [class.bg-emerald-50]="pub.estado === 'Activo'" [class.text-emerald-700]="pub.estado === 'Activo'" [class.bg-amber-50]="pub.estado === 'Pausado'" [class.text-amber-700]="pub.estado === 'Pausado'">
-              {{ pub.estado === 'Activo' ? 'Activo' : 'Pausado' }}
-            </button>
-          </div>
-
-          <div class="flex justify-end pt-2 border-t border-slate-100">
-            <button (click)="eliminarAnuncio(pub.id)" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl transition">Eliminar Lote</button>
+            <div class="flex items-center gap-2 pt-1">
+              <button (click)="rechazarSolicitud(sol.id)" class="flex-1 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl transition">Rechazar</button>
+              <button (click)="contactarWhatsApp(sol.taller?.telefono, sol.taller?.nombre_completo, sol.publicacion?.titulo)" class="py-2 px-3 bg-emerald-500 text-white text-xs font-bold rounded-xl">WhatsApp</button>
+              <button (click)="aceptarSolicitud(sol)" class="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold rounded-xl shadow-md">Aprobar</button>
+            </div>
           </div>
         </div>
       </div>
 
+      <!-- ACORDEÓN 3: MIS ANUNCIOS / LOTES PUBLICADOS -->
+      <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden transition-all">
+        <button (click)="toggleAcordeon('anuncios')" class="w-full p-4 font-extrabold text-xs flex justify-between items-center bg-white hover:bg-slate-50 transition text-slate-900">
+          <span class="flex items-center gap-2.5">
+            📢 Mis Lotes Publicados ({{ misPublicaciones().length }})
+          </span>
+          <span class="text-slate-400 text-xs transition-transform" [class.rotate-180]="acordeonActivo() === 'anuncios'">▼</span>
+        </button>
+        
+        <div *ngIf="acordeonActivo() === 'anuncios'" class="p-4 bg-slate-50/50 border-t border-slate-100 space-y-3">
+          <div *ngIf="misPublicaciones().length === 0" class="text-center py-6 text-xs text-slate-400 font-medium">
+            No has publicado ningún lote de corte aún.
+          </div>
+          
+          <div *ngFor="let pub of misPublicaciones()" class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3">
+            <div>
+              <span class="bg-slate-100 text-slate-700 text-[9px] font-extrabold px-2.5 py-0.5 rounded-md uppercase">Lote Corte</span>
+              <h4 class="font-black text-slate-900 text-xs sm:text-sm mt-1">{{ pub.titulo }}</h4>
+              <p class="text-[11px] text-slate-500">{{ pub.cantidad_piezas | number }} pzas | R$ {{ pub.pago_por_pieza | number:'1.2-2' }} / pza</p>
+            </div>
+            
+            <div class="flex items-center gap-2 shrink-0">
+              <button (click)="cambiarEstadoAnuncio(pub)" class="text-[9px] font-extrabold px-2.5 py-1.5 rounded-xl transition" [class.bg-emerald-50]="pub.estado === 'Activo'" [class.text-emerald-700]="pub.estado === 'Activo'" [class.bg-amber-50]="pub.estado === 'Pausado'" [class.text-amber-700]="pub.estado === 'Pausado'">
+                {{ pub.estado === 'Activo' ? 'Activo' : 'Pausado' }}
+              </button>
+              <button (click)="eliminarAnuncio(pub.id)" class="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition">
+                🗑️
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACORDEÓN 4: HISTORIAL DE LOTES / COMPROBANTES P2P (AL FINAL) -->
+      <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden transition-all">
+        <button (click)="toggleAcordeon('historial')" class="w-full p-4 font-extrabold text-xs flex justify-between items-center bg-slate-100 hover:bg-slate-200/70 transition text-slate-800">
+          <span class="flex items-center gap-2.5">
+            📜 Historial de Lotes & Comprobantes P2P ({{ historialLotes().length }})
+          </span>
+          <span class="text-slate-500 text-xs transition-transform" [class.rotate-180]="acordeonActivo() === 'historial'">▼</span>
+        </button>
+        
+        <div *ngIf="acordeonActivo() === 'historial'" class="p-4 bg-slate-50/50 border-t border-slate-100 space-y-3">
+          <div *ngIf="historialLotes().length === 0" class="text-center py-6 text-xs text-slate-400 font-medium">
+            No hay transacciones completadas archivadas en el historial.
+          </div>
+          
+          <div *ngFor="let hist of historialLotes()" class="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-sm flex items-center justify-between">
+            <div>
+              <span class="bg-emerald-50 text-emerald-700 text-[9px] font-black px-2 py-0.5 rounded-md uppercase">Completado P2P</span>
+              <h4 class="font-black text-slate-900 text-xs mt-1">{{ hist.descripcion_corte }}</h4>
+              <p class="text-[10px] text-slate-500">Oficina/Taller: {{ hist.oficina?.nombre_completo }} | {{ hist.cantidad_piezas | number }} pzas</p>
+            </div>
+            <span class="text-[10px] font-bold text-slate-400">{{ hist.fecha_cierre | date:'dd/MM/yyyy' }}</span>
+          </div>
+        </div>
+      </div>
+<!-- ACORDEÓN NUEVO: ASIGNACIÓN A FUNCIONARIOS / OPERARIOS INTERNOS -->
+      <div class="bg-white rounded-3xl border border-indigo-100 shadow-sm overflow-hidden transition-all">
+        <button (click)="toggleAcordeon('funcionarios')" class="w-full p-4 font-extrabold text-xs flex justify-between items-center bg-indigo-50/40 hover:bg-indigo-50/70 transition text-slate-900">
+          <span class="flex items-center gap-2.5">
+            👥 Operarios & Funcionarios Internos ({{ cortesAsignadosFuncionarios().length }})
+          </span>
+          <span class="text-slate-500 text-xs transition-transform" [class.rotate-180]="acordeonActivo() === 'funcionarios'">▼</span>
+        </button>
+        
+        <div *ngIf="acordeonActivo() === 'funcionarios'" class="p-4 bg-white border-t border-slate-100 space-y-3">
+          <div *ngIf="cortesAsignadosFuncionarios().length === 0" class="text-center py-6 text-xs text-slate-400 font-medium">
+            No tienes cortes asignados a operarios internos actualmente.
+          </div>
+          
+          <div *ngFor="let asig of cortesAsignadosFuncionarios()" class="bg-slate-50 p-4 rounded-2xl border border-indigo-100 shadow-sm space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase bg-indigo-100 text-indigo-800">
+                ⚙️ {{ asig.estado }}
+              </span>
+              <span class="text-xs font-black text-slate-900">{{ asig.cantidad_piezas | number }} pzas</span>
+            </div>
+            <div>
+              <h4 class="text-xs font-black text-slate-900">{{ asig.descripcion_corte }}</h4>
+              <p class="text-[11px] text-slate-600">Operario: <strong>{{ asig.funcionario?.nombre_completo }}</strong></p>
+              <p class="text-[11px] font-bold text-emerald-600">Total: R$ {{ asig.monto_total | number:'1.2-2' }}</p>
+            </div>
+            <div class="flex gap-2 pt-1">
+              <button (click)="cerrarCorteFuncionario(asig.id)" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition">
+                Liquidado y Cerrar 🏁
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>

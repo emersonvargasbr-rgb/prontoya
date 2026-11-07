@@ -24,7 +24,8 @@ export class PanelFuncionarioComponent implements OnInit {
   perfil: any = null;
   misPostulaciones: any[] = [];
   evaluacionesRecibidas: any[] = [];
-  pestanaActiva: 'perfil_pro' | 'empleos' | 'conquistas' | 'reputacion' = 'perfil_pro';
+  cortesAsignados: any[] = []; // 👈 Lotes asignados por talleres u oficinas
+  pestanaActiva: 'perfil_pro' | 'cortes' | 'empleos' | 'conquistas' | 'reputacion' = 'perfil_pro';
 
   // Sistema Gamificado (Gamification Engine)
   nivelTexto: string = 'Costurero Pro';
@@ -62,7 +63,7 @@ export class PanelFuncionarioComponent implements OnInit {
       if (errPerfil) throw errPerfil;
       this.perfil = perfilData;
 
-      // 2. Cargar postulaciones del operario a vacantes de talleres/oficinas
+      // 2. Cargar postulaciones del operario a vacantes
       const { data: posts, error: errPosts } = await this.supabaseService.supabase
         .from('postulaciones_lotes')
         .select(`
@@ -81,7 +82,25 @@ export class PanelFuncionarioComponent implements OnInit {
         }));
       }
 
-      // 3. Cargar evaluaciones o calificaciones recibidas
+      // 3. Cargar cortes asignados directamente al funcionario
+      const { data: cortes, error: errCortes } = await this.supabaseService.supabase
+        .from('asignaciones_funcionarios')
+        .select(`
+          *,
+          empleador:empleador_id (nombre_completo, telefono, zona_ubicacion)
+        `)
+        .eq('funcionario_id', this.usuarioId)
+        .in('estado', ['Asignado', 'En Confección'])
+        .order('fecha_inicio', { ascending: false });
+
+      if (!errCortes) {
+        this.cortesAsignados = (cortes || []).map((c: any) => ({
+          ...c,
+          empleador: Array.isArray(c.empleador) ? c.empleador[0] : c.empleador
+        }));
+      }
+
+      // 4. Cargar evaluaciones o calificaciones recibidas
       const { data: evals, error: errEvals } = await this.supabaseService.supabase
         .from('evaluaciones')
         .select(`
@@ -101,7 +120,7 @@ export class PanelFuncionarioComponent implements OnInit {
         }));
       }
 
-      // 4. Calcular Gamificación y Rango Textil
+      // 5. Calcular Gamificación y Rango Textil
       this.calcularGamificacion();
 
     } catch (e) {
@@ -109,6 +128,21 @@ export class PanelFuncionarioComponent implements OnInit {
     } finally {
       this.cargando = false;
       this.cdr.detectChanges();
+    }
+  }
+
+  // Marcar lote en proceso de confección
+  async marcarEnConfeccion(asignacionId: string) {
+    try {
+      const { error } = await this.supabaseService.supabase
+        .from('asignaciones_funcionarios')
+        .update({ estado: 'En Confección' })
+        .eq('id', asignacionId);
+
+      if (error) throw error;
+      await this.cargarDatosFuncionario();
+    } catch (e: any) {
+      alert('Error al actualizar estado: ' + e?.message);
     }
   }
 
@@ -201,7 +235,7 @@ export class PanelFuncionarioComponent implements OnInit {
   contactarWhatsApp(telefono: string, nombre: string) {
     if (!telefono) return;
     const limpio = telefono.replace(/\D/g, '');
-    const mensaje = `Hola ${nombre}, me pongo en contacto desde CosturaPronta respecto a la postulación de empleo.`;
+    const mensaje = `Hola ${nombre}, me pongo en contacto desde CosturaPronta respecto al trabajo de confección.`;
     window.open(`https://wa.me/${limpio}?text=${encodeURIComponent(mensaje)}`, '_blank');
   }
 

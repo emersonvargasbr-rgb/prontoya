@@ -38,12 +38,12 @@
             </div>
 
             <!-- Métricas Horizontales de Operario -->
-            <div class="flex items-center gap-5 sm:gap-6 mb-1 text-center">
+            <div class="flex items-center gap-4 sm:gap-5 mb-1 text-center">
               <div>
-                <p class="text-base font-black text-slate-900">{{ misPostulaciones.length }}</p>
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Postulaciones</p>
+                <p class="text-base font-black text-slate-900">{{ cortesAsignados.length }}</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cortes Activos</p>
               </div>
-              <div class="border-x border-slate-100 px-5 sm:px-6">
+              <div class="border-x border-slate-100 px-4 sm:px-5">
                 <p class="text-base font-black text-emerald-600">{{ puntosXP }} <span class="text-[10px] font-bold">XP</span></p>
                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Puntos Rank</p>
               </div>
@@ -100,34 +100,39 @@
     </div>
 
     <!-- ========================================================================= -->
-    <!-- NAVEGACIÓN PESTAÑAS PREDETERMINADAS                                      -->
+    <!-- NAVEGACIÓN PESTAÑAS (INCLUYENDO CORTES ASIGNADOS)                         -->
     <!-- ========================================================================= -->
-    <div class="bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm grid grid-cols-4 gap-1 text-center">
+    <div class="bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm grid grid-cols-5 gap-1 text-center">
       <button (click)="pestanaActiva = 'perfil_pro'" 
         [class.bg-slate-900]="pestanaActiva === 'perfil_pro'" [class.text-white]="pestanaActiva === 'perfil_pro'" [class.text-slate-600]="pestanaActiva !== 'perfil_pro'"
-        class="py-2.5 px-2 rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-1">
-        <span>Ficha Pro</span>
+        class="py-2.5 px-1 rounded-xl font-extrabold text-[11px] transition">
+        Ficha Pro
+      </button>
+
+      <button (click)="pestanaActiva = 'cortes'" 
+        [class.bg-slate-900]="pestanaActiva === 'cortes'" [class.text-white]="pestanaActiva === 'cortes'" [class.text-slate-600]="pestanaActiva !== 'cortes'"
+        class="py-2.5 px-1 rounded-xl font-extrabold text-[11px] transition flex items-center justify-center gap-1">
+        <span>Cortes</span>
+        <span class="bg-emerald-500 text-white px-1.5 rounded-full text-[9px]">{{ cortesAsignados.length }}</span>
       </button>
 
       <button (click)="pestanaActiva = 'empleos'" 
         [class.bg-slate-900]="pestanaActiva === 'empleos'" [class.text-white]="pestanaActiva === 'empleos'" [class.text-slate-600]="pestanaActiva !== 'empleos'"
-        class="py-2.5 px-2 rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-1">
+        class="py-2.5 px-1 rounded-xl font-extrabold text-[11px] transition flex items-center justify-center gap-1">
         <span>Empleos</span>
-        <span class="bg-blue-500 text-white px-1.5 py-0.2 rounded-full text-[9px]">{{ misPostulaciones.length }}</span>
+        <span class="bg-blue-500 text-white px-1.5 rounded-full text-[9px]">{{ misPostulaciones.length }}</span>
       </button>
 
       <button (click)="pestanaActiva = 'conquistas'" 
         [class.bg-slate-900]="pestanaActiva === 'conquistas'" [class.text-white]="pestanaActiva === 'conquistas'" [class.text-slate-600]="pestanaActiva !== 'conquistas'"
-        class="py-2.5 px-2 rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-1">
-        <span>Insignias</span>
-        <span class="bg-amber-400 text-slate-950 px-1.5 py-0.2 rounded-full text-[9px] font-black">🏆</span>
+        class="py-2.5 px-1 rounded-xl font-extrabold text-[11px] transition">
+        Insignias 🏆
       </button>
 
       <button (click)="pestanaActiva = 'reputacion'" 
         [class.bg-slate-900]="pestanaActiva === 'reputacion'" [class.text-white]="pestanaActiva === 'reputacion'" [class.text-slate-600]="pestanaActiva !== 'reputacion'"
-        class="py-2.5 px-2 rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-1">
-        <span>Reseñas</span>
-        <span class="bg-slate-200 text-slate-800 px-1.5 py-0.2 rounded-full text-[9px]">{{ evaluacionesRecibidas.length }}</span>
+        class="py-2.5 px-1 rounded-xl font-extrabold text-[11px] transition">
+        Reseñas
       </button>
     </div>
 
@@ -138,7 +143,7 @@
     </div>
 
     <!-- ========================================================================= -->
-    <!-- CONTENIDO PESTAÑAS                                                       -->
+    <!-- CONTENIDO PESTAÑAS                                                        -->
     <!-- ========================================================================= -->
     <div *ngIf="!cargando" class="space-y-3">
       
@@ -159,7 +164,39 @@
         </div>
       </div>
 
-      <!-- Pestaña 2: Mis Postulaciones de Empleo -->
+      <!-- Pestaña 2: Cortes Asignados por Tienda u Oficina (NUEVO) -->
+      <div *ngIf="pestanaActiva === 'cortes'" class="space-y-3">
+        <div *ngIf="cortesAsignados.length === 0" class="bg-white p-8 rounded-3xl text-center border border-slate-100 space-y-2">
+          <p class="text-xs text-slate-400 font-medium">No tienes cortes asignados en producción actualmente.</p>
+          <p class="text-[11px] text-slate-500">Cuando una tienda o taller te asigne un lote de confección, aparecerá aquí con su tarifa y conteo de piezas.</p>
+        </div>
+
+        <div *ngFor="let corte of cortesAsignados" class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-50 pb-2">
+            <span class="text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase bg-blue-50 text-blue-700">
+              ⚙️ Estado: {{ corte.estado }}
+            </span>
+            <span class="text-xs font-black text-slate-900">{{ corte.cantidad_piezas | number }} piezas</span>
+          </div>
+
+          <div>
+            <h4 class="font-extrabold text-slate-900 text-sm">{{ corte.descripcion_corte }}</h4>
+            <p class="text-xs text-slate-500 mt-0.5">Asignado por: <strong>{{ corte.empleador?.nombre_completo || 'Taller / Tienda' }}</strong></p>
+            <p class="text-xs font-bold text-emerald-600 mt-1">Tarifa Total estimada: R$ {{ corte.monto_total | number:'1.2-2' }} (R$ {{ corte.pago_por_pieza }} / pza)</p>
+          </div>
+
+          <div class="flex gap-2 pt-1">
+            <button (click)="contactarWhatsApp(corte.empleador?.telefono, corte.empleador?.nombre_completo)" class="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl transition text-center">
+              💬 Contactar Empleador
+            </button>
+            <button *ngIf="corte.estado === 'Asignado'" (click)="marcarEnConfeccion(corte.id)" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition">
+              Iniciar Confección 🧵
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pestaña 3: Mis Postulaciones de Empleo -->
       <div *ngIf="pestanaActiva === 'empleos'" class="space-y-3">
         <div *ngIf="misPostulaciones.length === 0" class="bg-white p-8 rounded-3xl text-center border border-slate-100">
           <p class="text-xs text-slate-400 font-medium">No te has postulado a ninguna vacante laboral aún.</p>
@@ -183,7 +220,7 @@
         </div>
       </div>
 
-      <!-- Pestaña 3: Insignias Gamificadas (Conquistas / Trophies) -->
+      <!-- Pestaña 4: Insignias Gamificadas -->
       <div *ngIf="pestanaActiva === 'conquistas'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div *ngFor="let ins of insignias" 
           [class.bg-white]="ins.desbloqueada" [class.border-amber-300]="ins.desbloqueada"
@@ -206,7 +243,7 @@
         </div>
       </div>
 
-      <!-- Pestaña 4: Reseñas y Estrellas Recibidas -->
+      <!-- Pestaña 5: Reseñas y Estrellas Recibidas -->
       <div *ngIf="pestanaActiva === 'reputacion'" class="space-y-3">
         <div *ngIf="evaluacionesRecibidas.length === 0" class="bg-white p-8 rounded-3xl text-center border border-slate-100">
           <p class="text-xs text-slate-400 font-medium">Aún no tienes reseñas de talleres o contratantes.</p>

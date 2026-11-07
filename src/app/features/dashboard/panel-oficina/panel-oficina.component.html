@@ -1,231 +1,271 @@
-<div class="min-h-screen bg-slate-50/80 py-6 px-3 sm:px-6 flex justify-center items-start">
-  <div class="w-full max-w-5xl space-y-6">
+<div class="min-h-screen bg-black/5 py-4 px-3 sm:px-6 flex justify-center items-start font-sans">
+  <div class="w-full max-w-md sm:max-w-xl space-y-4">
     
     <!-- ========================================================================= -->
-    <!-- MINI PERFIL PRO (DISEÑO ELEGANTE Y MODERNO)                              -->
+    <!-- PERFIL DISEÑO TIKTOK (AVATAR CENTRADO + ESTADÍSTICAS + BIO CLEAN)         -->
     <!-- ========================================================================= -->
-    <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden transition-all">
+    <div class="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100 flex flex-col items-center text-center relative overflow-hidden">
       
-      <!-- Portada Dinámica con Color Personalizado -->
-      <div class="h-36 px-6 pt-5 flex justify-between items-start transition-colors relative" [style.backgroundColor]="perfil?.color_portada || '#0f172a'">
-        <span class="bg-white/20 backdrop-blur-md text-white text-[10px] font-extrabold px-3.5 py-1 rounded-full uppercase border border-white/20 tracking-wider">
-          Oficina Textil Pro
+      <!-- Fondo / Cover sutil top -->
+      <div class="absolute top-0 left-0 right-0 h-24 transition-colors" [style.backgroundColor]="perfil()?.color_portada || '#0f172a'"></div>
+      
+      <!-- Botón Editar Perfil flotante superior -->
+      <button routerLink="/editar-perfil" class="absolute top-3 right-3 bg-black/30 hover:bg-black/50 text-white text-[10px] font-black px-3 py-1.5 rounded-full backdrop-blur-md transition flex items-center gap-1 z-20">
+        ✏️ Editar
+      </button>
+
+      <!-- Avatar TikTok Style (Circular flotante con borde blanco grueso) -->
+      <div class="relative mt-8 z-10">
+        <div class="w-24 h-24 rounded-full bg-slate-900 border-4 border-white shadow-xl flex items-center justify-center text-4xl overflow-hidden ring-2 ring-slate-100">
+          <span>{{ getAvatarEmoji(perfil()?.avatar_svg_id) }}</span>
+        </div>
+        <span *ngIf="perfil()?.verificado" class="absolute bottom-1 right-1 bg-emerald-500 text-white p-1 rounded-full shadow-md">
+          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
         </span>
-        <button routerLink="/editar-perfil" class="bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl backdrop-blur-md border border-white/30 transition flex items-center gap-1.5 shadow-sm">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-          Editar Perfil
-        </button>
       </div>
 
-      <!-- Datos Principales + Avatar Gigante + Estrellas -->
-      <div class="px-6 pb-6 pt-0 relative flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-12">
-        <div class="flex items-end gap-5">
+      <!-- Nombre y Usuario -->
+      <h1 class="text-lg font-black text-slate-900 mt-2 flex items-center justify-center gap-1">
+        {{ perfil()?.nombre_completo || 'Mi Oficina Taller' }}
+      </h1>
+      <p class="text-xs font-semibold text-slate-400">@{{ (perfil()?.nombre_completo || 'oficina').toLowerCase().replace(' ', '_') }}</p>
+
+      <!-- Métricas TikTok Style (Cortes / Máquinas / Estrellas) -->
+      <div class="flex items-center justify-center gap-6 my-4 w-full py-2 border-y border-slate-100">
+        <div class="text-center">
+          <p class="text-sm font-black text-slate-900">{{ lotesEnProduccion().length }}</p>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Activos</p>
+        </div>
+        <div class="w-px h-6 bg-slate-100"></div>
+        <div class="text-center">
+          <p class="text-sm font-black text-slate-900">{{ perfil()?.cantidad_maquinas || 0 }}</p>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Máquinas</p>
+        </div>
+        <div class="w-px h-6 bg-slate-100"></div>
+        <div class="text-center flex flex-col items-center">
+          <p class="text-sm font-black text-slate-900 flex items-center gap-0.5">
+            ⭐ {{ perfil()?.promedio_estrellas || '5.0' }}
+          </p>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rating</p>
+        </div>
+      </div>
+
+      <!-- Bio / Especialidad -->
+      <p class="text-xs text-slate-600 max-w-xs font-medium">
+        🧵 {{ perfil()?.especialidad_principal || 'Especialistas en Confección de Punto y Tejido Plano.' }}
+      </p>
+
+      <!-- Action Button TikTok Style -->
+      <a routerLink="/crear-publicacion" class="w-full mt-4 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white font-black py-3 rounded-2xl text-xs shadow-lg shadow-rose-500/20 transition flex items-center justify-center gap-2">
+        <span>➕ Crear Nuevo Anuncio</span>
+      </a>
+    </div>
+
+    <!-- CARGANDO -->
+    <div *ngIf="cargando()" class="text-center py-10 bg-white rounded-3xl border border-slate-100">
+      <div class="w-7 h-7 border-3 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+      <p class="text-xs font-semibold text-slate-400">Cargando datos...</p>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- ACORDEONES INTERACTIVOS                                                    -->
+    <!-- ========================================================================= -->
+    <div *ngIf="!cargando()" class="space-y-3">
+      
+      <!-- 1. PRODUCCIÓN ACTIVA B2B -->
+      <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden transition-all">
+        <button (click)="toggleAcordeon('produccion')" class="w-full p-4 font-extrabold text-xs flex justify-between items-center bg-white hover:bg-slate-50 transition text-slate-900">
+          <span class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            🏭 Producción Activa Tiendas ({{ lotesEnProduccion().length }})
+          </span>
+          <span class="text-slate-400 text-xs transition-transform" [class.rotate-180]="acordeonActivo() === 'produccion'">▼</span>
+        </button>
+        
+        <div *ngIf="acordeonActivo() === 'produccion'" class="p-4 bg-slate-50/50 border-t border-slate-100 space-y-3">
+          <div *ngIf="lotesEnProduccion().length === 0" class="text-center py-6 text-xs text-slate-400 font-medium">
+            No tienes lotes en producción en este momento.
+          </div>
           
-          <!-- AVATAR ANIMAL SVG (AGRANDADO Y DESTACADO 96x96 / w-24 h-24) -->
-          <div class="w-24 h-24 bg-white rounded-3xl shadow-xl border-4 border-white flex items-center justify-center text-4xl shrink-0 transform hover:scale-105 transition duration-200 bg-gradient-to-br from-slate-50 to-white">
-            <span>{{ getAvatarEmoji(perfil?.avatar_svg_id) }}</span>
+          <div *ngFor="let lote of lotesEnProduccion()" class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-50 pb-2">
+              <span class="text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase" 
+                    [class.bg-emerald-50]="lote.estado !== 'Terminado'" [class.text-emerald-700]="lote.estado !== 'Terminado'"
+                    [class.bg-amber-50]="lote.estado === 'Terminado'" [class.text-amber-700]="lote.estado === 'Terminado'">
+                {{ lote.estado === 'Terminado' ? '⏳ En Espera de Confirmación' : '⚙️ En Producción' }}
+              </span>
+              <span class="text-[10px] font-bold text-slate-400">{{ lote.cantidad_piezas | number }} pzas</span>
+            </div>
+
+            <div>
+              <h3 class="text-xs font-black text-slate-900">{{ lote.descripcion_corte }}</h3>
+              <p class="text-[11px] text-slate-500 mt-0.5">Tienda: <strong>{{ lote.tienda_info?.nombre_completo }}</strong></p>
+            </div>
+
+            <div class="flex items-center gap-2 pt-1">
+              <button (click)="contactarWhatsApp(lote.tienda_info?.telefono, lote.tienda_info?.nombre_completo, lote.descripcion_corte)" class="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl transition text-center">
+                💬 WhatsApp
+              </button>
+
+              <button *ngIf="lote.estado !== 'Terminado'" (click)="marcarComoTerminado(lote.id)" class="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition shadow-md">
+                Marcar Terminado 🏁
+              </button>
+              
+              <button *ngIf="lote.estado === 'Terminado'" disabled class="flex-1 py-2.5 bg-amber-100 text-amber-800 text-[11px] font-extrabold rounded-xl text-center cursor-not-allowed">
+                ⏳ Esperando Cliente
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. PROPUESTAS DIRECTAS B2B Y POSTULACIONES EN ESPERA -->
+      <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden transition-all">
+        <button (click)="toggleAcordeon('propuestas')" class="w-full p-4 font-extrabold text-xs flex justify-between items-center bg-white hover:bg-slate-50 transition text-slate-900">
+          <span class="flex items-center gap-2">
+            📥 Propuestas & Postulaciones ({{ propuestasPendientesB2B().length + misPostulacionesEnEspera().length }})
+          </span>
+          <span class="text-slate-400 text-xs transition-transform" [class.rotate-180]="acordeonActivo() === 'propuestas'">▼</span>
+        </button>
+        
+        <div *ngIf="acordeonActivo() === 'propuestas'" class="p-4 bg-slate-50/50 border-t border-slate-100 space-y-4">
+          
+          <div *ngIf="propuestasPendientesB2B().length === 0 && misPostulacionesEnEspera().length === 0" class="text-center py-6 text-xs text-slate-400 font-medium">
+            No tienes propuestas ni postulaciones pendientes.
           </div>
 
-          <div class="mb-1 space-y-1">
-            <h1 class="text-xl sm:text-2xl font-black text-slate-900 flex items-center gap-2">
-              <span>{{ perfil?.nombre_completo || 'Mi Oficina Taller' }}</span>
-              <svg *ngIf="perfil?.verificado" class="w-5 h-5 text-emerald-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-            </h1>
-            
-            <p class="text-xs font-bold text-blue-600 flex items-center gap-1">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-              {{ perfil?.especialidad_principal || 'Costura & Confección' }}
-            </p>
-
-            <!-- BARRA DE CALIFICACIÓN ⭐ -->
-            <div class="flex items-center gap-2 pt-0.5">
-              <div class="flex text-amber-400">
-                <span *ngFor="let star of [1,2,3,4,5]">
-                  <svg class="w-3.5 h-3.5" [class.text-amber-400]="star <= (perfil?.promedio_estrellas || 5)" [class.text-slate-200]="star > (perfil?.promedio_estrellas || 5)" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                  </svg>
-                </span>
+          <!-- A) PROPUESTAS DIRECTAS RECIBIDAS -->
+          <div *ngIf="propuestasPendientesB2B().length > 0" class="space-y-3">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">OFERTAS DIRECTAS RECIBIDAS</p>
+            <div *ngFor="let prop of propuestasPendientesB2B()" class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
+              <div>
+                <span class="bg-blue-50 text-blue-700 text-[9px] font-extrabold px-2.5 py-0.5 rounded-md uppercase">Oferta Recibida</span>
+                <h3 class="text-xs font-black text-slate-900 mt-1">{{ prop.descripcion_corte }}</h3>
+                <p class="text-[11px] text-slate-500">Tienda: {{ prop.tienda_info?.nombre_completo }}</p>
               </div>
-              <span class="text-xs font-black text-slate-800">{{ perfil?.promedio_estrellas || '5.0' }}</span>
-              <span class="text-[10px] text-slate-400 font-medium">({{ perfil?.total_evaluaciones || 0 }} reseñas)</span>
+              <div class="flex gap-2">
+                <button (click)="rechazarLoteDirecto(prop.id)" class="flex-1 py-2 bg-rose-50 text-rose-600 text-xs font-bold rounded-xl">Rechazar</button>
+                <button (click)="aceptarLoteDirecto(prop.id)" class="flex-1 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl shadow-md">Aprobar</button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <a routerLink="/crear-publicacion" class="bg-slate-900 active:scale-[0.98] text-white font-bold py-3.5 px-5 rounded-2xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
-          Crear Anuncio o Vacante
-        </a>
-      </div>
+          <!-- B) MIS POSTULACIONES EN ESPERA -->
+          <div *ngIf="misPostulacionesEnEspera().length > 0" class="space-y-3 pt-2">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">MIS POSTULACIONES ENVIADAS</p>
+            <div *ngFor="let post of misPostulacionesEnEspera()" class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
+              <div>
+                <span class="bg-amber-50 text-amber-700 text-[9px] font-extrabold px-2.5 py-0.5 rounded-md uppercase">Postulación Enviada</span>
+                <h3 class="text-xs font-black text-slate-900 mt-1">{{ post.descripcion_corte }}</h3>
+                <p class="text-[11px] text-slate-500">Tienda: {{ post.tienda_info?.nombre_completo }}</p>
+              </div>
+              <div class="bg-amber-50/80 border border-amber-200/60 p-2.5 rounded-xl text-center">
+                <p class="text-[11px] font-extrabold text-amber-800">⏳ Esperando Aprobación de la Tienda</p>
+              </div>
+            </div>
+          </div>
 
-      <!-- INFRAESTRUCTURA TÉCNICA VISIBLE -->
-      <div class="grid grid-cols-3 gap-2 px-6 py-3.5 bg-slate-50/80 border-t border-slate-100 text-center">
-        <div>
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Maquinaria</p>
-          <p class="text-sm font-black text-slate-800 mt-0.5">{{ perfil?.cantidad_maquinas || 0 }} máquinas</p>
-        </div>
-        <div class="border-x border-slate-200/60">
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Equipo Operativo</p>
-          <p class="text-sm font-black text-slate-800 mt-0.5">{{ perfil?.cantidad_operarios || 0 }} costureros</p>
-        </div>
-        <div>
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ubicación CEP</p>
-          <p class="text-sm font-black text-slate-800 mt-0.5">{{ puedeVerDireccion() ? (perfil?.cep || 'Brás') : 'Protegido 🔒' }}</p>
         </div>
       </div>
-    </div>
 
-    <!-- ========================================================================= -->
-    <!-- NAVEGACIÓN ADAPTABLE: TABS EN PC / ACORDEÓN TÁCTIL EN MÓVIL             -->
-    <!-- ========================================================================= -->
-    
-    <!-- Versión PC (Tabs Horizontales) -->
-    <div class="hidden sm:flex bg-white p-2 rounded-2xl border border-slate-100 shadow-sm gap-2">
-      <button (click)="pestanaActiva = 'lotes_asignados'" 
-        [class.bg-slate-900]="pestanaActiva === 'lotes_asignados'" [class.text-white]="pestanaActiva === 'lotes_asignados'" [class.text-slate-600]="pestanaActiva !== 'lotes_asignados'"
-        class="py-3 px-5 rounded-xl font-bold text-xs transition flex items-center gap-2">
-        <span>🏭 Lotes Asignados</span>
-        <span class="bg-white/20 px-2 py-0.5 rounded-full text-[10px]">{{ lotesAsignados.length }}</span>
-      </button>
-
-      <button (click)="pestanaActiva = 'candidatos_empleo'" 
-        [class.bg-slate-900]="pestanaActiva === 'candidatos_empleo'" [class.text-white]="pestanaActiva === 'candidatos_empleo'" [class.text-slate-600]="pestanaActiva !== 'candidatos_empleo'"
-        class="py-3 px-5 rounded-xl font-bold text-xs transition flex items-center gap-2">
-        <span>👥 Candidatos Empleo</span>
-        <span class="bg-amber-500 text-white px-2 py-0.5 rounded-full text-[10px]">{{ candidatosEmpleo.length }}</span>
-      </button>
-
-      <button (click)="pestanaActiva = 'mis_publicaciones'" 
-        [class.bg-slate-900]="pestanaActiva === 'mis_publicaciones'" [class.text-white]="pestanaActiva === 'mis_publicaciones'" [class.text-slate-600]="pestanaActiva !== 'mis_publicaciones'"
-        class="py-3 px-5 rounded-xl font-bold text-xs transition flex items-center gap-2">
-        <span>📢 Mis Anuncios</span>
-        <span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[10px]">{{ misPublicaciones.length }}</span>
-      </button>
-    </div>
-
-    <!-- Versión Móvil (Acordeón Táctil Vertical) -->
-    <div class="sm:hidden space-y-2">
-      
-      <!-- Acordeón 1: Lotes Asignados -->
-      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        <button (click)="toggleAcordeon('lotes_asignados')" class="w-full p-4 font-extrabold text-xs flex justify-between items-center text-slate-800">
-          <span class="flex items-center gap-2">🏭 Lotes Asignados ({{ lotesAsignados.length }})</span>
-          <span class="text-slate-400 text-sm">{{ pestanaActiva === 'lotes_asignados' ? '▲' : '▼' }}</span>
+      <!-- 3. MÓDULO OPERARIOS Y FUNCIONARIOS INTERNOS -->
+      <div class="bg-white rounded-3xl border border-indigo-100 shadow-sm overflow-hidden transition-all">
+        <button (click)="toggleAcordeon('funcionarios')" class="w-full p-4 font-extrabold text-xs flex justify-between items-center bg-indigo-50/40 hover:bg-indigo-50/70 transition text-slate-900">
+          <span class="flex items-center gap-2.5">
+            👥 Operarios & Funcionarios Internos ({{ cortesAsignadosFuncionarios().length }})
+          </span>
+          <span class="text-slate-500 text-xs transition-transform" [class.rotate-180]="acordeonActivo() === 'funcionarios'">▼</span>
         </button>
-        <div *ngIf="pestanaActiva === 'lotes_asignados'" class="p-3 bg-slate-50 border-t border-slate-100 space-y-2">
-          <div *ngIf="lotesAsignados.length === 0" class="text-center py-4 text-xs text-slate-400">Sin lotes asignados.</div>
-          <div *ngFor="let lote of lotesAsignados" class="bg-white p-3 rounded-xl border border-slate-100 text-xs space-y-1">
-            <p class="font-extrabold text-slate-900">{{ lote.descripcion_corte }}</p>
-            <p class="text-slate-500">Tienda: {{ lote.tienda_info?.nombre_completo }}</p>
+        
+        <div *ngIf="acordeonActivo() === 'funcionarios'" class="p-4 bg-white border-t border-slate-100 space-y-3">
+          <div *ngIf="cortesAsignadosFuncionarios().length === 0" class="text-center py-6 text-xs text-slate-400 font-medium">
+            No tienes cortes asignados a operarios internos actualmente.
+          </div>
+          
+          <div *ngFor="let asig of cortesAsignadosFuncionarios()" class="bg-slate-50 p-4 rounded-2xl border border-indigo-100 shadow-sm space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase bg-indigo-100 text-indigo-800">
+                ⚙️ {{ asig.estado }}
+              </span>
+              <span class="text-xs font-black text-slate-900">{{ asig.cantidad_piezas | number }} pzas</span>
+            </div>
+            <div>
+              <h4 class="text-xs font-black text-slate-900">{{ asig.descripcion_corte }}</h4>
+              <p class="text-[11px] text-slate-600">Operario: <strong>{{ asig.funcionario?.nombre_completo }}</strong></p>
+              <p class="text-[11px] font-bold text-emerald-600">Total: R$ {{ asig.monto_total | number:'1.2-2' }}</p>
+            </div>
+            <div class="flex gap-2 pt-1">
+              <button (click)="cerrarCorteFuncionario(asig.id)" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition">
+                Liquidado y Cerrar 🏁
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Acordeón 2: Candidatos -->
-      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        <button (click)="toggleAcordeon('candidatos_empleo')" class="w-full p-4 font-extrabold text-xs flex justify-between items-center text-slate-800">
-          <span class="flex items-center gap-2">👥 Candidatos Postulados ({{ candidatosEmpleo.length }})</span>
-          <span class="text-slate-400 text-sm">{{ pestanaActiva === 'candidatos_empleo' ? '▲' : '▼' }}</span>
+      <!-- 4. CANDIDATOS EMPLEO -->
+      <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden transition-all">
+        <button (click)="toggleAcordeon('candidatos')" class="w-full p-4 font-extrabold text-xs flex justify-between items-center bg-white hover:bg-slate-50 transition text-slate-900">
+          <span class="flex items-center gap-2">
+            👥 Candidatos Postulados ({{ candidatosEmpleo().length }})
+          </span>
+          <span class="text-slate-400 text-xs transition-transform" [class.rotate-180]="acordeonActivo() === 'candidatos'">▼</span>
         </button>
-        <div *ngIf="pestanaActiva === 'candidatos_empleo'" class="p-3 bg-slate-50 border-t border-slate-100 space-y-2">
-          <div *ngIf="candidatosEmpleo.length === 0" class="text-center py-4 text-xs text-slate-400">Sin candidatos postulados.</div>
-          <div *ngFor="let cand of candidatosEmpleo" class="bg-white p-3 rounded-xl border border-slate-100 text-xs space-y-1">
-            <p class="font-extrabold text-slate-900">{{ cand.postulante_info?.nombre_completo }}</p>
-            <p class="text-slate-500">Puesto: {{ cand.publicacion_info?.puesto_trabajo }}</p>
+        
+        <div *ngIf="acordeonActivo() === 'candidatos'" class="p-4 bg-slate-50/50 border-t border-slate-100 space-y-3">
+          <div *ngIf="candidatosEmpleo().length === 0" class="text-center py-6 text-xs text-slate-400 font-medium">
+            Sin postulados registrados.
+          </div>
+          <div *ngFor="let cand of candidatosEmpleo()" class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+              <h4 class="font-extrabold text-slate-900 text-xs">{{ cand.postulante_info?.nombre_completo }}</h4>
+              <p class="text-[10px] text-slate-400">⭐ {{ cand.postulante_info?.promedio_estrellas || '5.0' }}</p>
+            </div>
+            <button (click)="contactarWhatsApp(cand.postulante_info?.telefono, cand.postulante_info?.nombre_completo, cand.publicacion_info?.titulo)" class="px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-xl">WhatsApp</button>
           </div>
         </div>
       </div>
 
-      <!-- Acordeón 3: Mis Anuncios -->
-      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        <button (click)="toggleAcordeon('mis_publicaciones')" class="w-full p-4 font-extrabold text-xs flex justify-between items-center text-slate-800">
-          <span class="flex items-center gap-2">📢 Mis Anuncios ({{ misPublicaciones.length }})</span>
-          <span class="text-slate-400 text-sm">{{ pestanaActiva === 'mis_publicaciones' ? '▲' : '▼' }}</span>
+      <!-- 5. MIS ANUNCIOS -->
+      <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden transition-all">
+        <button (click)="toggleAcordeon('anuncios')" class="w-full p-4 font-extrabold text-xs flex justify-between items-center bg-white hover:bg-slate-50 transition text-slate-900">
+          <span class="flex items-center gap-2">
+            📢 Mis Anuncios ({{ misPublicaciones().length }})
+          </span>
+          <span class="text-slate-400 text-xs transition-transform" [class.rotate-180]="acordeonActivo() === 'anuncios'">▼</span>
         </button>
-        <div *ngIf="pestanaActiva === 'mis_publicaciones'" class="p-3 bg-slate-50 border-t border-slate-100 space-y-2">
-          <div *ngIf="misPublicaciones.length === 0" class="text-center py-4 text-xs text-slate-400">Sin anuncios publicados.</div>
-          <div *ngFor="let pub of misPublicaciones" class="bg-white p-3 rounded-xl border border-slate-100 text-xs space-y-1">
-            <p class="font-extrabold text-slate-900">{{ pub.titulo }}</p>
-            <p class="text-slate-500">Estado: <span class="uppercase font-bold">{{ pub.estado }}</span></p>
+        
+        <div *ngIf="acordeonActivo() === 'anuncios'" class="p-4 bg-slate-50/50 border-t border-slate-100 space-y-3">
+          <div *ngIf="misPublicaciones().length === 0" class="text-center py-6 text-xs text-slate-400 font-medium">
+            No has publicado anuncios.
+          </div>
+          <div *ngFor="let pub of misPublicaciones()" class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <h4 class="font-extrabold text-slate-900 text-xs">{{ pub.titulo }}</h4>
+            <button (click)="eliminarAnuncio(pub.id)" class="p-2 bg-rose-50 text-rose-600 rounded-xl">🗑️</button>
           </div>
         </div>
       </div>
 
-    </div>
-
-    <!-- ESTADO DE CARGA -->
-    <div *ngIf="cargando" class="text-center py-12 bg-white rounded-3xl border border-slate-100">
-      <div class="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-      <p class="text-xs font-semibold text-slate-400">Cargando panel de oficina...</p>
-    </div>
-
-    <!-- CONTENIDO PESTAÑA ACTIVA EN PC -->
-    <div *ngIf="!cargando" class="space-y-3">
-      
-      <!-- Pestaña 1: Lotes Asignados (PC) -->
-      <div *ngIf="pestanaActiva === 'lotes_asignados'" class="space-y-3">
-        <div *ngIf="lotesAsignados.length === 0" class="bg-white p-8 rounded-3xl text-center border border-slate-100">
-          <p class="text-xs text-slate-400 font-medium">Aún no tienes lotes asignados por tiendas.</p>
-        </div>
-        <div *ngFor="let lote of lotesAsignados" class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <span class="bg-emerald-50 text-emerald-700 text-[10px] font-extrabold px-2.5 py-1 rounded-lg uppercase border border-emerald-100">{{ lote.estado }}</span>
-            <h3 class="text-base font-extrabold text-slate-900 mt-2">{{ lote.descripcion_corte }}</h3>
-            <p class="text-xs text-slate-500 mt-0.5">Tienda: <strong>{{ lote.tienda_info?.nombre_completo }}</strong> (📍 {{ lote.tienda_info?.zona_ubicacion }})</p>
-            <p class="text-xs font-bold text-blue-600 mt-1">Volumen: {{ lote.cantidad_piezas | number }} piezas</p>
+      <!-- 6. HISTORIAL DE LOTES / COMPROBANTES P2P B2B (AL FINAL DE TODO) -->
+      <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden transition-all">
+        <button (click)="toggleAcordeon('historial')" class="w-full p-4 font-extrabold text-xs flex justify-between items-center bg-slate-100 hover:bg-slate-200/70 transition text-slate-800">
+          <span class="flex items-center gap-2">
+            📜 Historial de Lotes Auditados ({{ historialLotes().length }})
+          </span>
+          <span class="text-slate-500 text-xs transition-transform" [class.rotate-180]="acordeonActivo() === 'historial'">▼</span>
+        </button>
+        
+        <div *ngIf="acordeonActivo() === 'historial'" class="p-4 bg-slate-50/50 border-t border-slate-100 space-y-3">
+          <div *ngIf="historialLotes().length === 0" class="text-center py-6 text-xs text-slate-400 font-medium">
+            No hay comprobantes auditados archivados en el historial.
           </div>
-          <button (click)="contactarWhatsApp(lote.tienda_info?.telefono, lote.tienda_info?.nombre_completo, lote.descripcion_corte)" 
-            class="bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white text-xs font-bold py-3 px-4 rounded-2xl transition flex items-center justify-center gap-2 shadow-sm">
-            Contactar Tienda
-          </button>
-        </div>
-      </div>
-
-      <!-- Pestaña 2: Candidatos Empleo (PC) -->
-      <div *ngIf="pestanaActiva === 'candidatos_empleo'" class="space-y-3">
-        <div *ngIf="candidatosEmpleo.length === 0" class="bg-white p-8 rounded-3xl text-center border border-slate-100">
-          <p class="text-xs text-slate-400 font-medium">No hay operarios o costureros postulados por el momento.</p>
-        </div>
-        <div *ngFor="let cand of candidatosEmpleo" class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-3">
-          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div *ngFor="let hist of historialLotes()" class="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-sm flex items-center justify-between">
             <div>
-              <span class="bg-blue-50 text-blue-700 text-[10px] font-extrabold px-2.5 py-1 rounded-md uppercase">Vacante: {{ cand.publicacion_info?.puesto_trabajo }}</span>
-              <p class="text-[10px] text-slate-400 mt-1">Postulado: {{ cand.created_at | date:'dd/MM/yyyy HH:mm' }}</p>
+              <span class="bg-emerald-50 text-emerald-700 text-[9px] font-black px-2 py-0.5 rounded-md uppercase">Completado P2P</span>
+              <h4 class="font-black text-slate-900 text-xs mt-1">{{ hist.descripcion_corte }}</h4>
+              <p class="text-[10px] text-slate-500">Tienda: {{ hist.tienda?.nombre_completo }} | {{ hist.cantidad_piezas | number }} pzas</p>
             </div>
-            <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase" [class.bg-amber-50]="cand.estado === 'Pendiente'" [class.text-amber-700]="cand.estado === 'Pendiente'" [class.bg-emerald-50]="cand.estado === 'Aceptado'" [class.text-emerald-700]="cand.estado === 'Aceptado'">
-              {{ cand.estado }}
-            </span>
-          </div>
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <h4 class="font-extrabold text-slate-900 text-sm">{{ cand.postulante_info?.nombre_completo }}</h4>
-              <p class="text-xs text-slate-500 mt-0.5">📍 {{ cand.postulante_info?.zona_ubicacion || 'São Paulo' }} | ⭐ {{ cand.postulante_info?.promedio_estrellas || '5.0' }}</p>
-            </div>
-            <div class="flex items-center gap-1.5">
-              <button *ngIf="cand.estado === 'Pendiente'" (click)="responderPostulacion(cand.id, 'Aceptado')" class="px-3 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl active:scale-95 transition">Aprobar</button>
-              <button (click)="contactarWhatsApp(cand.postulante_info?.telefono, cand.postulante_info?.nombre_completo, cand.publicacion_info?.titulo)" class="p-2.5 bg-emerald-500 text-white rounded-xl active:scale-95 transition">WhatsApp</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Pestaña 3: Mis Anuncios (PC) -->
-      <div *ngIf="pestanaActiva === 'mis_publicaciones'" class="space-y-3">
-        <div *ngIf="misPublicaciones.length === 0" class="bg-white p-8 rounded-3xl text-center border border-slate-100">
-          <p class="text-xs text-slate-400 font-medium">No has publicado ningún anuncio aún.</p>
-        </div>
-        <div *ngFor="let pub of misPublicaciones" class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-3">
-          <div class="flex items-center justify-between">
-            <div>
-              <span class="bg-slate-100 text-slate-700 text-[10px] font-extrabold px-2.5 py-1 rounded-md uppercase">{{ pub.tipo_publicacion }}</span>
-              <h4 class="font-extrabold text-slate-900 text-sm mt-1">{{ pub.titulo }}</h4>
-            </div>
-            <button (click)="cambiarEstadoAnuncio(pub)" class="text-[10px] font-extrabold px-3 py-1.5 rounded-xl transition" [class.bg-emerald-50]="pub.estado === 'Activo'" [class.text-emerald-700]="pub.estado === 'Activo'" [class.bg-amber-50]="pub.estado === 'Pausado'" [class.text-amber-700]="pub.estado === 'Pausado'">
-              {{ pub.estado === 'Activo' ? 'Activo' : 'Pausado' }}
-            </button>
-          </div>
-          <div class="flex justify-end pt-2 border-t border-slate-100">
-            <button (click)="eliminarAnuncio(pub.id)" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl transition">Eliminar Anuncio</button>
+            <span class="text-[10px] font-bold text-slate-400">{{ hist.fecha_cierre | date:'dd/MM/yyyy' }}</span>
           </div>
         </div>
       </div>
