@@ -14,49 +14,63 @@ import { CrearPublicacionComponent } from './features/publicaciones/crear-public
 import { EditarPerfilComponent } from './features/perfil/editar-perfil/editar-perfil.component';
 import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
 
-
 export const routes: Routes = [
-  // Rutas de Acceso (Públicas, sin barra lateral)
+  // 1. Rutas de Autenticación (Públicas, sin layout)
   { path: 'login', component: LoginComponent },
   { path: 'registro', component: RegistroComponent },
   
-  // Rutas Protegidas dentro del Main Layout (Con Sidebar Lateral Corporativo)
+  // 2. Estructura Principal del Sitio (Layout Base)
   {
     path: '',
     component: MainLayoutComponent,
-    canActivate: [authGuard],
     children: [
+      // Redirección inicial: Si entran a la raíz '', van directamente al feed
+      { path: '', redirectTo: 'feed', pathMatch: 'full' },
+
+      // Rutas PÚBLICAS (Visitantes pueden navegar y ver ofertas en modo lectura)
       { path: 'feed', component: FeedTrabajosComponent },
       { path: 'trabajo/:id', component: DetalleTrabajoComponent },
       { path: 'perfil/:id', component: VistaPerfilComponent },
-      { path: 'evaluar/:id', component: DejarEvaluacionComponent },
-      { path: 'crear-publicacion', component: CrearPublicacionComponent },
-      { path: 'editar-perfil', component: EditarPerfilComponent },
+
+      // Rutas PRIVADAS (Requieren inicio de sesión)
+      { 
+        path: 'crear-publicacion', 
+        component: CrearPublicacionComponent, 
+        canActivate: [authGuard] 
+      },
+      { 
+        path: 'editar-perfil', 
+        component: EditarPerfilComponent, 
+        canActivate: [authGuard] 
+      },
+      { 
+        path: 'evaluar/:id', 
+        component: DejarEvaluacionComponent, 
+        canActivate: [authGuard] 
+      },
       
-      // Paneles de Control Protegidos por Rol Estricto
+      // Paneles de Control Protegidos por Autenticación y Rol Estricto
       { 
         path: 'panel-tienda', 
         component: PanelTiendaComponent, 
-        canActivate: [roleGuard],
+        canActivate: [authGuard, roleGuard],
         data: { expectedRole: 'tienda' } 
       },
       { 
         path: 'panel-oficina', 
         component: PanelOficinaComponent, 
-        canActivate: [roleGuard],
+        canActivate: [authGuard, roleGuard],
         data: { expectedRole: 'oficina' } 
       },
       { 
         path: 'panel-funcionario', 
         component: PanelFuncionarioComponent, 
-        canActivate: [roleGuard],
+        canActivate: [authGuard, roleGuard],
         data: { expectedRole: 'funcionario' } 
       }
     ]
   },
 
-  // Ruta por defecto
-  { path: '', redirectTo: '/login', pathMatch: 'full' },
-  // Comodín para URLs no encontradas
-  { path: '**', redirectTo: '/login' }
+  // 3. Comodín para cualquier URL no encontrada
+  { path: '**', redirectTo: 'feed' }
 ];

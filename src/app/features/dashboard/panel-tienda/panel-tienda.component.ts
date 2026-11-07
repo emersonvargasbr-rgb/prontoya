@@ -14,6 +14,7 @@ export class PanelTiendaComponent implements OnInit {
   cargando = true;
   pestanaActiva: 'solicitudes' | 'en_proceso' | 'mis_publicaciones' = 'solicitudes';
 
+  perfil: any = null;
   solicitudesPendientes: any[] = [];
   lotesEnProceso: any[] = [];
   misPublicaciones: any[] = [];
@@ -37,6 +38,17 @@ export class PanelTiendaComponent implements OnInit {
   async cargarDatosPanel() {
     this.cargando = true;
     try {
+      // 0. Cargar Perfil Pro de la Tienda (portada, avatar svg, estrellas, CNPJ, etc.)
+      const { data: perfData } = await this.supabaseService.supabase
+        .from('perfiles')
+        .select('*')
+        .eq('id', this.usuarioId)
+        .single();
+
+      if (perfData) {
+        this.perfil = perfData;
+      }
+
       // 1. Solicitudes entrantes de talleres para los lotes de esta tienda
       const { data: postulaciones } = await this.supabaseService.supabase
         .from('postulaciones_lotes')
@@ -45,7 +57,7 @@ export class PanelTiendaComponent implements OnInit {
           created_at,
           estado,
           publicacion:publicacion_id (id, titulo, cantidad_piezas, pago_por_pieza, creador_id),
-          taller:taller_id (id, nombre_completo, zona_ubicacion, verificado, promedio_estrellas, telefono)
+          taller:taller_id (id, nombre_completo, zona_ubicacion, verificado, promedio_estrellas, telefono, avatar_svg_id)
         `)
         .eq('estado', 'Pendiente');
 
@@ -59,7 +71,7 @@ export class PanelTiendaComponent implements OnInit {
         taller: Array.isArray(p.taller) ? p.taller[0] : p.taller
       }));
 
-      // 2. Lotes activos en producción
+      // 2. Lotes activos en producción con talleres
       const { data: lotes } = await this.supabaseService.supabase
         .from('lotes_asignados')
         .select(`
@@ -68,7 +80,7 @@ export class PanelTiendaComponent implements OnInit {
           cantidad_piezas,
           estado,
           fecha_asignacion,
-          oficina:oficina_id (id, nombre_completo, zona_ubicacion, telefono)
+          oficina:oficina_id (id, nombre_completo, zona_ubicacion, telefono, promedio_estrellas, avatar_svg_id)
         `)
         .eq('tienda_id', this.usuarioId)
         .order('fecha_asignacion', { ascending: false });
@@ -93,6 +105,12 @@ export class PanelTiendaComponent implements OnInit {
       this.cargando = false;
       this.cdr.detectChanges();
     }
+  }
+
+  // Mapeador de avatares animales SVG
+  getAvatarEmoji(id: string): string {
+    const mapa: any = { tigre: '🐯', leon: '🦁', oso: '🐻', zorro: '🦊', aguila: '🦅', buho: '🦉' };
+    return mapa[id] || '🧵';
   }
 
   async aceptarSolicitud(solicitud: any) {
@@ -138,9 +156,23 @@ export class PanelTiendaComponent implements OnInit {
   }
 
   async eliminarAnuncio(id: string) {
-    if (!confirm('¿Eliminar este anuncio?')) return;
+    if (!confirm('¿Deseas eliminar este anuncio?')) return;
     await this.supabaseService.supabase.from('publicaciones').delete().eq('id', id);
     this.misPublicaciones = this.misPublicaciones.filter(p => p.id !== id);
     this.cdr.detectChanges();
+  }
+
+  irAEvaluacion(usuarioIdObjetivo: string) {
+    this.router.navigate(['/dejar-evaluacion', usuarioIdObjetivo]);
+  }
+
+  contactarWhatsApp(telefono: string, nombre: string, concepto: string) {
+    if (!telefono) {
+      alert('El usuario no posee un teléfono registrado.');
+      return;
+    }
+    const limpio = telefono.replace(/\D/g, '');
+    const mensaje = `Hola ${nombre}, me pongo en contacto desde CosturaPronta respecto al lote: "${concepto}".`;
+    window.open(`https://wa.me/${limpio}?text=${encodeURIComponent(mensaje)}`, '_blank');
   }
 }

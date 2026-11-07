@@ -1,40 +1,48 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterModule, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { SupabaseService } from '../../../core/services/supabase.service';
 
 @Component({
   selector: 'app-detalle-trabajo',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './detalle-trabajo.component.html'
 })
 export class DetalleTrabajoComponent implements OnInit {
+  trabajoId: string = '';
   trabajo: any = null;
   cargando = true;
-  error = '';
+  cargandoPostulacion = false;
   
   usuarioActualId: string = '';
   rolUsuario: string = '';
-  yaPostulado = false;
-  cargandoPostulacion = false;
+
+  // Modal para Ofertar Corte (Modo Tienda hacia Taller Libre)
+  mostrarModalOferta = false;
+  datosOferta = {
+    descripcion_corte: '',
+    cantidad_piezas: 500,
+    pago_por_pieza: 2.50,
+    tipo_tejido: 'Malla Canelado',
+    logistica_entrega: 'recolectar' // 'recolectar' o 'entrega_puerta'
+  };
 
   constructor(
     private route: ActivatedRoute,
-    private supabaseService: SupabaseService,
     private router: Router,
+    private supabaseService: SupabaseService,
     private cdr: ChangeDetectorRef
   ) {}
 
   async ngOnInit() {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      await this.verificarSesionYRol();
-      await this.cargarDetalle(id);
-    }
+    this.trabajoId = this.route.snapshot.paramMap.get('id') || '';
+    await this.obtenerUsuarioActual();
+    await this.cargarDetalleTrabajo();
   }
 
-  async verificarSesionYRol() {
+  async obtenerUsuarioActual() {
     const { data: { user } } = await this.supabaseService.supabase.auth.getUser();
     if (user) {
       this.usuarioActualId = user.id;
@@ -43,61 +51,53 @@ export class DetalleTrabajoComponent implements OnInit {
         .select('rol')
         .eq('id', user.id)
         .single();
-      if (data) this.rolUsuario = data.rol;
+      if (data) {
+        this.rolUsuario = data.rol;
+      }
     }
   }
 
-  async cargarDetalle(id: string) {
+  async cargarDetalleTrabajo() {
+    this.cargando = true;
     try {
       const { data, error } = await this.supabaseService.supabase
         .from('publicaciones')
         .select(`
           *,
-          creador:creador_id (id, nombre_completo, telefono, verificado, zona_ubicacion, promedio_estrellas)
+          creador:creador_id (
+            id, nombre_completo, verificado, zona_ubicacion, 
+            promedio_estrellas, total_evaluaciones, avatar_svg_id, 
+            color_portada, especialidad_principal, telefono, 
+            visibilidad_whatsapp, cantidad_maquinas, cantidad_operarios
+          )
         `)
-        .eq('id', id)
+        .eq('id', this.trabajoId)
         .single();
 
       if (error) throw error;
-
-      const datosCreador = Array.isArray(data.creador) ? data.creador[0] : data.creador;
-      
-      this.trabajo = {
-        ...data,
-        creador_info: datosCreador || {}
-      };
-
-      if (this.usuarioActualId) {
-        const { data: post } = await this.supabaseService.supabase
-          .from('postulaciones_lotes')
-          .select('id')
-          .eq('publicacion_id', id)
-          .eq('taller_id', this.usuarioActualId)
-          .single();
-
-        if (post) this.yaPostulado = true;
-      }
-
+      this.trabajo = data;
     } catch (e) {
-      this.error = 'No se pudo cargar la información del anuncio.';
-      console.error(e);
+      console.error('Error al cargar detalle del anuncio:', e);
     } finally {
       this.cargando = false;
       this.cdr.detectChanges();
     }
   }
 
-  mostrarBotonPostular(): boolean {
-    if (!this.trabajo) return false;
-    if (this.trabajo.tipo_publicacion === 'busco_oficina' && this.rolUsuario === 'oficina') return true;
-    if (this.trabajo.tipo_publicacion === 'busco_funcionario' && this.rolUsuario === 'funcionario') return true;
-    return false;
+  abrirModalOfertar() {
+    if (!this.usuarioActualId) {
+      this.router.navigate(['/login']);
+      return;
+    }
+    this.datosOferta.descripcion_corte = `Lote de ${this.trabajo?.tipo_tejido || 'Moda'} - ${this.trabajo?.titulo || ''}`;
+    this.mostrarModalOferta = true;
+    this.cdr.detectChanges();
   }
 
-  async postularse() {
-    if (!this.usuarioActualId) {
-      alert('Debes iniciar sesión para postularte.');
-      this.router.navigate(['/login']);
+  // Enviar propuesta de la tienda a la oficina
+  async enviarOfertaLote() {
+    if (!this.datosOferta.descripcion_corte.trim() || this.datosOferta.cantidad_piezas <= 0 || this.datosOferta.pago_por_pieza <= 0) {
+      alert('Por favor completa la descripción, cantidad de piezas y precio por pieza.');
       return;
     }
 
@@ -106,19 +106,25 @@ export class DetalleTrabajoComponent implements OnInit {
       const { error } = await this.supabaseService.supabase
         .from('postulaciones_lotes')
         .insert([{
-          publicacion_id: this.trabajo.id,
-          taller_id: this.usuarioActualId,
-          estado: 'Pendiente'
+          publicacion_id: this.trabajoId,
+          taller_id: this.usuarioActualId, // Tienda que propone
+          estado: 'Pendiente',
+          descripcion_corte: this.datosOferta.descripcion_corte.trim(),
+          cantidad_piezas: this.datosOferta.cantidad_piezas,
+          pago_por_pieza: this.datosOferta.pago_por_pieza,
+          tipo_tejido: this.datosOferta.tipo_tejido,
+          logistica_entrega: this.datosOferta.logistica_entrega
         }]);
 
       if (error) throw error;
 
-      this.yaPostulado = true;
-      alert('¡Postulación enviada con éxito!');
+      alert('¡Propuesta de lote enviada con éxito a la oficina! Quedará pendiente de su aprobación.');
+      this.mostrarModalOferta = false;
+      this.router.navigate(['/feed']);
 
     } catch (e: any) {
+      alert('Error al enviar la oferta: ' + (e?.message || 'Intente de nuevo.'));
       console.error(e);
-      alert('Error al enviar la postulación: ' + (e.message || 'Intenta de nuevo'));
     } finally {
       this.cargandoPostulacion = false;
       this.cdr.detectChanges();
@@ -126,21 +132,18 @@ export class DetalleTrabajoComponent implements OnInit {
   }
 
   contactarWhatsApp() {
-    const telefono = this.trabajo.creador_info.telefono;
-    if (!telefono) {
-      alert('El anunciante no tiene un número de teléfono público registrado.');
+    const tel = this.trabajo?.creador?.telefono;
+    if (!tel) {
+      alert('El anunciante no posee un teléfono registrado.');
       return;
     }
+    const limpio = tel.replace(/\D/g, '');
+    const mensaje = `Hola ${this.trabajo.creador.nombre_completo}, me pongo en contacto desde CosturaPronta respecto a tu anuncio "${this.trabajo.titulo}".`;
+    window.open(`https://wa.me/${limpio}?text=${encodeURIComponent(mensaje)}`, '_blank');
+  }
 
-    const telefonoLimpio = telefono.replace(/\D/g, '');
-    let mensaje = `Hola ${this.trabajo.creador_info.nombre_completo}, vi tu anuncio de "${this.trabajo.titulo}" en CosturaPronta. ¿Podemos hablar de los detalles?`;
-    
-    if (this.trabajo.tipo_publicacion === 'busco_funcionario') {
-      // 👈 Corrección aplicada aquí usando 'this.trabajo.titulo' correctamente
-      mensaje = `Hola ${this.trabajo.creador_info.nombre_completo}, me interesa la vacante de "${this.trabajo.puesto_trabajo || this.trabajo.titulo}" en tu taller. ¿Sigue disponible?`;
-    }
-
-    const url = `https://wa.me/${telefonoLimpio}?text=${encodeURIComponent(mensaje)}`;
-    window.open(url, '_blank');
+  getAvatarEmoji(id: string): string {
+    const mapa: any = { tigre: '🐯', leon: '🦁', oso: '🐻', zorro: '🦊', aguila: '🦅', buho: '🦉' };
+    return mapa[id] || '🧵';
   }
 }

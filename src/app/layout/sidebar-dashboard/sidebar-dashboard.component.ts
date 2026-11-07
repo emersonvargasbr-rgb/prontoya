@@ -1,5 +1,5 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, Inject, PLATFORM_ID, signal, ChangeDetectorRef } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { SupabaseService } from '../../core/services/supabase.service';
 
@@ -11,56 +11,75 @@ import { SupabaseService } from '../../core/services/supabase.service';
   styleUrls: ['./sidebar-dashboard.component.css']
 })
 export class SidebarDashboardComponent implements OnInit {
-  rolUsuario: string = '';
-  cargando = true;
+  // Signals para reactividad ultra-rápida y cero retardos
+  rolUsuario = signal<string>('');
+  usuarioLogueado = signal<boolean>(false);
+  cargando = signal<boolean>(true);
+  sidebarExpandido = signal<boolean>(true); // Control de colapso en PC
 
   constructor(
-    private supabaseService: SupabaseService, 
-    private router: Router,
-    private cdr: ChangeDetectorRef
+    private supabaseService: SupabaseService,
+    public router: Router,
+    private cdr: ChangeDetectorRef,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
   async ngOnInit() {
-    // 1. Intentamos leer el rol del localStorage de inmediato para evitar demoras visuales
-    const rolGuardado = localStorage.getItem('rol_usuario');
-    if (rolGuardado) {
-      this.rolUsuario = rolGuardado;
-      this.cargando = false;
-      this.cdr.detectChanges();
+    // 1. Carga instantánea de memoria local solo en el navegador (Evita error SSR)
+    if (isPlatformBrowser(this.platformId)) {
+      const rolGuardado = localStorage.getItem('rol_usuario');
+      if (rolGuardado) {
+        this.rolUsuario.set(rolGuardado);
+      }
     }
 
     try {
-      // 2. Consultamos Supabase en segundo plano para asegurar que esté actualizado
-      const { data: { user } } = await this.supabaseService.supabase.auth.getUser();
-      if (user) {
+      // 2. Verificar la sesión en Supabase de forma segura
+      const { data: { session } } = await this.supabaseService.supabase.auth.getSession();
+      
+      if (session?.user) {
+        this.usuarioLogueado.set(true);
+
         const { data } = await this.supabaseService.supabase
           .from('perfiles')
           .select('rol')
-          .eq('id', user.id)
+          .eq('id', session.user.id)
           .single();
-        
-        if (data && data.rol) {
-          this.rolUsuario = data.rol;
-          // Actualizamos la memoria local con el rol fresco
-          localStorage.setItem('rol_usuario', data.rol);
+
+        if (data?.rol) {
+          this.rolUsuario.set(data.rol);
+          if (isPlatformBrowser(this.platformId)) {
+            localStorage.setItem('rol_usuario', data.rol);
+          }
         }
       } else {
-        // Si no hay sesión, limpiamos y mandamos al login
-        localStorage.removeItem('rol_usuario');
-        this.router.navigate(['/login']);
+        // 🛡️ CORRECCIÓN CLAVE: Si no hay usuario, SIMPLEMENTE LIMPIAMOS ESTADO.
+        // ¡JAMÁS HACES ROUTER.NAVIGATE A LOGIN AQUÍ! (Permite ver el feed público)
+        this.usuarioLogueado.set(false);
+        this.rolUsuario.set('');
+        if (isPlatformBrowser(this.platformId)) {
+          localStorage.removeItem('rol_usuario');
+        }
       }
     } catch (error) {
-      console.error('Error cargando rol en el sidebar:', error);
+      console.error('Error verificando usuario en Sidebar:', error);
     } finally {
-      this.cargando = false;
+      this.cargando.set(false);
       this.cdr.detectChanges();
     }
   }
 
+  toggleSidebar() {
+    this.sidebarExpandido.update(v => !v);
+  }
+
   async cerrarSesion() {
-    // Limpiamos la memoria local al salir
-    localStorage.removeItem('rol_usuario');
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.removeItem('rol_usuario');
+    }
     await this.supabaseService.supabase.auth.signOut();
+    this.usuarioLogueado.set(false);
+    this.rolUsuario.set('');
     this.router.navigate(['/login']);
   }
 }

@@ -1,97 +1,227 @@
-<div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-  <div class="max-w-5xl mx-auto space-y-6">
+<div class="min-h-screen bg-slate-50/80 py-6 px-3 sm:px-6 flex justify-center items-start">
+  <div class="w-full max-w-4xl space-y-5">
     
-    <!-- Tarjeta de Bienvenida y Estado Profesional -->
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-      <div class="flex items-center gap-4">
-        <div class="w-16 h-16 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-md">
-          {{ perfil?.nombre_completo?.charAt(0) | uppercase }}
-        </div>
-        <div>
-          <h1 class="text-2xl font-black text-gray-900 flex items-center">
-            {{ perfil?.nombre_completo }}
-            <svg *ngIf="perfil?.verificado" class="w-5 h-5 ml-1 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-          </h1>
-          <p class="text-sm text-gray-500">📍 Zona: {{ perfil?.zona_ubicacion || 'São Paulo - SP' }} | ⭐ {{ perfil?.promedio_estrellas || '5.0' }} ({{ perfil?.total_evaluaciones || 0 }} reseñas)</p>
-        </div>
-      </div>
-
-      <!-- Botón de Estado Laboral (Disponible / Ocupado) -->
-      <div class="flex items-center gap-3">
-        <button (click)="cambiarEstadoLaboral()" 
-          [class.bg-green-100]="perfil?.estado_laboral === 'Disponible'"
-          [class.text-green-800]="perfil?.estado_laboral === 'Disponible'"
-          [class.bg-red-100]="perfil?.estado_laboral !== 'Disponible'"
-          [class.text-red-800]="perfil?.estado_laboral !== 'Disponible'"
-          class="font-bold text-sm px-4 py-2.5 rounded-xl transition border border-transparent shadow-sm flex items-center gap-2">
-          <span class="w-2.5 h-2.5 rounded-full" [class.bg-green-600]="perfil?.estado_laboral === 'Disponible'" [class.bg-red-600]="perfil?.estado_laboral !== 'Disponible'"></span>
-          {{ perfil?.estado_laboral === 'Disponible' ? 'Disponible para Trabajar' : 'Ocupado actualmente' }}
-        </button>
-      </div>
-    </div>
-
-    <!-- Pestañas de Navegación -->
-    <div class="flex border-b border-gray-200 bg-white rounded-t-2xl px-6 pt-4 gap-6">
-      <button (click)="pestanaActiva = 'empleos'" 
-        [class.border-blue-600]="pestanaActiva === 'empleos'"
-        [class.text-blue-600]="pestanaActiva === 'empleos'"
-        class="pb-4 font-bold text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-800 flex items-center">
-        📋 Mis Postulaciones y Ofertas
-      </button>
-      <button (click)="pestanaActiva = 'reputacion'" 
-        [class.border-blue-600]="pestanaActiva === 'reputacion'"
-        [class.text-blue-600]="pestanaActiva === 'reputacion'"
-        class="pb-4 font-bold text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-800 flex items-center">
-        ⭐ Mi Reputación (Estilo Uber)
-      </button>
-    </div>
-
-    <!-- Estado de Carga -->
-    <div *ngIf="cargando" class="text-center py-12">
-      <p class="text-gray-500 font-medium animate-pulse">Cargando perfil...</p>
-    </div>
-
-    <!-- PESTAÑA 1: EMPLEOS Y POSTULACIONES -->
-    <div *ngIf="!cargando && pestanaActiva === 'empleos'" class="space-y-4">
-      <div *ngIf="misPostulaciones.length === 0" class="bg-white p-8 rounded-2xl text-center border border-gray-200">
-        <p class="text-gray-500 mb-4">Aún no te has postulado a ninguna vacante de empleo o taller.</p>
-        <a routerLink="/feed" class="inline-block bg-blue-600 text-white font-bold py-3 px-6 rounded-xl text-sm shadow-md hover:bg-blue-700 transition">
-          Explorar Ofertas en el Feed
-        </a>
-      </div>
-
-      <div *ngFor="let p of misPostulaciones" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h3 class="font-bold text-gray-900 text-lg">{{ p.publicacion_info?.titulo }}</h3>
-          <p class="text-sm text-gray-600">Oficina / Taller: <strong>{{ p.publicacion_info?.creador?.nombre_completo }}</strong></p>
-          <p class="text-xs text-gray-400 mt-1">Postulado el: {{ p.created_at | date:'dd/MM/yyyy' }}</p>
-        </div>
-        <div class="flex items-center gap-3">
-          <span [class.bg-yellow-100]="p.estado === 'Pendiente'"
-                [class.text-yellow-800]="p.estado === 'Pendiente'"
-                [class.bg-green-100]="p.estado === 'Aceptado'"
-                [class.text-green-800]="p.estado === 'Aceptado'"
-                class="text-xs font-bold px-3 py-1 rounded-full uppercase">
-            {{ p.estado }}
+    <!-- ========================================================================= -->
+    <!-- MINI PERFIL GAMIFICADO ESTILO RANKING SOCIAL / TIKTOK GOLD                -->
+    <!-- ========================================================================= -->
+    <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden relative">
+      
+      <!-- Portada Dinámica con Badge de Nivel Top -->
+      <div class="h-28 px-6 pt-4 flex justify-between items-start transition-colors relative" [style.backgroundColor]="perfil?.color_portada || '#0f172a'">
+        <div class="flex items-center gap-2">
+          <!-- Badge VIP Gold del Rango -->
+          <span class="bg-amber-400/90 text-slate-950 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1 shadow-md border border-amber-300">
+            <svg class="w-3 h-3 text-slate-950" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+            {{ nivelTexto }}
           </span>
         </div>
+
+        <button routerLink="/editar-perfil" class="bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl backdrop-blur-md border border-white/30 transition flex items-center gap-1.5 shadow-sm">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+          Editar Perfil
+        </button>
+      </div>
+
+      <!-- Cabecera Perfil: Avatar con Marco de Nivel + Barra de XP -->
+      <div class="px-6 pb-6 pt-0 relative">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-10">
+          
+          <div class="flex items-end gap-4">
+            <!-- Avatar Circulante con Marco Dorado / Nivel Escalable -->
+            <div class="relative shrink-0">
+              <div class="w-24 h-24 rounded-full p-1 bg-white shadow-xl ring-4 ring-amber-400 flex items-center justify-center text-4xl bg-gradient-to-br from-amber-50 to-white">
+                <span>{{ getAvatarEmoji(perfil?.avatar_svg_id) }}</span>
+              </div>
+              <span class="absolute -bottom-1 -right-1 bg-slate-900 text-amber-400 text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-400 shadow">
+                Nível {{ nivelNumero }}
+              </span>
+            </div>
+
+            <!-- Métricas Horizontales de Operario -->
+            <div class="flex items-center gap-5 sm:gap-6 mb-1 text-center">
+              <div>
+                <p class="text-base font-black text-slate-900">{{ misPostulaciones.length }}</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Postulaciones</p>
+              </div>
+              <div class="border-x border-slate-100 px-5 sm:px-6">
+                <p class="text-base font-black text-emerald-600">{{ puntosXP }} <span class="text-[10px] font-bold">XP</span></p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Puntos Rank</p>
+              </div>
+              <div>
+                <p class="text-base font-black text-amber-500 flex items-center justify-center gap-0.5">
+                  ★ {{ perfil?.promedio_estrellas || '5.0' }}
+                </p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Reputación</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Switch de Disponibilidad Laboral (Disponible / Ocupado) -->
+          <button (click)="cambiarEstadoLaboral()" 
+            [class.bg-emerald-500]="perfil?.estado_laboral === 'Disponible'" [class.hover:bg-emerald-600]="perfil?.estado_laboral === 'Disponible'"
+            [class.bg-slate-700]="perfil?.estado_laboral !== 'Disponible'" [class.hover:bg-slate-800]="perfil?.estado_laboral !== 'Disponible'"
+            class="text-white font-extrabold py-3 px-5 rounded-2xl text-xs flex items-center justify-center gap-2 shadow-lg transition active:scale-95">
+            <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
+            {{ perfil?.estado_laboral === 'Disponible' ? 'Disponible para Trabajar' : 'Actualmente Ocupado' }}
+          </button>
+        </div>
+
+        <!-- BARRA DE EXPERIENCIA (XP / Siguiente Nivel) -->
+        <div class="mt-4 bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-1.5">
+          <div class="flex justify-between items-center text-[11px] font-extrabold">
+            <span class="text-slate-700">Progreso de Rango: {{ nivelTexto }}</span>
+            <span class="text-blue-600 font-black">{{ porcentajeSiguienteNivel }}% XP para el siguiente Nível</span>
+          </div>
+          <div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden p-0.5">
+            <div class="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-amber-400 rounded-full transition-all duration-500" [style.width.%]="porcentajeSiguienteNivel"></div>
+          </div>
+        </div>
+
+        <!-- Biografía e Información Técnica del Operario -->
+        <div class="mt-4 space-y-2 border-t border-slate-100/80 pt-4">
+          <h1 class="text-lg font-black text-slate-900 flex items-center gap-1.5">
+            {{ perfil?.nombre_completo || 'Operario de Confección' }}
+            <svg *ngIf="perfil?.verificado" class="w-4 h-4 text-emerald-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+          </h1>
+          <p class="text-xs font-bold text-blue-600">
+            🧵 Operario Industrial de Costura (Especialidad: {{ perfil?.especialidad_principal || 'Costura General' }})
+          </p>
+          <p class="text-xs text-slate-600 leading-relaxed">{{ perfil?.bio_taller || 'Operario con experiencia en confección de prendas en el polo textil de São Paulo.' }}</p>
+
+          <!-- Badges de Máquinas que Maneja -->
+          <div class="flex flex-wrap gap-1.5 pt-1">
+            <span *ngFor="let maq of perfil?.maquinas_maneja || ['OVERLOCK', 'GALONEIRA', 'RETA']" class="bg-slate-100 text-slate-800 text-[10px] font-extrabold px-2.5 py-1 rounded-lg border border-slate-200">
+              ⚙️ {{ maq }}
+            </span>
+          </div>
+        </div>
+
       </div>
     </div>
 
-    <!-- PESTAÑA 2: REPUTACIÓN -->
-    <div *ngIf="!cargando && pestanaActiva === 'reputacion'" class="space-y-4">
-      <div *ngIf="evaluacionesRecibidas.length === 0" class="bg-white p-8 rounded-2xl text-center border border-gray-200">
-        <p class="text-gray-500">Todavía no tienes evaluaciones de talleres u oficinas.</p>
+    <!-- ========================================================================= -->
+    <!-- NAVEGACIÓN PESTAÑAS PREDETERMINADAS                                      -->
+    <!-- ========================================================================= -->
+    <div class="bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm grid grid-cols-4 gap-1 text-center">
+      <button (click)="pestanaActiva = 'perfil_pro'" 
+        [class.bg-slate-900]="pestanaActiva === 'perfil_pro'" [class.text-white]="pestanaActiva === 'perfil_pro'" [class.text-slate-600]="pestanaActiva !== 'perfil_pro'"
+        class="py-2.5 px-2 rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-1">
+        <span>Ficha Pro</span>
+      </button>
+
+      <button (click)="pestanaActiva = 'empleos'" 
+        [class.bg-slate-900]="pestanaActiva === 'empleos'" [class.text-white]="pestanaActiva === 'empleos'" [class.text-slate-600]="pestanaActiva !== 'empleos'"
+        class="py-2.5 px-2 rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-1">
+        <span>Empleos</span>
+        <span class="bg-blue-500 text-white px-1.5 py-0.2 rounded-full text-[9px]">{{ misPostulaciones.length }}</span>
+      </button>
+
+      <button (click)="pestanaActiva = 'conquistas'" 
+        [class.bg-slate-900]="pestanaActiva === 'conquistas'" [class.text-white]="pestanaActiva === 'conquistas'" [class.text-slate-600]="pestanaActiva !== 'conquistas'"
+        class="py-2.5 px-2 rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-1">
+        <span>Insignias</span>
+        <span class="bg-amber-400 text-slate-950 px-1.5 py-0.2 rounded-full text-[9px] font-black">🏆</span>
+      </button>
+
+      <button (click)="pestanaActiva = 'reputacion'" 
+        [class.bg-slate-900]="pestanaActiva === 'reputacion'" [class.text-white]="pestanaActiva === 'reputacion'" [class.text-slate-600]="pestanaActiva !== 'reputacion'"
+        class="py-2.5 px-2 rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-1">
+        <span>Reseñas</span>
+        <span class="bg-slate-200 text-slate-800 px-1.5 py-0.2 rounded-full text-[9px]">{{ evaluacionesRecibidas.length }}</span>
+      </button>
+    </div>
+
+    <!-- CARGANDO -->
+    <div *ngIf="cargando" class="text-center py-12 bg-white rounded-3xl border border-slate-100">
+      <div class="w-7 h-7 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+      <p class="text-xs text-slate-400 font-medium">Actualizando panel de funcionario...</p>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- CONTENIDO PESTAÑAS                                                       -->
+    <!-- ========================================================================= -->
+    <div *ngIf="!cargando" class="space-y-3">
+      
+      <!-- Pestaña 1: Ficha Técnica Pro -->
+      <div *ngIf="pestanaActiva === 'perfil_pro'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-2">
+          <h3 class="text-xs font-black text-slate-900 uppercase tracking-wider">Ubicación y Logística</h3>
+          <p class="text-xs text-slate-600">📍 Zona: <strong>{{ perfil?.zona_ubicacion || 'São Paulo - SP' }}</strong></p>
+          <p class="text-xs text-slate-600">🏠 Alojamiento: <strong>{{ perfil?.alojamiento_propio ? 'Alojamiento Propio' : 'Busca Cama Dentro' }}</strong></p>
+          <p class="text-xs text-slate-600">👨‍👩‍👧 Contratación: <strong>{{ perfil?.modalidad_trabajo || 'Individual' }}</strong></p>
+        </div>
+
+        <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-2">
+          <h3 class="text-xs font-black text-slate-900 uppercase tracking-wider">Habilidades Textil</h3>
+          <p class="text-xs text-slate-600">⚡ Velocidad estimada: <strong>Alta / Producción Industrial</strong></p>
+          <p class="text-xs text-slate-600">🧵 Tejidos que domina: <strong>Malla, Canelado, Viscose, Jeans</strong></p>
+          <p class="text-xs text-slate-600">🛡️ Certificación: <strong>{{ perfil?.verificado ? 'Perfil Verificado' : 'Pendiente Verificación' }}</strong></p>
+        </div>
       </div>
 
-      <div *ngFor="let ev of evaluacionesRecibidas" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-2">
-        <div class="flex justify-between items-center">
-          <h4 class="font-bold text-gray-900">{{ ev.evaluador_nombre || 'Taller o Tienda' }}</h4>
-          <span class="text-yellow-500 font-bold">★ {{ ev.estrellas }}.0</span>
+      <!-- Pestaña 2: Mis Postulaciones de Empleo -->
+      <div *ngIf="pestanaActiva === 'empleos'" class="space-y-3">
+        <div *ngIf="misPostulaciones.length === 0" class="bg-white p-8 rounded-3xl text-center border border-slate-100">
+          <p class="text-xs text-slate-400 font-medium">No te has postulado a ninguna vacante laboral aún.</p>
+          <a routerLink="/feed" class="inline-block mt-3 bg-slate-900 text-white text-xs font-extrabold px-4 py-2 rounded-xl">Buscar Empleos</a>
         </div>
-        <p class="text-sm text-gray-600 italic">"{{ ev.comentario || 'Sin comentarios adicionales.' }}"</p>
-        <p class="text-xs text-gray-400">{{ ev.created_at | date:'dd/MM/yyyy' }}</p>
+
+        <div *ngFor="let post of misPostulaciones" class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-md uppercase" 
+              [class.bg-amber-50]="post.estado === 'Pendiente'" [class.text-amber-700]="post.estado === 'Pendiente'"
+              [class.bg-emerald-50]="post.estado === 'Aceptado'" [class.text-emerald-700]="post.estado === 'Aceptado'">
+              Estado: {{ post.estado }}
+            </span>
+            <h4 class="font-extrabold text-slate-900 text-sm mt-2">{{ post.publicacion_info?.titulo }}</h4>
+            <p class="text-xs text-slate-500 mt-0.5">Taller: <strong>{{ post.publicacion_info?.creador?.nombre_completo }}</strong> (📍 {{ post.publicacion_info?.creador?.zona_ubicacion }})</p>
+          </div>
+
+          <button (click)="contactarWhatsApp(post.publicacion_info?.creador?.telefono, post.publicacion_info?.creador?.nombre_completo)" class="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl transition shadow-sm">
+            WhatsApp Taller
+          </button>
+        </div>
       </div>
+
+      <!-- Pestaña 3: Insignias Gamificadas (Conquistas / Trophies) -->
+      <div *ngIf="pestanaActiva === 'conquistas'" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div *ngFor="let ins of insignias" 
+          [class.bg-white]="ins.desbloqueada" [class.border-amber-300]="ins.desbloqueada"
+          [class.bg-slate-100/60]="!ins.desbloqueada" [class.border-slate-200]="!ins.desbloqueada"
+          class="p-4 rounded-3xl border shadow-sm flex items-start gap-3.5 transition">
+          
+          <div [class.bg-amber-400]="ins.desbloqueada" [class.text-slate-950]="ins.desbloqueada"
+               [class.bg-slate-200]="!ins.desbloqueada" [class.text-slate-400]="!ins.desbloqueada"
+               class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-inner">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="ins.iconoSvg"></path></svg>
+          </div>
+
+          <div class="space-y-0.5">
+            <div class="flex items-center gap-1.5">
+              <h4 class="text-xs font-black text-slate-900">{{ ins.nombre }}</h4>
+              <span *ngIf="ins.desbloqueada" class="text-[9px] font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">DESBLOQUEADO</span>
+            </div>
+            <p class="text-[11px] text-slate-500 leading-snug">{{ ins.descripcion }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pestaña 4: Reseñas y Estrellas Recibidas -->
+      <div *ngIf="pestanaActiva === 'reputacion'" class="space-y-3">
+        <div *ngIf="evaluacionesRecibidas.length === 0" class="bg-white p-8 rounded-3xl text-center border border-slate-100">
+          <p class="text-xs text-slate-400 font-medium">Aún no tienes reseñas de talleres o contratantes.</p>
+        </div>
+
+        <div *ngFor="let ev of evaluacionesRecibidas" class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-1.5">
+          <div class="flex items-center justify-between">
+            <span class="font-extrabold text-xs text-slate-900">{{ ev.evaluador_nombre || 'Taller Anónimo' }}</span>
+            <span class="text-amber-500 font-black text-xs">★ {{ ev.estrellas }}.0</span>
+          </div>
+          <p class="text-xs text-slate-600 italic">"{{ ev.comentario || 'Excelente trabajo y responsabilidad.' }}"</p>
+          <p class="text-[10px] text-slate-400">{{ ev.created_at | date:'dd/MM/yyyy' }}</p>
+        </div>
+      </div>
+
     </div>
 
   </div>

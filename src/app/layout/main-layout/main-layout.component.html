@@ -1,10 +1,14 @@
-<div class="min-h-screen bg-gray-50 flex relative">
-  
-  <!-- Sidebar automático (Lateral en PC, Oculto en Celular) -->
-  <app-sidebar-dashboard></app-sidebar-dashboard>
+<div class="min-h-screen bg-gray-50 flex flex-col">
+  <!-- Navbar superior -->
+  <app-navbar></app-navbar>
 
-  <!-- Contenido Principal: Margen izquierdo en PC (md:ml-64), y espacio abajo en celular (pb-20) -->
-  <main class="flex-1 w-full md:ml-64 p-4 md:p-8 pb-20 md:pb-8 overflow-y-auto">
-    <router-outlet></router-outlet>
-  </main>
+  <div class="flex flex-1 relative">
+    <!-- Sidebar lateral -->
+    <app-sidebar-dashboard></app-sidebar-dashboard>
+
+    <!-- Contenido Principal -->
+    <main class="flex-1 w-full md:ml-20 p-4 md:p-8 transition-all duration-300">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
 </div>
