@@ -132,7 +132,6 @@ export class DetalleTrabajoComponent implements OnInit {
   }
 
   // Postulación directa de la Oficina al lote de la Tienda
-  // Postulación directa de la Oficina al lote de la Tienda
   async postularOficinaAlLote() {
     if (!this.usuarioActualId) {
       this.router.navigate(['/login']);
@@ -147,7 +146,7 @@ export class DetalleTrabajoComponent implements OnInit {
         .from('postulaciones_lotes')
         .insert([{
           publicacion_id: this.trabajoId,
-          taller_id: this.usuarioActualId, // Tu ID de oficina
+          taller_id: this.usuarioActualId,
           estado: 'Pendiente',
           descripcion_corte: this.trabajo?.titulo || 'Lote de Confección',
           cantidad_piezas: this.trabajo?.cantidad_piezas || 0,
@@ -169,6 +168,45 @@ export class DetalleTrabajoComponent implements OnInit {
       this.cdr.detectChanges();
     }
   }
+
+  // Postulación del Operario/Funcionario a una Vacante de Empleo
+  async postularmeAEmpleo() {
+    if (!this.usuarioActualId) {
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    if (!confirm('¿Deseas postularte a esta vacante laboral?')) return;
+
+    this.cargandoPostulacion = true;
+    try {
+      const { error } = await this.supabaseService.supabase
+        .from('postulaciones_lotes')
+        .insert([{
+          publicacion_id: this.trabajoId,
+          taller_id: this.usuarioActualId, // ID del operario / funcionario
+          estado: 'Pendiente',
+          descripcion_corte: this.trabajo?.titulo || 'Postulación a Vacante',
+          cantidad_piezas: this.trabajo?.cantidad_piezas || 0,
+          pago_por_pieza: this.trabajo?.pago_por_pieza || 0,
+          tipo_tejido: this.trabajo?.tipo_tejido || 'General',
+          logistica_entrega: 'recolectar'
+        }]);
+
+      if (error) throw error;
+
+      alert('¡Postulación enviada con éxito al taller/anunciante!');
+      this.router.navigate(['/panel-funcionario']);
+
+    } catch (e: any) {
+      alert('Error al postularse a la vacante: ' + (e?.message || 'Intente de nuevo.'));
+      console.error(e);
+    } finally {
+      this.cargandoPostulacion = false;
+      this.cdr.detectChanges();
+    }
+  }
+
   contactarWhatsApp() {
     const tel = this.trabajo?.creador?.telefono;
     if (!tel) {

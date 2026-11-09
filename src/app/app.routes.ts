@@ -24,15 +24,18 @@ export const routes: Routes = [
     path: '',
     component: MainLayoutComponent,
     children: [
-      // Redirección inicial: Si entran a la raíz '', van directamente al feed
+      // Redirección inicial
       { path: '', redirectTo: 'feed', pathMatch: 'full' },
 
-      // Rutas PÚBLICAS (Visitantes pueden navegar y ver ofertas en modo lectura)
+      // Rutas PÚBLICAS
       { path: 'feed', component: FeedTrabajosComponent },
       { path: 'trabajo/:id', component: DetalleTrabajoComponent },
+      
+      // 👇 AQUÍ PONES LAS RUTAS DE PERFIL (Principal y el alias)
       { path: 'perfil/:id', component: VistaPerfilComponent },
+      { path: 'perfil-usuario/:id', component: VistaPerfilComponent }, // <--- Añadido aquí
 
-      // Rutas PRIVADAS (Requieren inicio de sesión)
+      // Rutas PRIVADAS
       { 
         path: 'crear-publicacion', 
         component: CrearPublicacionComponent, 
@@ -49,7 +52,7 @@ export const routes: Routes = [
         canActivate: [authGuard] 
       },
       
-      // Paneles de Control Protegidos por Autenticación y Rol Estricto
+      // Paneles de Control
       { 
         path: 'panel-tienda', 
         component: PanelTiendaComponent, 
@@ -71,6 +74,6 @@ export const routes: Routes = [
     ]
   },
 
-  // 3. Comodín para cualquier URL no encontrada
+  // 3. Comodín
   { path: '**', redirectTo: 'feed' }
 ];

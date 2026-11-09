@@ -1,99 +1,182 @@
-<div class="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
-  <div class="max-w-3xl mx-auto">
-    
-    <button routerLink="/feed" class="mb-6 flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
-      <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-      Volver al Feed
+<div class="min-h-screen bg-stone-100/70 text-slate-900 pb-16">
+
+  <!-- Botón Volver flotante -->
+  <div class="mx-auto max-w-4xl px-4 pt-6">
+    <button routerLink="/feed" 
+            class="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white/90 backdrop-blur-md px-4 py-2 text-xs font-bold text-slate-700 shadow-xs hover:bg-white transition-all active:scale-95">
+      <app-icon nombre="arrow-left" clase="w-4 h-4" /> Volver al Feed
     </button>
+  </div>
 
-    <div *ngIf="cargando" class="text-center py-20 text-gray-400 animate-pulse font-medium">
-      Cargando perfil profesional...
-    </div>
+  <!-- Estado de Carga / Skeleton -->
+  <div *ngIf="cargando()" class="mx-auto max-w-4xl px-4 mt-6 space-y-6" aria-busy="true">
+    <div class="h-48 sm:h-56 animate-pulse rounded-3xl bg-stone-200"></div>
+    <div class="h-40 animate-pulse rounded-3xl bg-stone-200"></div>
+  </div>
 
-    <div *ngIf="error" class="bg-red-50 text-red-600 p-6 rounded-2xl text-center font-bold">
-      {{ error }}
-    </div>
-
-    <div *ngIf="!cargando && perfil" class="space-y-6">
-      
-      <!-- TARJETA PRINCIPAL -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden p-8">
-        <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
-          
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="bg-gray-900 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                {{ perfil.rol }}
-              </span>
-              <!-- Insignia Dinámica Tienda Firma / Ferinha -->
-              <span *ngIf="perfil.rol === 'tienda' && perfil.tipo_tienda" class="bg-purple-100 text-purple-800 text-xs font-bold px-2.5 py-1 rounded-full uppercase">
-                🏪 Tienda {{ perfil.tipo_tienda }}
-              </span>
-              <!-- Estado Laboral Funcionario -->
-              <span *ngIf="perfil.rol === 'funcionario'" [ngClass]="perfil.estado_laboral === 'Disponible' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'" class="text-xs font-bold px-2.5 py-1 rounded-full">
-                {{ perfil.estado_laboral === 'Disponible' ? '🟢 Disponible para Trabajar' : '🟠 Ocupado actualmente' }}
-              </span>
-            </div>
-            
-            <h1 class="text-3xl font-black text-gray-900 mt-3 flex items-center">
-              {{ perfil.nombre_completo }}
-              <span *ngIf="perfil.verificado" class="ml-2 bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-md flex items-center font-bold">
-                ✓ Verificado
-              </span>
-            </h1>
-            
-            <p class="text-gray-500 mt-1 text-sm flex items-center font-medium">
-              📍 {{ perfil.zona_ubicacion || 'São Paulo - SP' }}
-            </p>
-
-            <!-- Datos Extra de Oficina -->
-            <div *ngIf="perfil.rol === 'oficina'" class="mt-3 flex items-center gap-4 text-xs font-bold text-gray-600 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
-              <span>👥 Personal en taller: <strong class="text-gray-900">{{ perfil.cantidad_funcionarios || 0 }} operarios</strong></span>
-            </div>
-          </div>
-
-          <!-- Estrellas / Calificación -->
-          <div class="text-left md:text-right bg-gray-50 p-4 rounded-xl border border-gray-100 min-w-[160px]">
-            <p class="text-3xl font-black text-gray-900">{{ perfil.promedio_estrellas | number:'1.1-1' }}</p>
-            <app-star-rating [promedio]="perfil.promedio_estrellas" [total]="perfil.total_evaluaciones" [mostrarTotal]="false"></app-star-rating>
-            <p class="text-xs text-gray-500 mt-1 font-medium">{{ perfil.total_evaluaciones }} evaluaciones</p>
-          </div>
-
-        </div>
-
-        <!-- Máquinas / Roles Especiales -->
-        <div *ngIf="perfil.especialidades?.length > 0" class="mt-6 pt-6 border-t border-gray-100">
-          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Máquinas y Roles Especiales</h3>
-          <div class="flex flex-wrap gap-2">
-            <span *ngFor="let mq of perfil.especialidades" class="bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-blue-100">
-              {{ mq }}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <!-- HISTORIAL DE EVALUACIONES -->
-      <h3 class="text-xl font-bold text-gray-900 mt-10 mb-4">Historial de Calificaciones</h3>
-      
-      <div *ngIf="evaluaciones.length === 0" class="bg-white rounded-xl p-8 text-center text-gray-400 border border-gray-200 border-dashed text-sm">
-        Este usuario aún no cuenta con reseñas registradas.
-      </div>
-
-      <div class="space-y-4">
-        <div *ngFor="let ev of evaluaciones" class="bg-white rounded-xl p-6 border border-gray-200 shadow-xs">
-          <div class="flex justify-between items-start mb-2">
-            <div>
-              <app-star-rating [promedio]="ev.estrellas" [mostrarTotal]="false"></app-star-rating>
-              <p class="text-sm font-bold text-gray-900 mt-1">{{ ev.evaluador_nombre }}</p>
-            </div>
-            <span class="text-xs text-gray-400 font-medium">{{ ev.fecha }}</span>
-          </div>
-          <p *ngIf="ev.comentario" class="text-gray-600 text-sm bg-gray-50 p-3 rounded-lg italic mt-2">
-            "{{ ev.comentario }}"
-          </p>
-        </div>
-      </div>
-
+  <!-- Estado de Error -->
+  <div *ngIf="error()" class="mx-auto max-w-4xl px-4 mt-8">
+    <div class="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center font-bold text-rose-700 shadow-xs">
+      {{ error() }}
     </div>
   </div>
+
+  <!-- CONTENIDO PRINCIPAL DEL PERFIL -->
+  <main *ngIf="!cargando() && perfil() as p" class="mx-auto max-w-4xl px-4 mt-6 space-y-6">
+    
+    <!-- TARJETA HERO (Portada + Avatar + Acciones + Stats) -->
+    <div class="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm transition-all">
+      
+      <!-- Portada personalizada con gradiente -->
+      <div class="h-40 sm:h-52 w-full transition-colors relative" 
+           [style.backgroundColor]="p.color_portada || '#0f766e'">
+        <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/40"></div>
+        
+        <!-- Insignia de Rol Global -->
+        <div class="absolute top-4 right-4 flex items-center gap-2">
+          <span class="rounded-full bg-slate-900/85 backdrop-blur-md px-3.5 py-1.5 text-[11px] font-black uppercase tracking-wider text-white shadow-lg border border-white/10">
+            {{ p.rol === 'funcionario' ? '⚡ Operario / Confeccionista' : (p.rol === 'oficina' ? '🏭 Oficina de Confección' : '🏪 Tienda / Marca') }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Sección de Identidad -->
+      <div class="px-6 pb-6 pt-0 relative">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-16 sm:-mt-20 mb-4">
+          
+          <!-- Avatar con anillo y badge de estado -->
+          <div class="relative inline-block">
+            <div class="rounded-full ring-4 ring-white shadow-xl bg-white p-1">
+              <app-avatar [nombre]="p.nombre_completo" tamano="xl" [verificado]="!!p.verificado" />
+            </div>
+            <!-- Indicador dinámico de Disponibilidad (Solo Operarios) -->
+            <span *ngIf="p.rol === 'funcionario'" 
+                  class="absolute bottom-1 right-1 h-5 w-5 rounded-full ring-4 ring-white shadow-md transition-colors"
+                  [ngClass]="p.estado_laboral === 'Disponible' ? 'bg-emerald-500' : 'bg-amber-500'"
+                  [title]="p.estado_laboral">
+            </span>
+          </div>
+
+         <!-- Botones de Acción (Seguir + Calificar + WhatsApp) -->
+          <div class="flex flex-wrap items-center gap-2.5">
+            <!-- Botón Seguir / Siguiendo -->
+            <button type="button" (click)="toggleSeguir()"
+                    class="inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-bold shadow-xs transition-all active:scale-95"
+                    [ngClass]="siguiendo() 
+                      ? 'border border-stone-200 bg-stone-50 text-slate-700 hover:bg-stone-100' 
+                      : 'bg-slate-900 text-white hover:bg-slate-800 shadow-md'">
+              <app-icon [nombre]="siguiendo() ? 'check' : 'user-plus'" clase="w-4 h-4" /> 
+              {{ siguiendo() ? 'Siguiendo' : 'Seguir' }}
+            </button>
+
+            <!-- Botón Calificar Experiencia -->
+            <a [routerLink]="['/evaluar', p.id]"
+               class="inline-flex items-center gap-2 rounded-2xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-white shadow-md hover:bg-amber-600 transition-all active:scale-95">
+              <app-icon nombre="star" clase="w-4 h-4" /> Calificar
+            </a>
+
+            <!-- Botón WhatsApp Pro -->
+            <button type="button" (click)="whatsapp()"
+                    class="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-md hover:bg-emerald-700 transition-all active:scale-95">
+              <app-icon nombre="chat" clase="w-4 h-4" /> WhatsApp
+            </button>
+          </div>
+        </div>
+
+        <!-- Nombre, Ubicación y Biografía -->
+        <div>
+          <div class="flex flex-wrap items-center gap-2.5">
+            <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              {{ p.nombre_completo }}
+            </h1>
+            <span *ngIf="p.verificado" 
+                  class="inline-flex items-center gap-1 rounded-full bg-teal-50 border border-teal-200 px-3 py-0.5 text-xs font-bold text-teal-700 shadow-2xs">
+              <app-icon nombre="check" clase="w-3.5 h-3.5" /> Verificado
+            </span>
+          </div>
+
+          <p class="mt-1 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+            <app-icon nombre="pin" clase="w-3.5 h-3.5 text-teal-700" /> 
+            {{ p.zona_ubicacion || 'São Paulo - SP' }}
+          </p>
+
+          <p class="mt-3.5 text-sm text-slate-600 leading-relaxed font-normal max-w-2xl">
+            {{ p.especialidad_principal || p.descripcion || 'Este usuario todavía no ha añadido una descripción biográfica en su perfil.' }}
+          </p>
+        </div>
+
+        <!-- BARRA DE ESTADÍSTICAS (Score, Seguidores, Siguiendo) -->
+        <div class="mt-6 grid grid-cols-3 divide-x divide-stone-200 rounded-2xl border border-stone-200 bg-stone-50/70 text-center shadow-2xs">
+          <div class="p-3.5">
+            <dt class="text-[11px] font-black uppercase tracking-wider text-slate-400">Valoración</dt>
+            <dd class="mt-1 flex items-center justify-center gap-1 text-base font-black text-slate-900">
+              <app-icon nombre="star" [relleno]="true" clase="w-4 h-4 text-amber-500" />
+              {{ p.promedio_estrellas ? (p.promedio_estrellas | number:'1.1-1') : '5.0' }}
+            </dd>
+          </div>
+          <div class="p-3.5">
+            <dt class="text-[11px] font-black uppercase tracking-wider text-slate-400">Seguidores</dt>
+            <dd class="mt-1 text-base font-black text-slate-900">{{ stats().seguidores }}</dd>
+          </div>
+          <div class="p-3.5">
+            <dt class="text-[11px] font-black uppercase tracking-wider text-slate-400">Siguiendo</dt>
+            <dd class="mt-1 text-base font-black text-slate-900">{{ stats().siguiendo }}</dd>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TARJETA DE MAQUINARIA Y DOMINIO TÉCNICO -->
+    <div *ngIf="p.maquinas_maneja?.length || p.especialidades?.length" 
+         class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
+      <h2 class="text-xs font-black uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
+        <app-icon nombre="cog" clase="w-4 h-4 text-teal-700" /> 
+        Maquinaria y Especialidades Dominadas
+      </h2>
+      <div class="flex flex-wrap gap-2">
+        <span *ngFor="let m of (p.maquinas_maneja || p.especialidades)" 
+              class="inline-flex items-center gap-1.5 rounded-xl bg-teal-50 border border-teal-200/80 px-3.5 py-1.5 text-xs font-bold text-teal-900 shadow-2xs">
+          ⚡ {{ m }}
+        </span>
+      </div>
+    </div>
+
+    <!-- SECCIÓN DE RESEÑAS Y CALIFICACIONES -->
+    <div class="rounded-3xl border border-stone-200 bg-white p-6 sm:p-8 shadow-sm">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-lg font-black text-slate-900 flex items-center gap-2">
+          <app-icon nombre="star" clase="w-5 h-5 text-amber-500" /> Historial de Calificaciones
+        </h2>
+        <span class="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold text-slate-600">
+          {{ evaluaciones().length }} reseñas
+        </span>
+      </div>
+
+      <!-- Estado vacío de reseñas -->
+      <div *ngIf="evaluaciones().length === 0" 
+           class="rounded-2xl border border-dashed border-stone-300 p-8 text-center text-sm font-semibold text-slate-400">
+        Este usuario aún no cuenta con reseñas registradas en la plataforma.
+      </div>
+
+      <!-- Lista de Evaluaciones -->
+      <div class="space-y-3.5">
+        <article *ngFor="let ev of evaluaciones()" class="rounded-2xl border border-stone-200/80 bg-stone-50/60 p-4 sm:p-5 transition-all">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+            <div>
+              <p class="text-sm font-bold text-slate-900">{{ ev.evaluador_nombre }}</p>
+              <div class="flex items-center gap-1 mt-1">
+                <app-star-rating [promedio]="ev.estrellas" [mostrarTotal]="false"></app-star-rating>
+              </div>
+            </div>
+            <span class="text-xs font-medium text-slate-400">{{ ev.fecha }}</span>
+          </div>
+          <p *ngIf="ev.comentario" class="mt-2.5 text-xs sm:text-sm leading-relaxed text-slate-700 italic bg-white p-3 rounded-xl border border-stone-200/50">
+            "{{ ev.comentario }}"
+          </p>
+        </article>
+      </div>
+    </div>
+
+  </main>
 </div>

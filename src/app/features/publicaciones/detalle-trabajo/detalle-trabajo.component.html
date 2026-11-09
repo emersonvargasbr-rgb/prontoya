@@ -9,7 +9,7 @@
       <div class="flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
         <span class="text-[11px] font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full bg-slate-100/80 text-slate-600 border border-slate-200/60">
-          {{ trabajo?.tipo_publicacion === 'busco_corte' ? 'Oportunidad para Taller' : 'Lote de Producción' }}
+          {{ trabajo?.tipo_publicacion === 'busco_corte' ? 'Oportunidad para Taller' : (trabajo?.tipo_publicacion === 'busco_funcionario' ? 'Vacante de Empleo' : 'Lote de Producción') }}
         </span>
       </div>
     </div>
@@ -20,19 +20,19 @@
       <p class="text-xs text-slate-400 font-medium">Cargando detalles de la oportunidad...</p>
     </div>
 
-    <!-- TARJETA PRINCIPAL TIPO LINKEDIN / INSTAGRAM PRO -->
+    <!-- TARJETA PRINCIPAL -->
     <div *ngIf="!cargando && trabajo" class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden">
       
       <!-- Banner decorativo superior cálido -->
       <div class="h-28 w-full bg-gradient-to-r from-amber-100/60 via-orange-50/40 to-blue-50/50 p-5 flex justify-end items-start border-b border-slate-100">
         <span class="bg-white/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-slate-600 shadow-xs border border-white">
-          São Paulo / Brás 📍
+          São Paulo / {{ trabajo.zona_ubicacion || 'Brás' }} 📍
         </span>
       </div>
 
       <div class="px-6 sm:px-8 pb-8 -mt-10 space-y-6">
         
-        <!-- Encabezado de Autor (Avatar con SVG animal + Datos de Confianza) -->
+        <!-- Encabezado de Autor -->
         <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div class="flex items-end gap-4">
             <div class="w-20 h-20 rounded-3xl bg-slate-900 text-white flex items-center justify-center text-4xl shadow-lg border-4 border-white shrink-0">
@@ -59,7 +59,7 @@
           </button>
         </div>
 
-        <!-- Título y Cuerpo del Anuncio -->
+        <!-- Título y Descripción -->
         <div class="space-y-3 pt-2">
           <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-snug">{{ trabajo.titulo }}</h1>
           <p class="text-xs sm:text-sm text-slate-600 leading-relaxed bg-[#F8F9FA] p-4.5 rounded-2xl border border-slate-100/80">
@@ -67,34 +67,113 @@
           </p>
         </div>
 
-        <!-- Tarjetas de Datos Clave (Grid Estilo Financiero / B2B Pro) -->
+        <!-- GRID DE DATOS TÉCNICOS ADAPTATIVO -->
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <div class="bg-[#F8F9FA] p-3.5 rounded-2xl border border-slate-100">
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Volumen Requerido</p>
+          
+          <!-- Pago / Tarifa -->
+          <div class="bg-[#F8F9FA] p-3.5 rounded-2xl border border-slate-100" *ngIf="trabajo.pago_por_pieza > 0">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              {{ trabajo.tipo_publicacion === 'busco_funcionario' ? 'Pago Estimado' : 'Tarifa / Pieza' }}
+            </p>
+            <p class="text-sm sm:text-base font-black text-emerald-600 mt-1">
+              R$ {{ trabajo.pago_por_pieza | number:'1.2-2' }}
+              <span class="text-[10px] text-slate-400 font-normal">({{ trabajo.modalidad_pago === 'salario_mensual' ? 'Mensual' : (trabajo.modalidad_pago === 'salario_semanal' ? 'Semanal' : 'Por pieza') }})</span>
+            </p>
+          </div>
+
+          <!-- Volumen (Si aplica) -->
+          <div class="bg-[#F8F9FA] p-3.5 rounded-2xl border border-slate-100" *ngIf="trabajo.cantidad_piezas > 0">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Volumen Lote</p>
             <p class="text-sm sm:text-base font-black text-slate-900 mt-1">{{ trabajo.cantidad_piezas | number }} <span class="text-xs font-semibold text-slate-500">piezas</span></p>
           </div>
 
-          <div class="bg-[#F8F9FA] p-3.5 rounded-2xl border border-slate-100" *ngIf="trabajo.pago_por_pieza > 0">
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tarifa por Pieza</p>
-            <p class="text-sm sm:text-base font-black text-emerald-600 mt-1">R$ {{ trabajo.pago_por_pieza | number:'1.2-2' }}</p>
+          <!-- Puesto Requerido (Si es Empleo) -->
+          <div class="bg-[#F8F9FA] p-3.5 rounded-2xl border border-slate-100" *ngIf="trabajo.puesto_trabajo">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Puesto Requerido</p>
+            <p class="text-xs sm:text-sm font-black text-slate-900 mt-1 truncate">{{ trabajo.puesto_trabajo }}</p>
           </div>
 
-          <div class="bg-[#F8F9FA] p-3.5 rounded-2xl border border-slate-100 col-span-2 sm:col-span-1">
+          <!-- Especialidad de Taller (Si es Busco Corte) -->
+          <div class="bg-[#F8F9FA] p-3.5 rounded-2xl border border-slate-100" *ngIf="trabajo.especialidad_taller">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Especialidad</p>
+            <p class="text-xs sm:text-sm font-black text-slate-900 mt-1 truncate">{{ trabajo.especialidad_taller }}</p>
+          </div>
+
+          <!-- Tipo de Tejido -->
+          <div class="bg-[#F8F9FA] p-3.5 rounded-2xl border border-slate-100" *ngIf="trabajo.tipo_tejido">
             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tejido / Material</p>
-            <p class="text-sm sm:text-base font-black text-slate-900 mt-1 truncate">{{ trabajo.tipo_tejido || 'General' }}</p>
+            <p class="text-xs sm:text-sm font-black text-slate-900 mt-1 truncate">{{ trabajo.tipo_tejido }}</p>
+          </div>
+
+          <!-- Capacidad de Producción (Si aplica) -->
+          <div class="bg-[#F8F9FA] p-3.5 rounded-2xl border border-slate-100" *ngIf="trabajo.capacidad_produccion">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Capacidad Diaria</p>
+            <p class="text-xs sm:text-sm font-black text-blue-700 mt-1 truncate">{{ trabajo.capacidad_produccion }}</p>
+          </div>
+
+          <!-- Logística de Transporte -->
+          <div class="bg-[#F8F9FA] p-3.5 rounded-2xl border border-slate-100 col-span-2 sm:col-span-1" *ngIf="trabajo.logistica_entrega">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Logística</p>
+            <p class="text-xs sm:text-sm font-black text-slate-900 mt-1 truncate">
+              {{ trabajo.logistica_entrega === 'oficina_retira' ? 'Taller retira' : (trabajo.logistica_entrega === 'tienda_entrega' ? 'Tienda entrega' : 'A combinar') }}
+            </p>
+          </div>
+        </div>
+
+        <!-- MAQUINARIA REQUERIDA / UTILIZADA -->
+        <div *ngIf="trabajo.maquinas_requeridas && trabajo.maquinas_requeridas.length > 0" class="space-y-2 pt-2 border-t border-slate-100">
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">🧵 Maquinaria Requerida / Utilizada</p>
+          <div class="flex flex-wrap gap-1.5">
+            <span *ngFor="let maq of trabajo.maquinas_requeridas" class="bg-blue-50 text-blue-800 text-[11px] font-extrabold px-3 py-1 rounded-xl border border-blue-100">
+              ⚙️ {{ maq }}
+            </span>
+          </div>
+        </div>
+
+        <!-- CONDICIONES Y BENEFICIOS EXTENDIDOS (VACANTES DE EMPLEO) -->
+        <div *ngIf="trabajo.tipo_publicacion === 'busco_funcionario'" class="bg-slate-50 p-4.5 rounded-2xl border border-slate-100 space-y-3">
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Vivienda, Instalaciones & Familia</p>
+          
+          <div class="flex flex-wrap gap-2">
+            <!-- Modalidad Alojamiento -->
+            <span class="bg-amber-100 text-amber-900 text-[10px] font-extrabold px-2.5 py-1 rounded-lg border border-amber-200">
+              🏠 Modalidad: {{ trabajo.modalidad_alojamiento === 'cama_dentro' ? 'Cama Dentro (Vive en Taller)' : 'Cama Fuera (Turno diario)' }}
+            </span>
+            
+            <!-- Modalidad Contratación -->
+            <span class="bg-slate-200 text-slate-800 text-[10px] font-extrabold px-2.5 py-1 rounded-lg">
+              👥 Buscado: {{ trabajo.modalidad_contratacion === 'casal' ? 'Casal (Pareja)' : (trabajo.modalidad_contratacion === 'equipo' ? 'Equipo Completo' : 'Individual') }}
+            </span>
+
+            <!-- Beneficios de Alojamiento -->
+            <span *ngIf="trabajo.ofrece_alojamiento" class="bg-emerald-50 text-emerald-700 text-[10px] font-extrabold px-2.5 py-1 rounded-lg border border-emerald-200">
+              🏠 Vivienda Incluida
+            </span>
+            <span *ngIf="trabajo.ofrece_comida" class="bg-blue-50 text-blue-700 text-[10px] font-extrabold px-2.5 py-1 rounded-lg border border-blue-200">
+              🍲 Comida Incluida
+            </span>
+            <span *ngIf="trabajo.ofrece_wifi" class="bg-indigo-50 text-indigo-700 text-[10px] font-extrabold px-2.5 py-1 rounded-lg border border-indigo-200">
+              📶 Wi-Fi Libre
+            </span>
+            <span *ngIf="trabajo.ofrece_banio_privado" class="bg-purple-50 text-purple-700 text-[10px] font-extrabold px-2.5 py-1 rounded-lg border border-purple-200">
+              🚿 Baño Privado
+            </span>
+
+            <!-- Límite de Hijos -->
+            <span class="bg-rose-50 text-rose-800 text-[10px] font-extrabold px-2.5 py-1 rounded-lg border border-rose-200">
+              👶 Admite: {{ trabajo.cantidad_hijos_permitidos > 0 ? ('Hasta ' + trabajo.cantidad_hijos_permitidos + ' hijo(s)') : 'Solo sin hijos / Solteros' }}
+            </span>
           </div>
         </div>
 
         <!-- ZONA DE ACCIÓN DE NEGOCIO SEGÚN ROL -->
-        <div class="pt-3 border-t border-slate-100">
+        <div class="pt-3 border-t border-slate-100 space-y-3">
           
           <!-- CASO A: Tienda ofertando a Taller Libre ('busco_corte') -->
           <div *ngIf="rolUsuario === 'tienda' && trabajo.tipo_publicacion === 'busco_corte'" class="bg-gradient-to-r from-blue-50 to-indigo-50/40 p-4.5 rounded-2xl border border-blue-100/80 space-y-3">
-            <div class="flex items-center justify-between">
-              <div>
-                <h3 class="text-xs font-black text-blue-900 uppercase tracking-wider">Capacidad de Taller Abierta</h3>
-                <p class="text-[11px] text-blue-700 mt-0.5">Envía tu propuesta de precio y volumen directamente a este taller asociado.</p>
-              </div>
+            <div>
+              <h3 class="text-xs font-black text-blue-900 uppercase tracking-wider">Capacidad de Taller Abierta</h3>
+              <p class="text-[11px] text-blue-700 mt-0.5">Envía tu propuesta de precio y volumen directamente a este taller asociado.</p>
             </div>
             <button (click)="abrirModalOfertar()" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-black py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-500/20 transition text-xs flex items-center justify-center gap-2">
               📦 Enviar Propuesta de Corte al Taller
@@ -103,13 +182,10 @@
 
           <!-- CASO B: Oficina postulándose a Lote de Tienda ('busco_oficina') -->
           <div *ngIf="rolUsuario === 'oficina' && trabajo.tipo_publicacion === 'busco_oficina'" class="bg-slate-900 text-white p-5 rounded-2xl space-y-3 shadow-xl">
-            <div class="flex items-center justify-between">
-              <div>
-                <h3 class="text-xs font-black uppercase tracking-wider text-amber-400">¿Interesado en este lote?</h3>
-                <p class="text-[11px] text-slate-300 mt-0.5">Postula tu taller para iniciar el flujo de producción seguro.</p>
-              </div>
+            <div>
+              <h3 class="text-xs font-black uppercase tracking-wider text-amber-400">¿Interesado en este lote?</h3>
+              <p class="text-[11px] text-slate-300 mt-0.5">Postula tu taller para iniciar el flujo de producción seguro.</p>
             </div>
-            
             <div class="flex gap-2.5 pt-1">
               <button (click)="postularOficinaAlLote()" [disabled]="cargandoPostulacion" class="flex-1 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black py-3.5 px-4 rounded-xl transition text-xs shadow-md shadow-blue-900/50 flex items-center justify-center gap-2">
                 {{ cargandoPostulacion ? 'Enviando postulación...' : '📥 Postular Mi Taller Ahora' }}
@@ -117,17 +193,25 @@
             </div>
           </div>
 
+          <!-- CASO C: Operario postulándose a Vacante de Empleo ('busco_funcionario') -->
+          <div *ngIf="trabajo.tipo_publicacion === 'busco_funcionario'" class="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-4.5 rounded-2xl shadow-md space-y-2">
+            <div>
+              <h3 class="text-xs font-black text-amber-400 uppercase tracking-wider">Vacante Laboral Activa</h3>
+              <p class="text-[11px] text-slate-300 mt-0.5">Postúlate como operario/maquinista para este taller u oficina.</p>
+            </div>
+            <button (click)="postularmeAEmpleo()" [disabled]="cargandoPostulacion" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-extrabold py-3.5 rounded-2xl text-xs shadow-lg shadow-blue-500/20 transition flex items-center justify-center gap-2">
+              <span>{{ cargandoPostulacion ? 'Enviando postulación...' : '🚀 Postularme a este Puesto' }}</span>
+            </button>
+          </div>
+
         </div>
 
       </div>
     </div>
 
-    <!-- ========================================================================= -->
-    <!-- MODAL DE OFERTA DE TIENDA A TALLER (DISEÑO FLOTANTE PRO)                  -->
-    <!-- ========================================================================= -->
+    <!-- MODAL DE OFERTA DE TIENDA A TALLER -->
     <div *ngIf="mostrarModalOferta" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
       <div class="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden p-7 space-y-5 animate-in fade-in zoom-in duration-200">
-        
         <div class="flex justify-between items-center border-b border-slate-100 pb-4">
           <div>
             <h3 class="text-base font-black text-slate-900">Proponer Lote de Confección</h3>

@@ -1,276 +1,431 @@
-<div class="min-h-screen bg-black/5 py-4 px-3 sm:px-6 flex justify-center items-start font-sans">
-  <div class="w-full max-w-md sm:max-w-xl space-y-4">
-    
-    <!-- ========================================================================= -->
-    <!-- PERFIL DISEÑO TIKTOK (AVATAR CENTRADO + ESTADÍSTICAS + BIO CLEAN)         -->
-    <!-- ========================================================================= -->
-    <div class="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100 flex flex-col items-center text-center relative overflow-hidden">
-      
-      <!-- Fondo / Cover sutil top -->
-      <div class="absolute top-0 left-0 right-0 h-24 transition-colors" [style.backgroundColor]="perfil()?.color_portada || '#0f172a'"></div>
-      
-      <!-- Botón Editar Perfil flotante superior -->
-      <button routerLink="/editar-perfil" class="absolute top-3 right-3 bg-black/30 hover:bg-black/50 text-white text-[10px] font-black px-3 py-1.5 rounded-full backdrop-blur-md transition flex items-center gap-1 z-20">
-        ✏️ Editar
-      </button>
+<div class="min-h-screen bg-stone-50 text-slate-900">
 
-      <!-- Avatar TikTok Style (Circular flotante con borde blanco grueso) -->
-      <div class="relative mt-8 z-10">
-        <div class="w-24 h-24 rounded-full bg-slate-900 border-4 border-white shadow-xl flex items-center justify-center text-4xl overflow-hidden ring-2 ring-slate-100">
-          <span>{{ getAvatarEmoji(perfil()?.avatar_svg_id) }}</span>
-        </div>
-        <span *ngIf="perfil()?.verificado" class="absolute bottom-1 right-1 bg-emerald-500 text-white p-1 rounded-full shadow-md">
-          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
-        </span>
-      </div>
+  <!-- Aviso (toast) -->
+  <div *ngIf="aviso() as a" role="status" aria-live="polite"
+       class="fixed inset-x-4 top-4 z-50 mx-auto flex max-w-md items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium shadow-lg"
+       [ngClass]="a.tipo === 'ok' ? 'bg-slate-900 text-white' : 'bg-rose-600 text-white'">
+    <app-icon [nombre]="a.tipo === 'ok' ? 'check' : 'alert'" clase="w-4 h-4 shrink-0" />
+    {{ a.texto }}
+  </div>
 
-      <!-- Nombre y Usuario -->
-      <h1 class="text-lg font-black text-slate-900 mt-2 flex items-center justify-center gap-1">
-        {{ perfil()?.nombre_completo || 'Mi Oficina Taller' }}
-      </h1>
-      <p class="text-xs font-semibold text-slate-400">@{{ (perfil()?.nombre_completo || 'oficina').toLowerCase().replace(' ', '_') }}</p>
+  <div class="mx-auto max-w-6xl px-4 py-6 lg:grid lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-6">
 
-      <!-- Métricas TikTok Style (Cortes / Máquinas / Estrellas) -->
-      <div class="flex items-center justify-center gap-6 my-4 w-full py-2 border-y border-slate-100">
-        <div class="text-center">
-          <p class="text-sm font-black text-slate-900">{{ lotesEnProduccion().length }}</p>
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Activos</p>
-        </div>
-        <div class="w-px h-6 bg-slate-100"></div>
-        <div class="text-center">
-          <p class="text-sm font-black text-slate-900">{{ perfil()?.cantidad_maquinas || 0 }}</p>
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Máquinas</p>
-        </div>
-        <div class="w-px h-6 bg-slate-100"></div>
-        <div class="text-center flex flex-col items-center">
-          <p class="text-sm font-black text-slate-900 flex items-center gap-0.5">
-            ⭐ {{ perfil()?.promedio_estrellas || '5.0' }}
+    <!-- ================================================= PERFIL (lateral) -->
+    <aside class="mb-6 lg:mb-0 lg:sticky lg:top-6 lg:self-start">
+      <div class="overflow-hidden rounded-xl border border-stone-200 bg-white">
+        <div class="h-16" [style.backgroundColor]="perfil()?.color_portada || '#134e4a'"></div>
+
+        <div class="px-5 pb-5">
+          <div class="-mt-8 flex items-end justify-between">
+            <div class="rounded-full ring-4 ring-white">
+              <app-avatar [nombre]="perfil()?.nombre_completo" tamano="lg" [verificado]="!!perfil()?.verificado" />
+            </div>
+            <a routerLink="/editar-perfil"
+               class="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-stone-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600">
+              <app-icon nombre="pencil" clase="w-3.5 h-3.5" /> Editar
+            </a>
+          </div>
+
+          <h1 class="mt-3 text-lg font-bold leading-tight">{{ perfil()?.nombre_completo || 'Mi oficina' }}</h1>
+          <p class="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
+            <app-icon nombre="building" clase="w-3.5 h-3.5" /> Oficina de confección
+            <span *ngIf="perfil()?.zona_ubicacion" class="inline-flex items-center gap-1">
+              <app-icon nombre="pin" clase="w-3.5 h-3.5" /> {{ perfil()?.zona_ubicacion }}
+            </span>
           </p>
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rating</p>
+          <p class="mt-3 text-sm leading-relaxed text-slate-600">
+            {{ perfil()?.especialidad_principal || 'Completa tu especialidad para que las tiendas te encuentren.' }}
+          </p>
+
+          <dl class="mt-4 grid grid-cols-4 divide-x divide-stone-200 rounded-lg border border-stone-200 text-center">
+            <div class="px-1 py-2.5">
+              <dt class="text-[11px] text-slate-500">Seguidores</dt>
+              <dd class="text-sm font-bold">{{ stats().seguidores }}</dd>
+            </div>
+            <div class="px-1 py-2.5">
+              <dt class="text-[11px] text-slate-500">Siguiendo</dt>
+              <dd class="text-sm font-bold">{{ stats().siguiendo }}</dd>
+            </div>
+            <div class="px-1 py-2.5">
+              <dt class="text-[11px] text-slate-500">Equipo</dt>
+              <dd class="text-sm font-bold">{{ equipoActivo().length }}</dd>
+            </div>
+            <div class="px-1 py-2.5">
+              <dt class="text-[11px] text-slate-500">Valoración</dt>
+              <dd class="flex items-center justify-center gap-0.5 text-sm font-bold">
+                <app-icon nombre="star" [relleno]="true" clase="w-3.5 h-3.5 text-amber-500" />
+                {{ perfil()?.promedio_estrellas || '0.0' }}
+              </dd>
+            </div>
+          </dl>
+
+          <a routerLink="/crear-publicacion"
+             class="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 active:scale-[0.99] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700">
+            <app-icon nombre="plus" clase="w-4 h-4" /> Publicar anuncio
+          </a>
         </div>
       </div>
+    </aside>
 
-      <!-- Bio / Especialidad -->
-      <p class="text-xs text-slate-600 max-w-xs font-medium">
-        🧵 {{ perfil()?.especialidad_principal || 'Especialistas en Confección de Punto y Tejido Plano.' }}
-      </p>
+    <!-- ===================================================== CONTENIDO -->
+    <main class="min-w-0">
 
-      <!-- Action Button TikTok Style -->
-      <a routerLink="/crear-publicacion" class="w-full mt-4 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white font-black py-3 rounded-2xl text-xs shadow-lg shadow-rose-500/20 transition flex items-center justify-center gap-2">
-        <span>➕ Crear Nuevo Anuncio</span>
-      </a>
-    </div>
-
-    <!-- CARGANDO -->
-    <div *ngIf="cargando()" class="text-center py-10 bg-white rounded-3xl border border-slate-100">
-      <div class="w-7 h-7 border-3 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-      <p class="text-xs font-semibold text-slate-400">Cargando datos...</p>
-    </div>
-
-    <!-- ========================================================================= -->
-    <!-- ACORDEONES INTERACTIVOS                                                    -->
-    <!-- ========================================================================= -->
-    <div *ngIf="!cargando()" class="space-y-3">
-      
-      <!-- 1. PRODUCCIÓN ACTIVA B2B -->
-      <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden transition-all">
-        <button (click)="toggleAcordeon('produccion')" class="w-full p-4 font-extrabold text-xs flex justify-between items-center bg-white hover:bg-slate-50 transition text-slate-900">
-          <span class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            🏭 Producción Activa Tiendas ({{ lotesEnProduccion().length }})
-          </span>
-          <span class="text-slate-400 text-xs transition-transform" [class.rotate-180]="acordeonActivo() === 'produccion'">▼</span>
-        </button>
-        
-        <div *ngIf="acordeonActivo() === 'produccion'" class="p-4 bg-slate-50/50 border-t border-slate-100 space-y-3">
-          <div *ngIf="lotesEnProduccion().length === 0" class="text-center py-6 text-xs text-slate-400 font-medium">
-            No tienes lotes en producción en este momento.
-          </div>
-          
-          <div *ngFor="let lote of lotesEnProduccion()" class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
-            <div class="flex items-center justify-between border-b border-slate-50 pb-2">
-              <span class="text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase" 
-                    [class.bg-emerald-50]="lote.estado !== 'Terminado'" [class.text-emerald-700]="lote.estado !== 'Terminado'"
-                    [class.bg-amber-50]="lote.estado === 'Terminado'" [class.text-amber-700]="lote.estado === 'Terminado'">
-                {{ lote.estado === 'Terminado' ? '⏳ En Espera de Confirmación' : '⚙️ En Producción' }}
+      <!-- Navegación por secciones -->
+      <nav class="-mx-4 mb-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Secciones">
+        <ul class="flex min-w-max gap-1 border-b border-stone-200" role="tablist">
+          <li *ngFor="let t of [
+              {id:'produccion', txt:'Producción',  icono:'layers',    n: produccion().length},
+              {id:'solicitudes',txt:'Solicitudes', icono:'inbox',     n: pendientes()},
+              {id:'equipo',     txt:'Equipo',      icono:'users',     n: equipoActivo().length},
+              {id:'anuncios',   txt:'Anuncios',    icono:'megaphone', n: misPublicaciones().length},
+              {id:'historial',  txt:'Historial',   icono:'archive',   n: historial().length}
+            ]">
+            <button type="button" role="tab" (click)="irA($any(t.id))"
+                    [attr.aria-selected]="seccion() === t.id"
+                    class="-mb-px flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
+                    [ngClass]="seccion() === t.id
+                      ? 'border-teal-700 text-teal-800'
+                      : 'border-transparent text-slate-500 hover:text-slate-800'">
+              <app-icon [nombre]="t.icono" clase="w-4 h-4" />
+              {{ t.txt }}
+              <span class="rounded-full px-1.5 text-[11px] font-bold"
+                    [ngClass]="t.id === 'solicitudes' && t.n > 0 ? 'bg-rose-600 text-white' : 'bg-stone-200 text-slate-600'">
+                {{ t.n }}
               </span>
-              <span class="text-[10px] font-bold text-slate-400">{{ lote.cantidad_piezas | number }} pzas</span>
-            </div>
+            </button>
+          </li>
+        </ul>
+      </nav>
 
-            <div>
-              <h3 class="text-xs font-black text-slate-900">{{ lote.descripcion_corte }}</h3>
-              <p class="text-[11px] text-slate-500 mt-0.5">Tienda: <strong>{{ lote.tienda_info?.nombre_completo }}</strong></p>
-            </div>
-
-            <div class="flex items-center gap-2 pt-1">
-              <button (click)="contactarWhatsApp(lote.tienda_info?.telefono, lote.tienda_info?.nombre_completo, lote.descripcion_corte)" class="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl transition text-center">
-                💬 WhatsApp
-              </button>
-
-              <button *ngIf="lote.estado !== 'Terminado'" (click)="marcarComoTerminado(lote.id)" class="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition shadow-md">
-                Marcar Terminado 🏁
-              </button>
-              
-              <button *ngIf="lote.estado === 'Terminado'" disabled class="flex-1 py-2.5 bg-amber-100 text-amber-800 text-[11px] font-extrabold rounded-xl text-center cursor-not-allowed">
-                ⏳ Esperando Cliente
-              </button>
-            </div>
-          </div>
-        </div>
+      <!-- Carga -->
+      <div *ngIf="cargando()" class="space-y-3" aria-busy="true">
+        <div class="h-24 animate-pulse rounded-xl bg-stone-200/70"></div>
+        <div class="h-24 animate-pulse rounded-xl bg-stone-200/70"></div>
       </div>
 
-      <!-- 2. PROPUESTAS DIRECTAS B2B Y POSTULACIONES EN ESPERA -->
-      <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden transition-all">
-        <button (click)="toggleAcordeon('propuestas')" class="w-full p-4 font-extrabold text-xs flex justify-between items-center bg-white hover:bg-slate-50 transition text-slate-900">
-          <span class="flex items-center gap-2">
-            📥 Propuestas & Postulaciones ({{ propuestasPendientesB2B().length + misPostulacionesEnEspera().length }})
-          </span>
-          <span class="text-slate-400 text-xs transition-transform" [class.rotate-180]="acordeonActivo() === 'propuestas'">▼</span>
-        </button>
-        
-        <div *ngIf="acordeonActivo() === 'propuestas'" class="p-4 bg-slate-50/50 border-t border-slate-100 space-y-4">
-          
-          <div *ngIf="propuestasPendientesB2B().length === 0 && misPostulacionesEnEspera().length === 0" class="text-center py-6 text-xs text-slate-400 font-medium">
-            No tienes propuestas ni postulaciones pendientes.
+      <div *ngIf="!cargando()">
+
+        <!-- ================================================ PRODUCCIÓN -->
+        <section *ngIf="seccion() === 'produccion'" class="space-y-3">
+          <div *ngIf="produccionConProgreso().length === 0" class="rounded-xl border border-dashed border-stone-300 bg-white p-8 text-center">
+            <app-icon nombre="layers" clase="mx-auto h-8 w-8 text-stone-400" />
+            <p class="mt-3 text-sm font-semibold">No tienes lotes en producción</p>
+            <p class="mt-1 text-sm text-slate-500">Cuando aceptes el lote de una tienda, aparecerá aquí para dividirlo entre tu equipo.</p>
+            <a routerLink="/feed" class="mt-4 inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+              <app-icon nombre="search" clase="w-4 h-4" /> Buscar lotes
+            </a>
           </div>
 
-          <!-- A) PROPUESTAS DIRECTAS RECIBIDAS -->
-          <div *ngIf="propuestasPendientesB2B().length > 0" class="space-y-3">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">OFERTAS DIRECTAS RECIBIDAS</p>
-            <div *ngFor="let prop of propuestasPendientesB2B()" class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
-              <div>
-                <span class="bg-blue-50 text-blue-700 text-[9px] font-extrabold px-2.5 py-0.5 rounded-md uppercase">Oferta Recibida</span>
-                <h3 class="text-xs font-black text-slate-900 mt-1">{{ prop.descripcion_corte }}</h3>
-                <p class="text-[11px] text-slate-500">Tienda: {{ prop.tienda_info?.nombre_completo }}</p>
+          <article *ngFor="let l of produccionConProgreso()" class="overflow-hidden rounded-xl border border-stone-200 bg-white">
+
+            <!-- Cabecera del lote (acordeón) -->
+            <button type="button" (click)="toggleLote(l.id)" [attr.aria-expanded]="loteAbierto() === l.id"
+                    class="flex w-full items-start gap-3 p-4 text-left hover:bg-stone-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600">
+              <app-avatar [nombre]="l.contraparte?.nombre_completo" tamano="md" [verificado]="!!l.contraparte?.verificado" />
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h2 class="truncate text-sm font-bold">{{ l.descripcion_corte || l.publicacion?.titulo }}</h2>
+                  <span class="rounded-md px-2 py-0.5 text-[11px] font-semibold" [ngClass]="claseEstado(l.estado)">
+                    {{ etiquetaLote(l) }}
+                  </span>
+                </div>
+                <p class="mt-0.5 text-xs text-slate-500">
+                  {{ l.contraparte?.nombre_completo }} · {{ l.cantidad_piezas | number }} piezas
+                  · R$ {{ l.pago_por_pieza | number:'1.2-2' }} / pieza
+                </p>
+
+                <!-- Barra de progreso general -->
+                <div class="mt-3 flex items-center gap-3">
+                  <div class="h-2 flex-1 overflow-hidden rounded-full bg-stone-200"
+                       role="progressbar" [attr.aria-valuenow]="l.progreso" aria-valuemin="0" aria-valuemax="100">
+                    <div class="h-full rounded-full bg-teal-600 transition-[width] duration-500" [style.width.%]="l.progreso"></div>
+                  </div>
+                  <span class="w-24 shrink-0 text-right text-xs font-semibold text-slate-600">
+                    {{ l.hechos }} de {{ l.subs.length }} listas
+                  </span>
+                </div>
               </div>
-              <div class="flex gap-2">
-                <button (click)="rechazarLoteDirecto(prop.id)" class="flex-1 py-2 bg-rose-50 text-rose-600 text-xs font-bold rounded-xl">Rechazar</button>
-                <button (click)="aceptarLoteDirecto(prop.id)" class="flex-1 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl shadow-md">Aprobar</button>
+              <app-icon nombre="chevron-down" clase="mt-1 h-4 w-4 shrink-0 text-slate-400 transition-transform"
+                        [class.rotate-180]="loteAbierto() === l.id" />
+            </button>
+
+            <!-- Detalle desplegable -->
+            <div *ngIf="loteAbierto() === l.id" class="border-t border-stone-200 bg-stone-50/60 p-4">
+
+              <p *ngIf="l.subs.length === 0" class="mb-3 text-sm text-slate-500">
+                Aún no dividiste este lote. Asigna cada operación (Overlock, Reta, etc.) a un operario de tu equipo.
+              </p>
+
+              <!-- Sub-cortes / operaciones -->
+              <ul class="space-y-2">
+                <li *ngFor="let s of l.subs" class="rounded-lg border border-stone-200 bg-white p-3">
+                  <div class="flex items-center gap-3">
+
+                    <!-- Tachar como terminado -->
+                    <button type="button" (click)="alternarTerminado(s)" [disabled]="s.estado === 'Cerrado'"
+                            [attr.aria-label]="s.estado === 'Asignado' || s.estado === 'En Confección' ? 'Marcar como terminada' : 'Reabrir operación'"
+                            class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed"
+                            [ngClass]="s.estado === 'Asignado' || s.estado === 'En Confección'
+                              ? 'border-stone-300 text-transparent hover:border-teal-600 hover:text-teal-600'
+                              : 'border-teal-600 bg-teal-600 text-white'">
+                      <app-icon nombre="check" clase="w-4 h-4" />
+                    </button>
+
+                    <div class="min-w-0 flex-1" [class.opacity-60]="s.estado === 'Terminado' || s.estado === 'Cerrado'">
+                      <p class="flex flex-wrap items-center gap-2 text-sm font-semibold"
+                         [class.line-through]="s.estado === 'Terminado' || s.estado === 'Cerrado'">
+                        {{ s.operacion_maquina }}
+                        <span class="rounded-md px-2 py-0.5 text-[11px] font-semibold no-underline" [ngClass]="claseEstado(s.estado)">{{ s.estado }}</span>
+                      </p>
+                      <p class="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
+                        <app-avatar [nombre]="s.funcionario?.nombre_completo" tamano="sm" />
+                        <span class="truncate">{{ s.funcionario?.nombre_completo }}</span>
+                        · {{ s.cantidad_piezas | number }} pzas
+                      </p>
+                    </div>
+
+                    <p class="shrink-0 text-right text-sm font-bold">
+                      R$ {{ (s.estado === 'Cerrado' ? s.monto_neto : s.monto_total) | number:'1.2-2' }}
+                    </p>
+                  </div>
+
+                  <!-- Liquidación con descuentos -->
+                  <div *ngIf="s.estado === 'Terminado'" class="mt-3 grid gap-2 rounded-lg bg-amber-50/70 p-3 sm:grid-cols-[110px_minmax(0,1fr)_auto] sm:items-end">
+                    <label class="block text-xs font-medium text-slate-700">
+                      Piezas defectuosas
+                      <input type="number" min="0" [max]="s.cantidad_piezas" [(ngModel)]="borrador(s).piezas"
+                             class="mt-1 w-full rounded-md border border-stone-300 bg-white px-2.5 py-2 text-sm outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20">
+                    </label>
+                    <label class="block text-xs font-medium text-slate-700">
+                      Motivo del descuento
+                      <input type="text" [(ngModel)]="borrador(s).motivo" placeholder="Ej: costura abierta en 12 piezas"
+                             class="mt-1 w-full rounded-md border border-stone-300 bg-white px-2.5 py-2 text-sm outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20">
+                    </label>
+                    <button type="button" (click)="liquidar(s)"
+                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900">
+                      <app-icon nombre="coin" clase="w-4 h-4" /> Liquidar
+                    </button>
+                    <p class="text-xs text-slate-600 sm:col-span-3">
+                      Bruto R$ {{ s.monto_total | number:'1.2-2' }}
+                      · descuento R$ {{ descuento(s) | number:'1.2-2' }}
+                      · <strong class="text-slate-900">neto R$ {{ neto(s) | number:'1.2-2' }}</strong>
+                    </p>
+                  </div>
+
+                  <p *ngIf="s.estado === 'Cerrado' && s.monto_descuento > 0" class="mt-2 text-xs text-slate-500">
+                    Descuento de R$ {{ s.monto_descuento | number:'1.2-2' }} por {{ s.piezas_defectuosas }} pzas defectuosas
+                    <span *ngIf="s.motivo_descuento">({{ s.motivo_descuento }})</span>.
+                  </p>
+                </li>
+              </ul>
+
+              <!-- Formulario nueva operación -->
+              <div *ngIf="loteConFormulario() === l.id" class="mt-3 rounded-lg border border-teal-200 bg-white p-3">
+                <p *ngIf="equipoActivo().length === 0" class="text-sm text-slate-600">
+                  Tu equipo está vacío. Aprueba candidatos desde
+                  <button type="button" (click)="irA('solicitudes')" class="font-semibold text-teal-700 underline">Solicitudes</button>.
+                </p>
+
+                <div *ngIf="equipoActivo().length > 0" class="grid gap-3 sm:grid-cols-2">
+                  <label class="block text-xs font-medium text-slate-700">
+                    Operario
+                    <select [(ngModel)]="nuevoSub.funcionario_id" class="mt-1 w-full rounded-md border border-stone-300 bg-white px-2.5 py-2 text-sm outline-none focus:border-teal-600">
+                      <option value="" disabled>Elegir operario</option>
+                      <option *ngFor="let e of equipoActivo()" [value]="e.funcionario?.id">{{ e.funcionario?.nombre_completo }}</option>
+                    </select>
+                  </label>
+                  <label class="block text-xs font-medium text-slate-700">
+                    Operación
+                    <select [(ngModel)]="nuevoSub.operacion_maquina" class="mt-1 w-full rounded-md border border-stone-300 bg-white px-2.5 py-2 text-sm outline-none focus:border-teal-600">
+                      <option *ngFor="let o of operaciones" [value]="o">{{ o }}</option>
+                    </select>
+                  </label>
+                  <label class="block text-xs font-medium text-slate-700">
+                    Piezas
+                    <input type="number" min="1" [(ngModel)]="nuevoSub.cantidad_piezas" class="mt-1 w-full rounded-md border border-stone-300 px-2.5 py-2 text-sm outline-none focus:border-teal-600">
+                    <span class="mt-1 block text-[11px] text-slate-500">
+                      Ya asignadas en {{ nuevoSub.operacion_maquina }}: {{ piezasAsignadas(l, nuevoSub.operacion_maquina) | number }} de {{ l.cantidad_piezas | number }}
+                    </span>
+                  </label>
+                  <label class="block text-xs font-medium text-slate-700">
+                    Tarifa por pieza (R$)
+                    <input type="number" step="0.01" min="0" [(ngModel)]="nuevoSub.pago_por_pieza" class="mt-1 w-full rounded-md border border-stone-300 px-2.5 py-2 text-sm outline-none focus:border-teal-600">
+                  </label>
+                  <div class="flex gap-2 sm:col-span-2">
+                    <button type="button" (click)="loteConFormulario.set(null)"
+                            class="flex-1 rounded-lg border border-stone-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-stone-50">Cancelar</button>
+                    <button type="button" (click)="crearSubcorte(l)"
+                            class="flex-1 rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">Asignar operación</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Acciones del lote -->
+              <div class="mt-4 flex flex-wrap gap-2">
+                <button *ngIf="loteConFormulario() !== l.id && l.estado !== 'Terminado'" type="button" (click)="abrirFormulario(l)"
+                        class="inline-flex items-center gap-2 rounded-lg border border-teal-700 px-3.5 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-50">
+                  <app-icon nombre="plus" clase="w-4 h-4" /> Asignar operación
+                </button>
+                <button type="button" (click)="contactarWhatsApp(l.contraparte?.telefono, l.contraparte?.nombre_completo, l.descripcion_corte)"
+                        class="inline-flex items-center gap-2 rounded-lg border border-stone-300 px-3.5 py-2 text-sm font-semibold text-slate-700 hover:bg-white">
+                  <app-icon nombre="chat" clase="w-4 h-4" /> WhatsApp
+                </button>
+                <button *ngIf="l.estado !== 'Terminado'" type="button" (click)="terminarLote(l)"
+                        class="ml-auto inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+                  <app-icon nombre="flag" clase="w-4 h-4" /> Lote terminado
+                </button>
               </div>
             </div>
+          </article>
+        </section>
+
+        <!-- =============================================== SOLICITUDES -->
+        <section *ngIf="seccion() === 'solicitudes'" class="space-y-6">
+
+          <div *ngIf="pendientes() === 0 && postulacionesEnviadas().length === 0"
+               class="rounded-xl border border-dashed border-stone-300 bg-white p-8 text-center">
+            <app-icon nombre="inbox" clase="mx-auto h-8 w-8 text-stone-400" />
+            <p class="mt-3 text-sm font-semibold">Nada pendiente</p>
+            <p class="mt-1 text-sm text-slate-500">Las propuestas de tiendas y las postulaciones de operarios llegarán aquí.</p>
           </div>
 
-          <!-- B) MIS POSTULACIONES EN ESPERA -->
-          <div *ngIf="misPostulacionesEnEspera().length > 0" class="space-y-3 pt-2">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">MIS POSTULACIONES ENVIADAS</p>
-            <div *ngFor="let post of misPostulacionesEnEspera()" class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
-              <div>
-                <span class="bg-amber-50 text-amber-700 text-[9px] font-extrabold px-2.5 py-0.5 rounded-md uppercase">Postulación Enviada</span>
-                <h3 class="text-xs font-black text-slate-900 mt-1">{{ post.descripcion_corte }}</h3>
-                <p class="text-[11px] text-slate-500">Tienda: {{ post.tienda_info?.nombre_completo }}</p>
+          <div *ngIf="ofertasRecibidas().length > 0">
+            <h2 class="mb-2 text-sm font-bold">Propuestas de tiendas</h2>
+            <ul class="space-y-2">
+              <li *ngFor="let o of ofertasRecibidas()" class="rounded-xl border border-stone-200 bg-white p-4">
+                <div class="flex items-start gap-3">
+                  <app-avatar [nombre]="o.contraparte?.nombre_completo" [verificado]="!!o.contraparte?.verificado" />
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-bold">{{ o.contraparte?.nombre_completo }}</p>
+                    <p class="text-xs text-slate-500">{{ o.descripcion_corte }} · {{ o.cantidad_piezas | number }} pzas · R$ {{ o.pago_por_pieza | number:'1.2-2' }} / pza</p>
+                    <p class="mt-1 text-xs font-semibold text-teal-800">Total estimado R$ {{ o.cantidad_piezas * o.pago_por_pieza | number:'1.2-2' }}</p>
+                  </div>
+                </div>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <a [routerLink]="['/perfil-usuario', o.contraparte?.id]" class="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-stone-50"><app-icon nombre="user" clase="w-3.5 h-3.5" /> Ver perfil</a>
+                  <button type="button" (click)="contactarWhatsApp(o.contraparte?.telefono, o.contraparte?.nombre_completo, o.descripcion_corte)" class="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-stone-50"><app-icon nombre="chat" clase="w-3.5 h-3.5" /> WhatsApp</button>
+                  <button type="button" (click)="responderLote(o, false)" class="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50"><app-icon nombre="x" clase="w-3.5 h-3.5" /> Rechazar</button>
+                  <button type="button" (click)="responderLote(o, true)" class="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-800"><app-icon nombre="check" clase="w-3.5 h-3.5" /> Aceptar lote</button>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div *ngIf="candidatos().length > 0">
+            <h2 class="mb-2 text-sm font-bold">Candidatos a tus vacantes</h2>
+            <ul class="space-y-2">
+              <li *ngFor="let c of candidatos()" class="rounded-xl border border-stone-200 bg-white p-4">
+                <div class="flex items-start gap-3">
+                  <app-avatar [nombre]="c.contraparte?.nombre_completo" [verificado]="!!c.contraparte?.verificado" />
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-bold">{{ c.contraparte?.nombre_completo }}</p>
+                    <p class="text-xs text-slate-500">Vacante: {{ c.publicacion?.titulo }} · {{ c.contraparte?.zona_ubicacion || 'São Paulo' }}</p>
+                  </div>
+                  <span class="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-xs font-bold text-amber-800">
+                    <app-icon nombre="star" [relleno]="true" clase="w-3.5 h-3.5" /> {{ c.contraparte?.promedio_estrellas || '0.0' }}
+                  </span>
+                </div>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <a [routerLink]="['/perfil-usuario', c.contraparte?.id]" class="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-stone-50"><app-icon nombre="user" clase="w-3.5 h-3.5" /> Ver perfil</a>
+                  <button type="button" (click)="contactarWhatsApp(c.contraparte?.telefono, c.contraparte?.nombre_completo, c.publicacion?.titulo)" class="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-stone-50"><app-icon nombre="chat" clase="w-3.5 h-3.5" /> WhatsApp</button>
+                  <button type="button" (click)="rechazarCandidato(c)" class="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50"><app-icon nombre="x" clase="w-3.5 h-3.5" /> Rechazar</button>
+                  <button type="button" (click)="aprobarCandidato(c)" class="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-800"><app-icon nombre="user-plus" clase="w-3.5 h-3.5" /> Sumar al equipo</button>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div *ngIf="postulacionesEnviadas().length > 0">
+            <h2 class="mb-2 text-sm font-bold">Postulaciones que enviaste</h2>
+            <ul class="space-y-2">
+              <li *ngFor="let p of postulacionesEnviadas()" class="flex items-center gap-3 rounded-xl border border-stone-200 bg-white p-4">
+                <app-avatar [nombre]="p.contraparte?.nombre_completo" />
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm font-bold">{{ p.descripcion_corte }}</p>
+                  <p class="text-xs text-slate-500">{{ p.contraparte?.nombre_completo }}</p>
+                </div>
+                <span class="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
+                  <app-icon nombre="clock" clase="w-3.5 h-3.5" /> Esperando respuesta
+                </span>
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- ===================================================== EQUIPO -->
+        <section *ngIf="seccion() === 'equipo'" class="space-y-2">
+          <div *ngIf="equipoActivo().length === 0" class="rounded-xl border border-dashed border-stone-300 bg-white p-8 text-center">
+            <app-icon nombre="users" clase="mx-auto h-8 w-8 text-stone-400" />
+            <p class="mt-3 text-sm font-semibold">Todavía no tienes operarios</p>
+            <p class="mt-1 text-sm text-slate-500">Publica una vacante y suma a quienes se postulen.</p>
+            <a routerLink="/crear-publicacion" class="mt-4 inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+              <app-icon nombre="plus" clase="w-4 h-4" /> Publicar vacante
+            </a>
+          </div>
+
+          <div class="grid gap-2 sm:grid-cols-2">
+            <article *ngFor="let e of equipoActivo()" class="rounded-xl border border-stone-200 bg-white p-4">
+              <div class="flex items-center gap-3">
+                <app-avatar [nombre]="e.funcionario?.nombre_completo" tamano="md" [verificado]="!!e.funcionario?.verificado" />
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm font-bold">{{ e.funcionario?.nombre_completo }}</p>
+                  <p class="truncate text-xs text-slate-500">{{ e.funcionario?.especialidad_principal }}</p>
+                </div>
               </div>
-              <div class="bg-amber-50/80 border border-amber-200/60 p-2.5 rounded-xl text-center">
-                <p class="text-[11px] font-extrabold text-amber-800">⏳ Esperando Aprobación de la Tienda</p>
+              <div class="mt-3 flex flex-wrap gap-1.5" *ngIf="e.funcionario?.maquinas_maneja?.length">
+                <span *ngFor="let m of e.funcionario.maquinas_maneja" class="inline-flex items-center gap-1 rounded-md bg-stone-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+                  <app-icon nombre="cog" clase="w-3 h-3" /> {{ m }}
+                </span>
               </div>
-            </div>
+              <div class="mt-3 flex gap-2">
+                <a [routerLink]="['/perfil-usuario', e.funcionario?.id]" class="flex-1 rounded-lg border border-stone-300 px-3 py-2 text-center text-xs font-semibold text-slate-700 hover:bg-stone-50">Ver perfil</a>
+                <button type="button" (click)="quitarDelEquipo(e)" class="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50" aria-label="Quitar del equipo"><app-icon nombre="user-minus" clase="w-3.5 h-3.5" /></button>
+              </div>
+            </article>
           </div>
+        </section>
 
-        </div>
+        <!-- =================================================== ANUNCIOS -->
+        <section *ngIf="seccion() === 'anuncios'" class="space-y-2">
+          <div *ngIf="misPublicaciones().length === 0" class="rounded-xl border border-dashed border-stone-300 bg-white p-8 text-center">
+            <app-icon nombre="megaphone" clase="mx-auto h-8 w-8 text-stone-400" />
+            <p class="mt-3 text-sm font-semibold">No has publicado anuncios</p>
+          </div>
+          <article *ngFor="let p of misPublicaciones()" class="flex items-center gap-3 rounded-xl border border-stone-200 bg-white p-4">
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-bold">{{ p.titulo }}</p>
+              <p class="text-xs text-slate-500">
+                {{ p.tipo_publicacion === 'busco_funcionario' ? 'Vacante' : (p.tipo_publicacion === 'busco_corte' ? 'Taller disponible' : 'Lote') }}
+                · {{ p.zona_ubicacion }}
+              </p>
+            </div>
+            <button type="button" (click)="alternarAnuncio(p)"
+                    class="rounded-md px-2.5 py-1 text-xs font-semibold"
+                    [ngClass]="p.estado === 'Activo' ? 'bg-teal-50 text-teal-800' : 'bg-amber-50 text-amber-800'">
+              {{ p.estado }}
+            </button>
+            <button type="button" (click)="eliminarAnuncio(p.id)" aria-label="Eliminar anuncio"
+                    class="rounded-lg p-2 text-rose-600 hover:bg-rose-50"><app-icon nombre="trash" clase="w-4 h-4" /></button>
+          </article>
+        </section>
+
+        <!-- ================================================== HISTORIAL -->
+        <section *ngIf="seccion() === 'historial'" class="space-y-2">
+          <div *ngIf="historial().length === 0" class="rounded-xl border border-dashed border-stone-300 bg-white p-8 text-center">
+            <app-icon nombre="archive" clase="mx-auto h-8 w-8 text-stone-400" />
+            <p class="mt-3 text-sm font-semibold">Sin operaciones cerradas</p>
+            <p class="mt-1 text-sm text-slate-500">Cuando una tienda confirme la recepción de un lote, quedará registrado aquí.</p>
+          </div>
+          <article *ngFor="let h of historial()" class="flex items-center gap-3 rounded-xl border border-stone-200 bg-white p-4">
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-bold">{{ h.descripcion_corte }}</p>
+              <p class="text-xs text-slate-500">{{ h.tienda?.nombre_completo }} · {{ h.cantidad_piezas | number }} pzas · R$ {{ h.monto_total | number:'1.2-2' }}</p>
+            </div>
+            <span class="shrink-0 text-xs font-medium text-slate-500">{{ h.fecha_cierre | date:'dd/MM/yyyy' }}</span>
+          </article>
+        </section>
+
       </div>
-
-      <!-- 3. MÓDULO OPERARIOS Y FUNCIONARIOS INTERNOS -->
-      <div class="bg-white rounded-3xl border border-indigo-100 shadow-sm overflow-hidden transition-all">
-        <button (click)="toggleAcordeon('funcionarios')" class="w-full p-4 font-extrabold text-xs flex justify-between items-center bg-indigo-50/40 hover:bg-indigo-50/70 transition text-slate-900">
-          <span class="flex items-center gap-2.5">
-            👥 Operarios & Funcionarios Internos ({{ cortesAsignadosFuncionarios().length }})
-          </span>
-          <span class="text-slate-500 text-xs transition-transform" [class.rotate-180]="acordeonActivo() === 'funcionarios'">▼</span>
-        </button>
-        
-        <div *ngIf="acordeonActivo() === 'funcionarios'" class="p-4 bg-white border-t border-slate-100 space-y-3">
-          <div *ngIf="cortesAsignadosFuncionarios().length === 0" class="text-center py-6 text-xs text-slate-400 font-medium">
-            No tienes cortes asignados a operarios internos actualmente.
-          </div>
-          
-          <div *ngFor="let asig of cortesAsignadosFuncionarios()" class="bg-slate-50 p-4 rounded-2xl border border-indigo-100 shadow-sm space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase bg-indigo-100 text-indigo-800">
-                ⚙️ {{ asig.estado }}
-              </span>
-              <span class="text-xs font-black text-slate-900">{{ asig.cantidad_piezas | number }} pzas</span>
-            </div>
-            <div>
-              <h4 class="text-xs font-black text-slate-900">{{ asig.descripcion_corte }}</h4>
-              <p class="text-[11px] text-slate-600">Operario: <strong>{{ asig.funcionario?.nombre_completo }}</strong></p>
-              <p class="text-[11px] font-bold text-emerald-600">Total: R$ {{ asig.monto_total | number:'1.2-2' }}</p>
-            </div>
-            <div class="flex gap-2 pt-1">
-              <button (click)="cerrarCorteFuncionario(asig.id)" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition">
-                Liquidado y Cerrar 🏁
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 4. CANDIDATOS EMPLEO -->
-      <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden transition-all">
-        <button (click)="toggleAcordeon('candidatos')" class="w-full p-4 font-extrabold text-xs flex justify-between items-center bg-white hover:bg-slate-50 transition text-slate-900">
-          <span class="flex items-center gap-2">
-            👥 Candidatos Postulados ({{ candidatosEmpleo().length }})
-          </span>
-          <span class="text-slate-400 text-xs transition-transform" [class.rotate-180]="acordeonActivo() === 'candidatos'">▼</span>
-        </button>
-        
-        <div *ngIf="acordeonActivo() === 'candidatos'" class="p-4 bg-slate-50/50 border-t border-slate-100 space-y-3">
-          <div *ngIf="candidatosEmpleo().length === 0" class="text-center py-6 text-xs text-slate-400 font-medium">
-            Sin postulados registrados.
-          </div>
-          <div *ngFor="let cand of candidatosEmpleo()" class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <h4 class="font-extrabold text-slate-900 text-xs">{{ cand.postulante_info?.nombre_completo }}</h4>
-              <p class="text-[10px] text-slate-400">⭐ {{ cand.postulante_info?.promedio_estrellas || '5.0' }}</p>
-            </div>
-            <button (click)="contactarWhatsApp(cand.postulante_info?.telefono, cand.postulante_info?.nombre_completo, cand.publicacion_info?.titulo)" class="px-3 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-xl">WhatsApp</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 5. MIS ANUNCIOS -->
-      <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden transition-all">
-        <button (click)="toggleAcordeon('anuncios')" class="w-full p-4 font-extrabold text-xs flex justify-between items-center bg-white hover:bg-slate-50 transition text-slate-900">
-          <span class="flex items-center gap-2">
-            📢 Mis Anuncios ({{ misPublicaciones().length }})
-          </span>
-          <span class="text-slate-400 text-xs transition-transform" [class.rotate-180]="acordeonActivo() === 'anuncios'">▼</span>
-        </button>
-        
-        <div *ngIf="acordeonActivo() === 'anuncios'" class="p-4 bg-slate-50/50 border-t border-slate-100 space-y-3">
-          <div *ngIf="misPublicaciones().length === 0" class="text-center py-6 text-xs text-slate-400 font-medium">
-            No has publicado anuncios.
-          </div>
-          <div *ngFor="let pub of misPublicaciones()" class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <h4 class="font-extrabold text-slate-900 text-xs">{{ pub.titulo }}</h4>
-            <button (click)="eliminarAnuncio(pub.id)" class="p-2 bg-rose-50 text-rose-600 rounded-xl">🗑️</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 6. HISTORIAL DE LOTES / COMPROBANTES P2P B2B (AL FINAL DE TODO) -->
-      <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden transition-all">
-        <button (click)="toggleAcordeon('historial')" class="w-full p-4 font-extrabold text-xs flex justify-between items-center bg-slate-100 hover:bg-slate-200/70 transition text-slate-800">
-          <span class="flex items-center gap-2">
-            📜 Historial de Lotes Auditados ({{ historialLotes().length }})
-          </span>
-          <span class="text-slate-500 text-xs transition-transform" [class.rotate-180]="acordeonActivo() === 'historial'">▼</span>
-        </button>
-        
-        <div *ngIf="acordeonActivo() === 'historial'" class="p-4 bg-slate-50/50 border-t border-slate-100 space-y-3">
-          <div *ngIf="historialLotes().length === 0" class="text-center py-6 text-xs text-slate-400 font-medium">
-            No hay comprobantes auditados archivados en el historial.
-          </div>
-          <div *ngFor="let hist of historialLotes()" class="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-sm flex items-center justify-between">
-            <div>
-              <span class="bg-emerald-50 text-emerald-700 text-[9px] font-black px-2 py-0.5 rounded-md uppercase">Completado P2P</span>
-              <h4 class="font-black text-slate-900 text-xs mt-1">{{ hist.descripcion_corte }}</h4>
-              <p class="text-[10px] text-slate-500">Tienda: {{ hist.tienda?.nombre_completo }} | {{ hist.cantidad_piezas | number }} pzas</p>
-            </div>
-            <span class="text-[10px] font-bold text-slate-400">{{ hist.fecha_cierre | date:'dd/MM/yyyy' }}</span>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
+    </main>
   </div>
 </div>
