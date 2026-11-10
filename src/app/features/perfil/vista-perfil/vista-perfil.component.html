@@ -1,182 +1,196 @@
-<div class="min-h-screen bg-stone-100/70 text-slate-900 pb-16">
+<div class="min-h-screen bg-stone-50 px-4 py-6 text-slate-900">
+  <app-toast [aviso]="aviso()" />
 
-  <!-- Botón Volver flotante -->
-  <div class="mx-auto max-w-4xl px-4 pt-6">
-    <button routerLink="/feed" 
-            class="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white/90 backdrop-blur-md px-4 py-2 text-xs font-bold text-slate-700 shadow-xs hover:bg-white transition-all active:scale-95">
-      <app-icon nombre="arrow-left" clase="w-4 h-4" /> Volver al Feed
+  <div class="mx-auto max-w-2xl space-y-4">
+
+    <button type="button" (click)="irAtras()" [ngClass]="ui.btnSecundario" class="!px-3 !py-1.5 !text-xs">
+      <app-icon nombre="arrow-left" clase="w-3.5 h-3.5" /> Volver
     </button>
-  </div>
 
-  <!-- Estado de Carga / Skeleton -->
-  <div *ngIf="cargando()" class="mx-auto max-w-4xl px-4 mt-6 space-y-6" aria-busy="true">
-    <div class="h-48 sm:h-56 animate-pulse rounded-3xl bg-stone-200"></div>
-    <div class="h-40 animate-pulse rounded-3xl bg-stone-200"></div>
-  </div>
-
-  <!-- Estado de Error -->
-  <div *ngIf="error()" class="mx-auto max-w-4xl px-4 mt-8">
-    <div class="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center font-bold text-rose-700 shadow-xs">
-      {{ error() }}
+    <div *ngIf="cargando()" class="space-y-3" aria-busy="true">
+      <div class="h-64 animate-pulse rounded-xl bg-stone-200/70"></div>
+      <div class="h-28 animate-pulse rounded-xl bg-stone-200/70"></div>
     </div>
-  </div>
 
-  <!-- CONTENIDO PRINCIPAL DEL PERFIL -->
-  <main *ngIf="!cargando() && perfil() as p" class="mx-auto max-w-4xl px-4 mt-6 space-y-6">
-    
-    <!-- TARJETA HERO (Portada + Avatar + Acciones + Stats) -->
-    <div class="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm transition-all">
-      
-      <!-- Portada personalizada con gradiente -->
-      <div class="h-40 sm:h-52 w-full transition-colors relative" 
-           [style.backgroundColor]="p.color_portada || '#0f766e'">
-        <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/40"></div>
-        
-        <!-- Insignia de Rol Global -->
-        <div class="absolute top-4 right-4 flex items-center gap-2">
-          <span class="rounded-full bg-slate-900/85 backdrop-blur-md px-3.5 py-1.5 text-[11px] font-black uppercase tracking-wider text-white shadow-lg border border-white/10">
-            {{ p.rol === 'funcionario' ? '⚡ Operario / Confeccionista' : (p.rol === 'oficina' ? '🏭 Oficina de Confección' : '🏪 Tienda / Marca') }}
+    <div *ngIf="!cargando() && noEncontrado()" [ngClass]="ui.vacio">
+      <app-icon nombre="user" clase="mx-auto h-8 w-8 text-stone-400" />
+      <p class="mt-3 text-sm font-semibold">Perfil no encontrado</p>
+      <a routerLink="/feed" [ngClass]="ui.btnOscuro" class="mt-4">Ir al feed</a>
+    </div>
+
+    <ng-container *ngIf="!cargando() && perfil() as p">
+
+      <!-- ===================================================== CABECERA -->
+      <section class="overflow-hidden" [ngClass]="ui.card">
+        <div class="h-28" [ngStyle]="estiloPortada(p.color_portada, p.patron_portada)"></div>
+
+        <div class="px-5 pb-5">
+          <div class="-mt-10 flex items-end justify-between gap-3">
+            <div class="rounded-full bg-white p-1">
+              <app-avatar [nombre]="p.nombre_completo" tamano="xl" [verificado]="!!p.verificado"
+                          [icono]="p.avatar_icono" [color]="p.avatar_color" [anillo]="g()?.claseAnillo ?? ''" />
+            </div>
+            <div class="flex gap-2 pb-1">
+              <a *ngIf="esMio()" routerLink="/editar-perfil" [ngClass]="ui.btnSecundario" class="!px-3 !py-1.5 !text-xs"><app-icon nombre="pencil" clase="w-3.5 h-3.5" /> Editar perfil</a>
+              <button *ngIf="esMio()" type="button" (click)="irAMiPanel()" [ngClass]="ui.btnOscuro" class="!px-3 !py-1.5 !text-xs">Mi panel</button>
+            </div>
+          </div>
+
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <h1 class="text-xl font-bold leading-tight">{{ p.nombre_completo }}</h1>
+            <app-gamificacion [perfil]="p" modo="chip" />
+          </div>
+          <p *ngIf="p.lema" class="mt-1 text-sm italic text-slate-600">{{ p.lema }}</p>
+
+          <p class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+            <span class="inline-flex items-center gap-1.5"><app-icon [nombre]="roles[p.rol]?.icono || 'user'" clase="w-3.5 h-3.5" /> {{ roles[p.rol]?.txt }}</span>
+            <span *ngIf="p.zona_ubicacion" class="inline-flex items-center gap-1.5"><app-icon nombre="pin" clase="w-3.5 h-3.5" /> {{ p.zona_ubicacion }}</span>
+            <span class="inline-flex items-center gap-0.5 font-semibold text-amber-700">
+              <app-icon nombre="star" [relleno]="true" clase="w-3.5 h-3.5" /> {{ p.promedio_estrellas || '0.0' }}
+              <span class="font-normal text-slate-500">({{ p.total_evaluaciones || 0 }})</span>
+            </span>
+          </p>
+
+          <p *ngIf="p.bio_taller" class="mt-3 text-sm leading-relaxed text-slate-600">{{ p.bio_taller }}</p>
+
+          <!-- Insignias a la vista -->
+          <ul *ngIf="destacadas().length" class="mt-4 flex flex-wrap gap-2" aria-label="Insignias destacadas">
+            <li *ngFor="let l of destacadas()" class="inline-flex items-center gap-1.5 rounded-lg bg-teal-50 px-2.5 py-1.5 text-xs font-semibold text-teal-900" [attr.title]="l.descripcion">
+              <app-icon [nombre]="l.icono" clase="w-4 h-4 text-teal-700" /> {{ l.nombre }}
+            </li>
+          </ul>
+
+          <dl class="mt-4 grid grid-cols-3 divide-x divide-stone-200 rounded-lg border border-stone-200 text-center">
+            <div class="px-1 py-2.5"><dt class="text-[11px] text-slate-500">Seguidores</dt><dd class="text-sm font-bold">{{ stats().seguidores }}</dd></div>
+            <div class="px-1 py-2.5"><dt class="text-[11px] text-slate-500">Siguiendo</dt><dd class="text-sm font-bold">{{ stats().siguiendo }}</dd></div>
+            <div class="px-1 py-2.5"><dt class="text-[11px] text-slate-500">Conexiones</dt><dd class="text-sm font-bold">{{ conexiones().length }}</dd></div>
+          </dl>
+
+          <!-- Acciones sociales -->
+          <div *ngIf="!esMio()" class="mt-4 flex flex-wrap gap-2">
+            <button type="button" (click)="alternarSeguir()" [disabled]="procesando()" [ngClass]="siguiendo() ? ui.btnSecundario : ui.btnOscuro">
+              <app-icon [nombre]="siguiendo() ? 'user-minus' : 'plus'" clase="w-4 h-4" /> {{ siguiendo() ? 'Dejar de seguir' : 'Seguir' }}
+            </button>
+
+            <ng-container [ngSwitch]="vinculo().estado">
+              <button *ngSwitchCase="'ninguno'" type="button" (click)="conectar()" [disabled]="procesando()" [ngClass]="ui.btnPrimario"><app-icon nombre="user-plus" clase="w-4 h-4" /> Conectar</button>
+              <button *ngSwitchCase="'enviado'" type="button" (click)="quitarVinculo()" [ngClass]="ui.btnSecundario"><app-icon nombre="clock" clase="w-4 h-4" /> Solicitud enviada · cancelar</button>
+              <ng-container *ngSwitchCase="'recibido'">
+                <button type="button" (click)="responder(true)" [ngClass]="ui.btnPrimario"><app-icon nombre="check" clase="w-4 h-4" /> Aceptar conexión</button>
+                <button type="button" (click)="responder(false)" [ngClass]="ui.btnPeligro"><app-icon nombre="x" clase="w-4 h-4" /> Rechazar</button>
+              </ng-container>
+              <button *ngSwitchCase="'conectado'" type="button" (click)="quitarVinculo()" [ngClass]="ui.btnSecundario"><app-icon nombre="check" clase="w-4 h-4 text-teal-700" /> Conectados</button>
+            </ng-container>
+
+            <button *ngIf="telefono()" type="button" (click)="whatsapp()" [ngClass]="ui.btnSecundario"><app-icon nombre="chat" clase="w-4 h-4" /> WhatsApp</button>
+            <a *ngIf="puedoEvaluar()" [routerLink]="['/dejar-evaluacion', p.id]" [ngClass]="ui.btnSecundario"><app-icon nombre="star" clase="w-4 h-4" /> Calificar</a>
+          </div>
+        </div>
+      </section>
+
+      <app-tabs [items]="tabs()" [activo]="seccion()" (cambio)="seccion.set($any($event))" />
+
+      <!-- ====================================================== RESUMEN -->
+      <section *ngIf="seccion() === 'resumen'" class="space-y-4">
+        <app-gamificacion [perfil]="p" modo="resumen" [editable]="esMio()" />
+
+        <dl class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div *ngFor="let t of trayectoria()" [ngClass]="ui.card" class="p-3">
+            <dt class="text-[11px] text-slate-500">{{ t.etq }}</dt>
+            <dd class="mt-0.5 text-sm font-bold">{{ t.val }}</dd>
+          </div>
+        </dl>
+
+        <dl class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div *ngFor="let f of ficha()" [ngClass]="ui.card" class="p-3">
+            <dt class="text-[11px] text-slate-500">{{ f.etq }}</dt>
+            <dd class="mt-0.5 text-sm font-bold">{{ f.val }}</dd>
+          </div>
+        </dl>
+
+        <div *ngIf="p.maquinas_maneja?.length" [ngClass]="ui.card" class="p-4">
+          <h2 class="mb-2 text-sm font-bold">{{ p.rol === 'oficina' ? 'Maquinaria del taller' : 'Máquinas que maneja' }}</h2>
+          <div class="flex flex-wrap gap-1.5">
+            <span *ngFor="let m of p.maquinas_maneja" [ngClass]="ui.chip"><app-icon nombre="cog" clase="w-3 h-3" /> {{ m }}</span>
+          </div>
+        </div>
+
+        <p *ngIf="!esMio() && !telefono() && p.visibilidad_whatsapp === 'conectados' && vinculo().estado !== 'conectado'"
+           class="flex items-center gap-2 rounded-lg bg-stone-100 p-3 text-xs text-slate-600">
+          <app-icon nombre="lock" clase="w-4 h-4 shrink-0" /> El contacto directo se habilita al conectarte con este perfil.
+        </p>
+      </section>
+
+      <!-- ===================================================== INSIGNIAS -->
+      <section *ngIf="seccion() === 'insignias'"><app-gamificacion [perfil]="p" modo="insignias" /></section>
+
+      <!-- ====================================================== ANUNCIOS -->
+      <section *ngIf="seccion() === 'anuncios'" class="space-y-2">
+        <div *ngIf="anuncios().length === 0" [ngClass]="ui.vacio">
+          <app-icon nombre="megaphone" clase="mx-auto h-8 w-8 text-stone-400" />
+          <p class="mt-3 text-sm font-semibold">Sin anuncios activos</p>
+        </div>
+        <a *ngFor="let a of anuncios()" [routerLink]="['/trabajo', a.id]" [ngClass]="ui.card" class="flex items-center gap-3 p-4 transition hover:border-stone-300">
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-bold">{{ a.titulo }}</p>
+            <p class="mt-0.5 text-xs text-slate-500">{{ a.zona_ubicacion }}<span *ngIf="a.cantidad_piezas > 0"> · {{ a.cantidad_piezas | number }} pzas</span><span *ngIf="a.pago_por_pieza > 0"> · {{ moneda(a.pago_por_pieza) }}</span></p>
+          </div>
+          <span *ngIf="tipos[a.tipo_publicacion] as tp" class="inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-semibold" [ngClass]="tp.clase">
+            <app-icon [nombre]="tp.icono" clase="w-3.5 h-3.5" /> {{ tp.txt }}
           </span>
-        </div>
-      </div>
+        </a>
+      </section>
 
-      <!-- Sección de Identidad -->
-      <div class="px-6 pb-6 pt-0 relative">
-        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-16 sm:-mt-20 mb-4">
-          
-          <!-- Avatar con anillo y badge de estado -->
-          <div class="relative inline-block">
-            <div class="rounded-full ring-4 ring-white shadow-xl bg-white p-1">
-              <app-avatar [nombre]="p.nombre_completo" tamano="xl" [verificado]="!!p.verificado" />
-            </div>
-            <!-- Indicador dinámico de Disponibilidad (Solo Operarios) -->
-            <span *ngIf="p.rol === 'funcionario'" 
-                  class="absolute bottom-1 right-1 h-5 w-5 rounded-full ring-4 ring-white shadow-md transition-colors"
-                  [ngClass]="p.estado_laboral === 'Disponible' ? 'bg-emerald-500' : 'bg-amber-500'"
-                  [title]="p.estado_laboral">
-            </span>
-          </div>
-
-         <!-- Botones de Acción (Seguir + Calificar + WhatsApp) -->
-          <div class="flex flex-wrap items-center gap-2.5">
-            <!-- Botón Seguir / Siguiendo -->
-            <button type="button" (click)="toggleSeguir()"
-                    class="inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-bold shadow-xs transition-all active:scale-95"
-                    [ngClass]="siguiendo() 
-                      ? 'border border-stone-200 bg-stone-50 text-slate-700 hover:bg-stone-100' 
-                      : 'bg-slate-900 text-white hover:bg-slate-800 shadow-md'">
-              <app-icon [nombre]="siguiendo() ? 'check' : 'user-plus'" clase="w-4 h-4" /> 
-              {{ siguiendo() ? 'Siguiendo' : 'Seguir' }}
-            </button>
-
-            <!-- Botón Calificar Experiencia -->
-            <a [routerLink]="['/evaluar', p.id]"
-               class="inline-flex items-center gap-2 rounded-2xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-white shadow-md hover:bg-amber-600 transition-all active:scale-95">
-              <app-icon nombre="star" clase="w-4 h-4" /> Calificar
-            </a>
-
-            <!-- Botón WhatsApp Pro -->
-            <button type="button" (click)="whatsapp()"
-                    class="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-md hover:bg-emerald-700 transition-all active:scale-95">
-              <app-icon nombre="chat" clase="w-4 h-4" /> WhatsApp
-            </button>
-          </div>
+      <!-- ======================================================= RESEÑAS -->
+      <section *ngIf="seccion() === 'resenas'" class="space-y-3">
+        <div *ngIf="resenas().length === 0" [ngClass]="ui.vacio">
+          <app-icon nombre="star" clase="mx-auto h-8 w-8 text-stone-400" />
+          <p class="mt-3 text-sm font-semibold">Aún no tiene reseñas</p>
+          <p class="mt-1 text-sm text-slate-500">Aparecen cuando alguien con quien trabajó la califica.</p>
         </div>
 
-        <!-- Nombre, Ubicación y Biografía -->
-        <div>
-          <div class="flex flex-wrap items-center gap-2.5">
-            <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              {{ p.nombre_completo }}
-            </h1>
-            <span *ngIf="p.verificado" 
-                  class="inline-flex items-center gap-1 rounded-full bg-teal-50 border border-teal-200 px-3 py-0.5 text-xs font-bold text-teal-700 shadow-2xs">
-              <app-icon nombre="check" clase="w-3.5 h-3.5" /> Verificado
-            </span>
+        <div *ngIf="resenas().length > 0" [ngClass]="ui.card" class="flex items-center gap-5 p-4">
+          <div class="text-center">
+            <p class="text-3xl font-bold">{{ p.promedio_estrellas || '0.0' }}</p>
+            <p class="text-xs text-slate-500">{{ p.total_evaluaciones }} reseñas</p>
           </div>
-
-          <p class="mt-1 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
-            <app-icon nombre="pin" clase="w-3.5 h-3.5 text-teal-700" /> 
-            {{ p.zona_ubicacion || 'São Paulo - SP' }}
-          </p>
-
-          <p class="mt-3.5 text-sm text-slate-600 leading-relaxed font-normal max-w-2xl">
-            {{ p.especialidad_principal || p.descripcion || 'Este usuario todavía no ha añadido una descripción biográfica en su perfil.' }}
-          </p>
+          <ul class="flex-1 space-y-1" aria-label="Distribución de estrellas">
+            <li *ngFor="let d of distribucion()" class="flex items-center gap-2 text-xs">
+              <span class="w-3 text-right text-slate-500">{{ d.n }}</span>
+              <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-stone-200"><div class="h-full rounded-full bg-amber-500" [style.width.%]="d.pct"></div></div>
+              <span class="w-6 text-slate-400">{{ d.count }}</span>
+            </li>
+          </ul>
         </div>
 
-        <!-- BARRA DE ESTADÍSTICAS (Score, Seguidores, Siguiendo) -->
-        <div class="mt-6 grid grid-cols-3 divide-x divide-stone-200 rounded-2xl border border-stone-200 bg-stone-50/70 text-center shadow-2xs">
-          <div class="p-3.5">
-            <dt class="text-[11px] font-black uppercase tracking-wider text-slate-400">Valoración</dt>
-            <dd class="mt-1 flex items-center justify-center gap-1 text-base font-black text-slate-900">
-              <app-icon nombre="star" [relleno]="true" clase="w-4 h-4 text-amber-500" />
-              {{ p.promedio_estrellas ? (p.promedio_estrellas | number:'1.1-1') : '5.0' }}
-            </dd>
+        <article *ngFor="let r of resenas()" [ngClass]="ui.card" class="p-4">
+          <div class="flex items-center justify-between">
+            <a *ngIf="r.evaluador?.id" [routerLink]="['/perfil-usuario', r.evaluador.id]" class="text-sm font-bold hover:underline">{{ r.evaluador?.nombre_completo }}</a>
+            <p class="inline-flex items-center gap-0.5 text-sm font-bold text-amber-600"><app-icon nombre="star" [relleno]="true" clase="w-4 h-4" /> {{ r.estrellas }}</p>
           </div>
-          <div class="p-3.5">
-            <dt class="text-[11px] font-black uppercase tracking-wider text-slate-400">Seguidores</dt>
-            <dd class="mt-1 text-base font-black text-slate-900">{{ stats().seguidores }}</dd>
+          <div *ngIf="r.etiquetas?.length" class="mt-2 flex flex-wrap gap-1.5">
+            <span *ngFor="let e of r.etiquetas" [ngClass]="ui.chip">{{ e }}</span>
           </div>
-          <div class="p-3.5">
-            <dt class="text-[11px] font-black uppercase tracking-wider text-slate-400">Siguiendo</dt>
-            <dd class="mt-1 text-base font-black text-slate-900">{{ stats().siguiendo }}</dd>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- TARJETA DE MAQUINARIA Y DOMINIO TÉCNICO -->
-    <div *ngIf="p.maquinas_maneja?.length || p.especialidades?.length" 
-         class="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
-      <h2 class="text-xs font-black uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
-        <app-icon nombre="cog" clase="w-4 h-4 text-teal-700" /> 
-        Maquinaria y Especialidades Dominadas
-      </h2>
-      <div class="flex flex-wrap gap-2">
-        <span *ngFor="let m of (p.maquinas_maneja || p.especialidades)" 
-              class="inline-flex items-center gap-1.5 rounded-xl bg-teal-50 border border-teal-200/80 px-3.5 py-1.5 text-xs font-bold text-teal-900 shadow-2xs">
-          ⚡ {{ m }}
-        </span>
-      </div>
-    </div>
-
-    <!-- SECCIÓN DE RESEÑAS Y CALIFICACIONES -->
-    <div class="rounded-3xl border border-stone-200 bg-white p-6 sm:p-8 shadow-sm">
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-lg font-black text-slate-900 flex items-center gap-2">
-          <app-icon nombre="star" clase="w-5 h-5 text-amber-500" /> Historial de Calificaciones
-        </h2>
-        <span class="rounded-full bg-stone-100 px-3 py-1 text-xs font-bold text-slate-600">
-          {{ evaluaciones().length }} reseñas
-        </span>
-      </div>
-
-      <!-- Estado vacío de reseñas -->
-      <div *ngIf="evaluaciones().length === 0" 
-           class="rounded-2xl border border-dashed border-stone-300 p-8 text-center text-sm font-semibold text-slate-400">
-        Este usuario aún no cuenta con reseñas registradas en la plataforma.
-      </div>
-
-      <!-- Lista de Evaluaciones -->
-      <div class="space-y-3.5">
-        <article *ngFor="let ev of evaluaciones()" class="rounded-2xl border border-stone-200/80 bg-stone-50/60 p-4 sm:p-5 transition-all">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-            <div>
-              <p class="text-sm font-bold text-slate-900">{{ ev.evaluador_nombre }}</p>
-              <div class="flex items-center gap-1 mt-1">
-                <app-star-rating [promedio]="ev.estrellas" [mostrarTotal]="false"></app-star-rating>
-              </div>
-            </div>
-            <span class="text-xs font-medium text-slate-400">{{ ev.fecha }}</span>
-          </div>
-          <p *ngIf="ev.comentario" class="mt-2.5 text-xs sm:text-sm leading-relaxed text-slate-700 italic bg-white p-3 rounded-xl border border-stone-200/50">
-            "{{ ev.comentario }}"
-          </p>
+          <p *ngIf="r.comentario" class="mt-2 text-sm text-slate-600">{{ r.comentario }}</p>
+          <p class="mt-1 text-xs text-slate-400">{{ r.created_at | date:'dd/MM/yyyy' }}</p>
         </article>
-      </div>
-    </div>
+      </section>
 
-  </main>
+      <!-- ===================================================== CONEXIONES -->
+      <section *ngIf="seccion() === 'red'" class="grid gap-2 sm:grid-cols-2">
+        <div *ngIf="conexiones().length === 0" [ngClass]="ui.vacio" class="sm:col-span-2">
+          <app-icon nombre="users" clase="mx-auto h-8 w-8 text-stone-400" />
+          <p class="mt-3 text-sm font-semibold">Todavía sin conexiones</p>
+        </div>
+        <a *ngFor="let c of conexiones()" [routerLink]="['/perfil-usuario', c.perfil?.id]" [ngClass]="ui.card" class="flex items-center gap-3 p-3 transition hover:border-stone-300">
+          <app-avatar [nombre]="c.perfil?.nombre_completo" [verificado]="!!c.perfil?.verificado" />
+          <div class="min-w-0">
+            <p class="truncate text-sm font-bold">{{ c.perfil?.nombre_completo }}</p>
+            <p class="text-xs text-slate-500">{{ roles[c.perfil?.rol]?.txt }}</p>
+          </div>
+        </a>
+      </section>
+
+    </ng-container>
+  </div>
 </div>

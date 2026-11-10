@@ -1,132 +1,136 @@
-<div class="min-h-screen bg-slate-50/80 py-6 px-3 sm:px-6 flex justify-center items-start">
-  <div class="w-full max-w-2xl space-y-4">
-    
-    <!-- BANNER DE BIENVENIDA PARA VISITANTES (NO LOGUEADOS) -->
-    <div *ngIf="!usuarioLogueado" class="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white p-4.5 rounded-3xl shadow-lg border border-slate-800 flex items-center justify-between gap-3">
-      <div class="space-y-0.5">
-        <span class="bg-blue-500/20 text-blue-300 text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase border border-blue-400/30">Modo Vista Previa</span>
-        <h2 class="text-xs sm:text-sm font-black tracking-tight">Explora las ofertas textiles de São Paulo</h2>
-        <p class="text-[11px] text-slate-300">Regístrate gratis para contactar directamente con talleres y marcas.</p>
-      </div>
-      <button (click)="irAlRegistro()" class="bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-xs font-black py-2.5 px-4 rounded-xl shadow-md transition shrink-0">
-        Crear Cuenta
-      </button>
-    </div>
+<div class="min-h-screen bg-stone-50 px-4 py-6 text-slate-900">
+  <div class="mx-auto max-w-2xl space-y-4">
 
-    <!-- HEADER FEED -->
-    <div class="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+    <!-- Banner para invitados -->
+    <div *ngIf="!usuarioLogueado" class="flex items-center justify-between gap-3 rounded-xl bg-slate-900 p-4 text-white">
       <div>
-        <h1 class="text-lg font-black text-slate-900 tracking-tight">Marketplace Textil</h1>
-        <p class="text-[11px] text-slate-400 font-medium">Brás, Bom Retiro, Guarulhos, Zona Leste</p>
+        <p class="text-sm font-bold">Explora las ofertas textiles de São Paulo</p>
+        <p class="mt-0.5 text-xs text-slate-300">Regístrate gratis para contactar talleres y marcas.</p>
       </div>
-      <button (click)="usuarioLogueado ? router.navigate(['/crear-publicacion']) : solicitarAccionInvitado('Regístrate para publicar tu oferta o vacante.')" 
-        class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold py-2.5 px-4 rounded-xl shadow-md transition flex items-center gap-1.5 active:scale-95">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
-        Publicar
-      </button>
+      <button type="button" (click)="irAlRegistro()" [ngClass]="ui.btnPrimario" class="shrink-0">Crear cuenta</button>
     </div>
 
-    <!-- BUSCADOR Y FILTROS -->
-    <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm space-y-3">
+    <!-- Encabezado -->
+    <header class="flex items-center justify-between gap-3">
+      <div>
+        <h1 class="text-xl font-bold">Marketplace textil</h1>
+        <p class="text-xs text-slate-500">Brás, Bom Retiro, Pari, Guarulhos y más</p>
+      </div>
+      <button type="button" (click)="publicar()" [ngClass]="ui.btnOscuro">
+        <app-icon nombre="plus" clase="w-4 h-4" /> Publicar
+      </button>
+    </header>
+
+    <!-- Filtros -->
+    <section [ngClass]="ui.card" class="space-y-3 p-3" aria-label="Filtros">
       <div class="relative">
-        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-        </span>
-        <input type="text" [(ngModel)]="busquedaTexto" (input)="aplicarFiltros()" placeholder="Buscar prendas, cortes o talleres..." 
-          class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <app-icon nombre="search" clase="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <input type="search" [(ngModel)]="busquedaTexto" (input)="aplicarFiltros()" placeholder="Buscar prendas, talleres o puestos"
+               class="w-full rounded-lg border border-stone-300 bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20">
       </div>
 
-      <div class="grid grid-cols-3 gap-2">
-        <select [(ngModel)]="filtroZona" (change)="aplicarFiltros()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-[11px] font-bold text-slate-700 outline-none">
-          <option value="">📍 Todas las zonas</option>
-          <option *ngFor="let zona of zonasDisponibles" [value]="zona">{{ zona }}</option>
+      <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <select [(ngModel)]="filtroZona" (change)="aplicarFiltros()" aria-label="Zona" class="rounded-lg border border-stone-300 bg-white px-2.5 py-2 text-sm outline-none focus:border-teal-600">
+          <option value="">Todas las zonas</option>
+          <option *ngFor="let z of zonas" [value]="z">{{ z }}</option>
         </select>
-
-        <select [(ngModel)]="filtroTipo" (change)="aplicarFiltros()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-[11px] font-bold text-slate-700 outline-none">
-          <option value="">📋 Tipo Anuncio</option>
-          <option value="busco_oficina">🏪 Tiendas (Cortes)</option>
-          <option value="busco_corte">✂️ Talleres Libres</option>
-          <option value="busco_funcionario">👥 Ofertas Empleo</option>
+        <select [(ngModel)]="filtroTipo" (change)="aplicarFiltros()" aria-label="Tipo de anuncio" class="rounded-lg border border-stone-300 bg-white px-2.5 py-2 text-sm outline-none focus:border-teal-600">
+          <option value="">Todos los tipos</option>
+          <option *ngFor="let t of tiposDisponibles()" [value]="t.id">{{ t.txt }}</option>
         </select>
-
-        <select [(ngModel)]="filtroMaquina" (change)="aplicarFiltros()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-[11px] font-bold text-slate-700 outline-none">
-          <option value="">🧵 Maquinaria</option>
-          <option value="RETA">Recta</option>
-          <option value="OVERLOCK">Overlock</option>
-          <option value="GALONEIRA">Galoneira</option>
+        <select [(ngModel)]="filtroMaquina" (change)="aplicarFiltros()" aria-label="Maquinaria" class="rounded-lg border border-stone-300 bg-white px-2.5 py-2 text-sm outline-none focus:border-teal-600">
+          <option value="">Toda la maquinaria</option>
+          <option *ngFor="let m of maquinas" [value]="m.id">{{ m.nombre }}</option>
         </select>
       </div>
+
+      <div class="flex items-center justify-between">
+        <label *ngIf="usuarioLogueado" class="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+          <input type="checkbox" [(ngModel)]="soloSeguidos" (change)="aplicarFiltros()" class="h-4 w-4 accent-teal-700">
+          Solo de quienes sigo
+        </label>
+        <button *ngIf="hayFiltros" type="button" (click)="limpiarFiltros()" class="ml-auto text-xs font-semibold text-teal-700 hover:underline">Limpiar filtros</button>
+      </div>
+    </section>
+
+    <!-- Carga -->
+    <div *ngIf="cargando()" class="space-y-3" aria-busy="true">
+      <div class="h-36 animate-pulse rounded-xl bg-stone-200/70"></div>
+      <div class="h-36 animate-pulse rounded-xl bg-stone-200/70"></div>
+      <div class="h-36 animate-pulse rounded-xl bg-stone-200/70"></div>
     </div>
 
-    <!-- TARJETAS DEL FEED -->
-    <div *ngIf="!cargando && trabajosFiltrados.length > 0" class="space-y-3">
-      <div *ngFor="let trabajo of trabajosFiltrados" 
-        (click)="abrirPublicacion(trabajo.id)"
-        class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm hover:shadow-md transition-all cursor-pointer space-y-3 active:scale-[0.995]">
-        
-        <div class="flex items-center justify-between border-b border-slate-100/60 pb-2.5">
-          <div class="flex items-center gap-2.5">
-            <div class="w-9 h-9 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-xs shadow-sm">
-              {{ (trabajo.empresa || 'A').charAt(0) | uppercase }}
+    <!-- Error -->
+    <div *ngIf="!cargando() && error()" [ngClass]="ui.vacio">
+      <app-icon nombre="alert" clase="mx-auto h-8 w-8 text-rose-400" />
+      <p class="mt-3 text-sm font-semibold">No pudimos cargar los anuncios</p>
+      <button type="button" (click)="cargarFeed()" [ngClass]="ui.btnOscuro" class="mt-4">Reintentar</button>
+    </div>
+
+    <!-- Vacío -->
+    <div *ngIf="!cargando() && !error() && visibles().length === 0" [ngClass]="ui.vacio">
+      <app-icon nombre="search" clase="mx-auto h-8 w-8 text-stone-400" />
+      <p class="mt-3 text-sm font-semibold">No hay anuncios con esos filtros</p>
+      <p class="mt-1 text-sm text-slate-500">Prueba con otra zona o quita algún filtro.</p>
+      <button *ngIf="hayFiltros" type="button" (click)="limpiarFiltros()" [ngClass]="ui.btnSecundario" class="mt-4">Limpiar filtros</button>
+    </div>
+
+    <!-- Tarjetas -->
+    <ul *ngIf="!cargando() && visibles().length > 0" class="space-y-3">
+      <li *ngFor="let t of visibles()">
+        <article (click)="abrirPublicacion(t.id)" (keydown.enter)="abrirPublicacion(t.id)" tabindex="0" role="link"
+                 class="cursor-pointer space-y-3 p-4 transition hover:border-stone-300 hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
+                 [ngClass]="ui.card">
+
+          <div class="flex items-center gap-3">
+            <app-avatar [nombre]="t.empresa" tamano="md" [verificado]="t.verificado" />
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-bold">{{ t.empresa }}</p>
+              <p class="flex items-center gap-2 text-xs text-slate-500">
+                <span class="inline-flex items-center gap-1"><app-icon nombre="pin" clase="w-3.5 h-3.5" /> {{ t.zona }}</span>
+                <span class="inline-flex items-center gap-0.5 text-amber-700"><app-icon nombre="star" [relleno]="true" clase="w-3.5 h-3.5" /> {{ t.rating || '0.0' }}</span>
+              </p>
             </div>
-            <div>
-              <h3 class="text-xs font-black text-slate-900 flex items-center gap-1">
-                {{ trabajo.empresa }}
-                <svg *ngIf="trabajo.verificado" class="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-              </h3>
-              <p class="text-[10px] text-slate-400 font-medium">📍 {{ trabajo.zona }} • ★ {{ trabajo.promedio_estrellas }}</p>
-            </div>
+            <span *ngIf="tipos[t.tipo_publicacion] as tp" class="inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-semibold" [ngClass]="tp.clase">
+              <app-icon [nombre]="tp.icono" clase="w-3.5 h-3.5" /> {{ tp.txt }}
+            </span>
           </div>
-          <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-lg uppercase bg-slate-100 text-slate-700">
-            {{ trabajo.tipo_publicacion === 'busco_corte' ? 'Taller Libre' : 'Corte Tienda' }}
-          </span>
-        </div>
 
-        <div>
-          <h2 class="text-sm font-extrabold text-slate-900">{{ trabajo.titulo }}</h2>
-          <p class="text-xs text-slate-500 line-clamp-2 mt-1">{{ trabajo.descripcion }}</p>
-        </div>
+          <div>
+            <h2 class="text-base font-bold leading-snug">{{ t.titulo }}</h2>
+            <p *ngIf="t.descripcion" class="mt-1 line-clamp-2 text-sm text-slate-500">{{ t.descripcion }}</p>
+          </div>
 
-        <div class="flex items-center justify-between border-t border-slate-100/60 pt-2.5">
-          <span class="font-black text-slate-800 text-xs">{{ trabajo.cantidad_piezas | number }} <span class="text-[10px] text-slate-400">piezas</span></span>
-          <span class="text-[11px] font-bold text-blue-600 flex items-center gap-1">
-            {{ usuarioLogueado ? 'Ver detalles →' : '🔒 Iniciar sesión para ver' }}
-          </span>
-        </div>
+          <div *ngIf="t.maquinas_requeridas?.length" class="flex flex-wrap gap-1.5">
+            <span *ngFor="let m of t.maquinas_requeridas | slice:0:4" [ngClass]="ui.chip">{{ m }}</span>
+            <span *ngIf="t.maquinas_requeridas.length > 4" [ngClass]="ui.chip">+{{ t.maquinas_requeridas.length - 4 }}</span>
+          </div>
 
-      </div>
-    </div>
-
+          <div class="flex items-center justify-between border-t border-stone-100 pt-3">
+            <span class="text-sm font-bold text-teal-800">{{ dato(t) }}</span>
+            <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+              <app-icon [nombre]="usuarioLogueado ? 'chevron-down' : 'lock'" clase="w-3.5 h-3.5" [class.-rotate-90]="usuarioLogueado" />
+              {{ usuarioLogueado ? 'Ver detalles' : 'Inicia sesión para ver' }}
+            </span>
+          </div>
+        </article>
+      </li>
+    </ul>
   </div>
-</div>
 
-<!-- ========================================================================= -->
-<!-- MODAL DE CAPTACIÓN / CONVERSIÓN DE INVITADOS                              -->
-<!-- ========================================================================= -->
-<div *ngIf="mostrarModalInvitado" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-  <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl border border-slate-100 overflow-hidden p-6 space-y-5 text-center animate-in fade-in zoom-in duration-150">
-    
-    <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-inner">
-      🔒
+  <!-- Modal invitados -->
+  <div *ngIf="mostrarModalInvitado()" class="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 p-4 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="titulo-invitado">
+    <div class="w-full max-w-sm space-y-4 rounded-2xl bg-white p-6 text-center shadow-xl">
+      <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-teal-50 text-teal-700"><app-icon nombre="lock" clase="w-6 h-6" /></span>
+      <div>
+        <h3 id="titulo-invitado" class="text-base font-bold">Únete a CosturaPronta</h3>
+        <p class="mt-1 text-sm text-slate-500">{{ mensajeInvitado }}</p>
+      </div>
+      <div class="space-y-2">
+        <button type="button" (click)="irAlRegistro()" [ngClass]="ui.btnPrimario" class="w-full !py-2.5">Crear cuenta gratuita</button>
+        <button type="button" (click)="irAlLogin()" [ngClass]="ui.btnSecundario" class="w-full !py-2.5">Ya tengo cuenta</button>
+      </div>
+      <button type="button" (click)="mostrarModalInvitado.set(false)" class="text-xs font-semibold text-slate-500 hover:text-slate-700">Seguir mirando como invitado</button>
     </div>
-
-    <div class="space-y-1.5">
-      <h3 class="text-base font-black text-slate-900">¡Únete a CosturaPronta!</h3>
-      <p class="text-xs text-slate-500 leading-relaxed">{{ mensajeInvitado }}</p>
-    </div>
-
-    <div class="space-y-2 pt-2">
-      <button (click)="irAlRegistro()" class="w-full py-3 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-black rounded-xl transition shadow-md shadow-blue-200">
-        Crear Cuenta Gratuita
-      </button>
-      <button (click)="irAlLogin()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition">
-        Ya tengo cuenta (Iniciar Sesión)
-      </button>
-    </div>
-
-    <button (click)="mostrarModalInvitado = false" class="text-[11px] font-bold text-slate-400 hover:text-slate-600">
-      Seguir mirando como invitado
-    </button>
-
   </div>
 </div>

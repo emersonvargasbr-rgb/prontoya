@@ -104,15 +104,14 @@ export class PanelOficinaComponent implements OnInit {
       const [perf, pubs, lotes, hist, emp, asig, stats] = await Promise.all([
         this.db.from('perfiles').select('*').eq('id', id).single(),
         this.db.from('publicaciones').select('*').eq('creador_id', id).order('created_at', { ascending: false }),
-        this.db.from('postulaciones_lotes').select(`
-            id, estado, created_at, descripcion_corte, cantidad_piezas, pago_por_pieza,
-            taller_id, receptor_id, publicacion_id,
-            publicacion:publicacion_id (id, titulo, tipo_publicacion, creador_id,
-              creador:creador_id (${PERFIL_MIN})),
-            emisor:taller_id (${PERFIL_MIN})
-          `)
-          .or(`taller_id.eq.${id},receptor_id.eq.${id}`)
-          .order('created_at', { ascending: false }),
+       this.db.from('postulaciones_lotes').select(`
+    id, estado, created_at, descripcion_corte, cantidad_piezas, pago_por_pieza,
+    taller_id, receptor_id, publicacion_id,
+    publicacion:publicacion_id (id, titulo, tipo_publicacion, creador_id,
+      creador:creador_id (${PERFIL_MIN})),
+    emisor:taller_id (${PERFIL_MIN})
+  `)
+  .order('created_at', { ascending: false }),
         this.db.from('historial_operaciones')
           .select('*, tienda:tienda_id (nombre_completo, zona_ubicacion)')
           .eq('oficina_id', id).order('fecha_cierre', { ascending: false }),

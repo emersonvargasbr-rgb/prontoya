@@ -2,7 +2,6 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from './icon.component';
 
-// Clases completas y literales para que Tailwind las detecte
 const PALETAS = [
   'bg-teal-100 text-teal-800',
   'bg-amber-100 text-amber-800',
@@ -24,13 +23,17 @@ const TAMANOS = {
   standalone: true,
   imports: [CommonModule, IconComponent],
   template: `
-    <span class="relative inline-flex shrink-0">
-      <span [ngClass]="[tamanoClase, paleta]"
-            class="inline-flex items-center justify-center rounded-full font-semibold select-none">
-        {{ iniciales }}
+    <span class="relative inline-flex shrink-0" [ngClass]="anillo">
+      <span [ngClass]="!color ? paleta : ''"
+            [style.backgroundColor]="color || null"
+            [style.color]="color ? '#ffffff' : null"
+            [class]="tamanoClase + ' inline-flex items-center justify-center rounded-full font-semibold select-none overflow-hidden'">
+        <!-- Si hay icono, lo muestra; si no, muestra las iniciales -->
+        <app-icon *ngIf="icono" [nombre]="icono" clase="w-1/2 h-1/2" />
+        <span *ngIf="!icono">{{ iniciales }}</span>
       </span>
       <span *ngIf="verificado"
-            class="absolute -bottom-0.5 -right-0.5 rounded-full bg-white p-px text-teal-600">
+            class="absolute -bottom-0.5 -right-0.5 rounded-full bg-white p-px text-teal-600 shadow-sm">
         <app-icon nombre="verified" clase="w-4 h-4" [relleno]="false" />
       </span>
     </span>
@@ -40,6 +43,9 @@ export class AvatarComponent {
   @Input() nombre: string | null | undefined = '';
   @Input() tamano: keyof typeof TAMANOS = 'md';
   @Input() verificado = false;
+  @Input() color?: string | null;
+  @Input() icono?: string | null;
+  @Input() anillo?: string | null;
 
   get tamanoClase() { return TAMANOS[this.tamano]; }
 
@@ -50,6 +56,7 @@ export class AvatarComponent {
   }
 
   get paleta(): string {
+    if (this.color) return '';
     let h = 0;
     for (const c of this.nombre ?? '') h = (h * 31 + c.charCodeAt(0)) >>> 0;
     return PALETAS[h % PALETAS.length];
