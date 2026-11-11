@@ -1,161 +1,248 @@
-<div class="min-h-screen bg-slate-50/70 py-8 px-4 flex justify-center items-start">
-  <div class="w-full max-w-2xl bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-    
-    <div class="p-6 sm:p-8 space-y-6">
-      <div class="border-b border-slate-100 pb-4 flex justify-between items-center">
-        <div>
-          <span class="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">Configuración</span>
-          <h2 class="text-2xl font-black text-slate-900 mt-1">Editar Perfil Pro</h2>
-        </div>
-        <button (click)="volverAlPanel()" class="text-xs font-bold text-slate-500 hover:text-slate-800 bg-slate-100 px-3 py-2 rounded-xl">
-          ← Volver
-        </button>
+<div class="min-h-[calc(100dvh-var(--header-h,4rem))] bg-stone-50 px-4 pb-6 pt-6 text-slate-900">
+  <app-toast [aviso]="aviso()" />
+
+  <div class="mx-auto max-w-2xl space-y-5">
+
+    <header class="flex items-center justify-between">
+      <div>
+        <h1 class="text-xl font-bold">Editar perfil</h1>
+        <p class="text-sm text-slate-500">{{ roles[rol()]?.txt }} · así te verán los demás.</p>
       </div>
+      <button type="button" (click)="cancelar()" aria-label="Cerrar" [ngClass]="ui.btnSecundario" class="!px-2.5"><app-icon nombre="x" clase="w-4 h-4" /></button>
+    </header>
 
-      <form (ngSubmit)="guardarPerfil()" class="space-y-6">
-        
-        <!-- SECCIÓN 1: PERSONALIZACIÓN VISUAL (COLOR Y AVATAR ANIMAL) -->
-        <div class="space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-200/60">
-          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
-            Personalización de Portada y Avatar
-          </h3>
-
-          <!-- Vista Previa Portada -->
-          <div class="h-24 rounded-2xl p-4 flex items-center justify-between transition-colors shadow-inner" [style.backgroundColor]="perfil.color_portada">
-            <div class="flex items-center gap-3">
-              <div class="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center text-2xl border border-white/30">
-                <span [innerHTML]="getAvatarSvg(perfil.avatar_svg_id)"></span>
-              </div>
-              <span class="font-extrabold text-sm" [style.color]="perfil.color_texto_portada">
-                {{ perfil.nombre_completo || 'Nombre de tu Oficina' }}
-              </span>
-            </div>
-            <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-black/20 text-white">Vista previa</span>
-          </div>
-
-          <!-- Selector de Colores de Fondo -->
-          <div>
-            <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Color de Portada</label>
-            <div class="flex flex-wrap gap-2">
-              <button type="button" *ngFor="let col of coloresDisponibles" 
-                (click)="seleccionarColor(col.hex)"
-                [style.backgroundColor]="col.hex"
-                [class.ring-4]="perfil.color_portada === col.hex"
-                class="w-8 h-8 rounded-xl ring-blue-500 transition-all transform active:scale-90 shadow-sm"></button>
-            </div>
-          </div>
-
-          <!-- Selector de Avatares Animales SVG -->
-          <div>
-            <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Icono / Avatar de Taller (Animal SVG)</label>
-            <div class="grid grid-cols-6 gap-2">
-              <button type="button" *ngFor="let animal of animalesSvg"
-                (click)="perfil.avatar_svg_id = animal.id"
-                [class.bg-blue-600]="perfil.avatar_svg_id === animal.id"
-                [class.text-white]="perfil.avatar_svg_id === animal.id"
-                [class.bg-white]="perfil.avatar_svg_id !== animal.id"
-                class="p-2.5 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-xl transition active:scale-95 shadow-sm">
-                <span>{{ animal.emoji }}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- SECCIÓN 2: INFORMACIÓN TÉCNICA Y OPERATIVA DE LA OFICINA -->
-        <div class="space-y-4">
-          <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700">Capacidad e Infraestructura Textil</h3>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Nombre Comercial / Oficina</label>
-              <input type="text" [(ngModel)]="perfil.nombre_completo" name="nombre" required
-                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none">
-            </div>
-
-            <div>
-              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Especialidad Principal</label>
-              <select [(ngModel)]="perfil.especialidad_principal" name="especialidad"
-                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none">
-                <option value="Costura y Confeccion Completa">Costura & Confección Completa</option>
-                <option value="Oficina de Corte">Oficina de Corte</option>
-                <option value="Caseadeira y Botoneira">Caseadeira & Botoneira</option>
-                <option value="Estampado y Sublimacion">Estampado & Sublimación</option>
-                <option value="Acabados y Plancha">Acabados & Plancha</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <div>
-              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Nº Máquinas</label>
-              <input type="number" [(ngModel)]="perfil.cantidad_maquinas" name="maquinas" placeholder="Ej: 8"
-                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none">
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Nº Operarios</label>
-              <input type="number" [(ngModel)]="perfil.cantidad_operarios" name="operarios" placeholder="Ej: 6"
-                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none">
-            </div>
-            <div class="col-span-2 sm:col-span-1">
-              <label class="block text-xs font-bold text-slate-600 uppercase mb-1">CEP (Zona)</label>
-              <input type="text" [(ngModel)]="perfil.cep" name="cep" placeholder="03001-000"
-                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium outline-none">
-            </div>
-          </div>
-        </div>
-
-        <!-- SECCIÓN 3: CONTROL DE PRIVACIDAD DE DATOS (PÚBLICO / CONECTADOS / PRIVADO) -->
-        <div class="space-y-4 bg-blue-50/50 p-5 rounded-2xl border border-blue-100">
-          <h3 class="text-xs font-extrabold uppercase tracking-wider text-blue-900 flex items-center gap-1.5">
-            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-            Privacidad y Visibilidad de Datos Sensibles
-          </h3>
-
-          <div class="space-y-3">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-xs font-bold text-slate-800">Número de WhatsApp</p>
-                <p class="text-[10px] text-slate-500">¿Quién puede ver tu número directo?</p>
-              </div>
-              <select [(ngModel)]="perfil.visibilidad_whatsapp" name="visWhatsapp" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none">
-                <option value="publico">🌐 Público (Todos)</option>
-                <option value="conectados">👥 Solo Conectados</option>
-                <option value="privado">🔒 Solo yo</option>
-              </select>
-            </div>
-
-            <div class="flex items-center justify-between border-t border-slate-200/60 pt-3">
-              <div>
-                <p class="text-xs font-bold text-slate-800">Dirección Exacta y CEP</p>
-                <p class="text-[10px] text-slate-500">¿Quién puede ver la ubicación exacta?</p>
-              </div>
-              <select [(ngModel)]="perfil.visibilidad_direccion" name="visDireccion" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none">
-                <option value="publico">🌐 Público</option>
-                <option value="conectados">👥 Solo Conectados / Lotes asignados</option>
-                <option value="privado">🔒 Solo yo</option>
-              </select>
-            </div>
-
-            <div class="flex items-center justify-between border-t border-slate-200/60 pt-3">
-              <div>
-                <p class="text-xs font-bold text-slate-800">Registro CNPJ</p>
-                <p class="text-[10px] text-slate-500">Número de identificación tributaria</p>
-              </div>
-              <select [(ngModel)]="perfil.visibilidad_cnpj" name="visCnpj" class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none">
-                <option value="conectados">👥 Solo Conectados</option>
-                <option value="privado">🔒 Privado</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <button type="submit" [disabled]="guardando"
-          class="w-full bg-slate-900 active:scale-[0.98] text-white font-black py-4 px-6 rounded-2xl shadow-xl shadow-slate-900/20 hover:bg-slate-800 transition duration-200">
-          {{ guardando ? 'Guardando Perfil Pro...' : 'Guardar Cambios' }}
-        </button>
-
-      </form>
+    <div *ngIf="cargando()" class="space-y-3" aria-busy="true">
+      <div class="h-40 animate-pulse rounded-xl bg-stone-200/70"></div>
+      <div class="h-56 animate-pulse rounded-xl bg-stone-200/70"></div>
     </div>
+
+    <form *ngIf="!cargando() && base()" (ngSubmit)="guardar()" #f="ngForm" class="space-y-5">
+
+      <!-- ===================================================== VISTA PREVIA -->
+      <section class="overflow-hidden" [ngClass]="ui.card" aria-label="Vista previa">
+        <div class="h-20" [ngStyle]="estiloPortada(form.color_portada, form.patron_portada)"></div>
+        <div class="flex items-end gap-4 px-5 pb-5">
+          <div class="-mt-8 rounded-full bg-white p-1">
+            <app-avatar [nombre]="form.nombre_completo" tamano="lg" [verificado]="!!base().verificado"
+                        [icono]="form.avatar_icono" [color]="form.avatar_color" [anillo]="g()?.claseAnillo ?? ''" />
+          </div>
+          <div class="min-w-0 pt-3">
+            <p class="truncate text-base font-bold">{{ form.nombre_completo || 'Tu nombre' }}</p>
+            <p class="truncate text-xs italic text-slate-500">{{ form.lema || 'Tu lema aparecerá aquí' }}</p>
+          </div>
+          <span *ngIf="g() as x" class="ml-auto hidden shrink-0 rounded-md px-2 py-1 text-[11px] font-bold sm:inline-flex" [ngClass]="x.claseNivel">Nivel {{ x.nivel }} · {{ x.nombre }}</span>
+        </div>
+      </section>
+
+      <!-- ===================================================== COMPLETITUD -->
+      <section [ngClass]="ui.card" class="p-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold">Perfil al {{ comp.pct }}%</h2>
+          <span *ngIf="comp.pct === 100" class="inline-flex items-center gap-1 text-xs font-semibold text-teal-700"><app-icon nombre="check" clase="w-3.5 h-3.5" /> Completo, suma puntos</span>
+        </div>
+        <div class="mt-2 h-2 overflow-hidden rounded-full bg-stone-200" role="progressbar" [attr.aria-valuenow]="comp.pct" aria-valuemin="0" aria-valuemax="100">
+          <div class="h-full rounded-full bg-teal-600 transition-[width] duration-500" [style.width.%]="comp.pct"></div>
+        </div>
+        <ul *ngIf="comp.faltan.length" class="mt-3 space-y-1 text-xs text-slate-600">
+          <li *ngFor="let m of comp.faltan" class="flex items-center gap-2"><app-icon nombre="plus" clase="w-3 h-3 text-slate-400" /> {{ m.etq }}</li>
+        </ul>
+      </section>
+
+      <!-- ======================================================== IDENTIDAD -->
+      <section [ngClass]="ui.card" class="space-y-4 p-4">
+        <h2 class="text-sm font-bold">Identidad</h2>
+
+        <label [ngClass]="ui.etiqueta">{{ rol() === 'funcionario' ? 'Nombre completo' : 'Nombre del negocio' }}
+          <input type="text" [(ngModel)]="form.nombre_completo" name="nombre" required maxlength="80" [ngClass]="ui.inputGrande">
+          <span *ngIf="errores['nombre_completo']" class="mt-1 block text-xs text-rose-600">{{ errores['nombre_completo'] }}</span>
+        </label>
+
+        <label [ngClass]="ui.etiqueta">Lema
+          <input type="text" [(ngModel)]="form.lema" name="lema" maxlength="80" placeholder="Ej: Calidad en cada puntada" [ngClass]="ui.inputGrande">
+          <span class="mt-1 flex justify-between text-[11px] text-slate-400"><span class="text-rose-600">{{ errores['lema'] }}</span><span>{{ form.lema?.length || 0 }}/80</span></span>
+        </label>
+
+        <label [ngClass]="ui.etiqueta">Descripción
+          <textarea [(ngModel)]="form.bio_taller" name="bio" rows="3" maxlength="280" [ngClass]="ui.inputGrande"
+                    [placeholder]="rol() === 'funcionario' ? 'Tu experiencia, tipos de prenda, años de oficio...' : 'Qué haces, qué prendas trabajas, cómo te gusta trabajar...'"></textarea>
+          <span class="mt-1 flex justify-between text-[11px] text-slate-400"><span class="text-rose-600">{{ errores['bio_taller'] }}</span><span>{{ form.bio_taller?.length || 0 }}/280</span></span>
+        </label>
+
+        <div class="grid gap-3 sm:grid-cols-2">
+          <label [ngClass]="ui.etiqueta">{{ rol() === 'tienda' ? 'Rubro' : 'Especialidad' }}
+            <select [(ngModel)]="form.especialidad_principal" name="esp" [ngClass]="ui.inputGrande">
+              <option *ngFor="let e of especialidades()" [value]="e">{{ e }}</option>
+            </select></label>
+          <label [ngClass]="ui.etiqueta">Zona o barrio
+            <select [(ngModel)]="form.zona_ubicacion" name="zona" [ngClass]="ui.inputGrande">
+              <option [ngValue]="null" disabled>Elegir zona</option>
+              <option *ngFor="let z of zonas" [value]="z">{{ z }}</option>
+            </select></label>
+        </div>
+      </section>
+
+      <!-- ====================================================== APARIENCIA -->
+      <section [ngClass]="ui.card" class="space-y-5 p-4">
+        <div>
+          <h2 class="text-sm font-bold">Apariencia</h2>
+          <p class="mt-0.5 text-xs text-slate-500">Subir de nivel desbloquea más colores, patrones e iconos. Eres nivel {{ nivel() }}.</p>
+        </div>
+
+        <!-- Color de portada -->
+        <fieldset>
+          <legend class="mb-2 text-xs font-medium text-slate-700">Color de portada</legend>
+          <div class="grid grid-cols-5 gap-2 sm:grid-cols-10">
+            <button type="button" *ngFor="let c of colores" (click)="elegirColor(c)"
+                    [attr.aria-label]="c.nombre + (bloqueado(c.nivelMin) ? ', bloqueado hasta nivel ' + c.nivelMin : '')" [attr.aria-pressed]="form.color_portada === c.hex"
+                    class="relative flex h-10 items-center justify-center rounded-lg ring-offset-2 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
+                    [ngClass]="form.color_portada === c.hex ? 'ring-2 ring-teal-600' : ''" [style.backgroundColor]="c.hex" [class.opacity-40]="bloqueado(c.nivelMin)">
+              <app-icon *ngIf="bloqueado(c.nivelMin)" nombre="lock" clase="w-4 h-4 text-white" />
+              <app-icon *ngIf="!bloqueado(c.nivelMin) && form.color_portada === c.hex" nombre="check" clase="w-4 h-4 text-white" />
+            </button>
+          </div>
+        </fieldset>
+
+        <!-- Patrón -->
+        <fieldset>
+          <legend class="mb-2 text-xs font-medium text-slate-700">Patrón</legend>
+          <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <button type="button" *ngFor="let p of patrones" (click)="elegirPatron(p)" [attr.aria-pressed]="form.patron_portada === p.id"
+                    class="overflow-hidden rounded-lg border text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
+                    [ngClass]="form.patron_portada === p.id ? 'border-teal-600 ring-1 ring-teal-600' : 'border-stone-200'" [class.opacity-50]="bloqueado(p.nivelMin)">
+              <span class="block h-10" [ngStyle]="estiloPortada(form.color_portada, p.id)"></span>
+              <span class="flex items-center justify-between px-2 py-1.5 text-xs font-semibold">
+                {{ p.nombre }}
+                <span *ngIf="bloqueado(p.nivelMin)" class="inline-flex items-center gap-0.5 text-[10px] text-slate-400"><app-icon nombre="lock" clase="w-3 h-3" /> Nv {{ p.nivelMin }}</span>
+              </span>
+            </button>
+          </div>
+        </fieldset>
+
+        <!-- Avatar -->
+        <fieldset>
+          <legend class="mb-2 text-xs font-medium text-slate-700">Avatar</legend>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" (click)="elegirIcono(null)" [ngClass]="opcion(!form.avatar_icono)" [attr.aria-pressed]="!form.avatar_icono">Iniciales</button>
+            <button type="button" *ngFor="let i of iconos" (click)="elegirIcono(i)" [ngClass]="opcion(form.avatar_icono === i.id, bloqueado(i.nivelMin))"
+                    [attr.aria-pressed]="form.avatar_icono === i.id" [attr.aria-label]="i.nombre + (bloqueado(i.nivelMin) ? ', bloqueado hasta nivel ' + i.nivelMin : '')">
+              <app-icon [nombre]="bloqueado(i.nivelMin) ? 'lock' : i.id" clase="w-4 h-4" /> {{ i.nombre }}
+            </button>
+          </div>
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <span class="text-xs text-slate-500">Color</span>
+            <button type="button" (click)="elegirAvatarColor(null)" [ngClass]="opcion(!form.avatar_color)" class="!px-2.5 !py-1 !text-xs">Automático</button>
+            <button type="button" *ngFor="let c of paletas" (click)="elegirAvatarColor(c.id)" [attr.aria-label]="c.nombre" [attr.aria-pressed]="form.avatar_color === c.id"
+                    class="h-7 w-7 rounded-full ring-offset-2 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
+                    [ngClass]="[c.clase, form.avatar_color === c.id ? 'ring-2 ring-teal-600' : '']"></button>
+          </div>
+        </fieldset>
+      </section>
+
+      <!-- ============================================== INSIGNIAS DESTACADAS -->
+      <section [ngClass]="ui.card" class="p-4">
+        <h2 class="text-sm font-bold">Insignias a la vista</h2>
+        <p class="mt-0.5 text-xs text-slate-500">Elige hasta 3 de las que ganaste para mostrarlas en tu cabecera.</p>
+
+        <p *ngIf="ganadas().length === 0" class="mt-3 flex items-center gap-2 rounded-lg bg-stone-100 p-3 text-xs text-slate-600">
+          <app-icon nombre="lock" clase="w-4 h-4 shrink-0" /> Todavía no tienes insignias. Cierra tu primer trabajo o completa tu perfil para ganar la primera.
+        </p>
+        <div *ngIf="ganadas().length > 0" class="mt-3 flex flex-wrap gap-2">
+          <button type="button" *ngFor="let l of ganadas()" (click)="toggleDestacada(l.id)" [attr.aria-pressed]="form.insignias_destacadas.includes(l.id)" [ngClass]="opcion(form.insignias_destacadas.includes(l.id))">
+            <app-icon [nombre]="l.icono" clase="w-4 h-4" /> {{ l.nombre }}
+          </button>
+        </div>
+      </section>
+
+      <!-- =================================================== DATOS: OFICINA -->
+      <section *ngIf="rol() === 'oficina'" [ngClass]="ui.card" class="space-y-4 p-4">
+        <h2 class="text-sm font-bold">Tu taller</h2>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <label [ngClass]="ui.etiqueta">Cantidad de máquinas
+            <input type="number" min="0" [(ngModel)]="form.cantidad_maquinas" name="cmaq" [ngClass]="ui.inputGrande"></label>
+          <label [ngClass]="ui.etiqueta">Cantidad de operarios
+            <input type="number" min="0" [(ngModel)]="form.cantidad_operarios" name="coper" [ngClass]="ui.inputGrande"></label>
+        </div>
+      </section>
+
+      <!-- ==================================================== DATOS: TIENDA -->
+      <section *ngIf="rol() === 'tienda'" [ngClass]="ui.card" class="space-y-3 p-4">
+        <h2 class="text-sm font-bold">Tu tienda</h2>
+        <div class="flex gap-2">
+          <button type="button" (click)="form.tipo_tienda = 'firma'" [ngClass]="opcion(form.tipo_tienda === 'firma')" [attr.aria-pressed]="form.tipo_tienda === 'firma'">Firma</button>
+          <button type="button" (click)="form.tipo_tienda = 'ferinha'" [ngClass]="opcion(form.tipo_tienda === 'ferinha')" [attr.aria-pressed]="form.tipo_tienda === 'ferinha'">Feirinha</button>
+        </div>
+      </section>
+
+      <!-- ================================================= DATOS: FUNCIONARIO -->
+      <section *ngIf="rol() === 'funcionario'" [ngClass]="ui.card" class="space-y-4 p-4">
+        <h2 class="text-sm font-bold">Cómo trabajas</h2>
+        <label [ngClass]="ui.etiqueta">Modalidad
+          <select [(ngModel)]="form.modalidad_trabajo" name="modalidad" [ngClass]="ui.inputGrande">
+            <option>Individual</option><option>Casal</option><option>Equipo</option>
+          </select></label>
+        <div class="grid gap-2 sm:grid-cols-2">
+          <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-stone-200 px-3 py-2.5 text-sm"><input type="checkbox" [(ngModel)]="form.trabaja_en_casal" name="casal" class="h-4 w-4 accent-teal-700"> Trabajo en casal (pareja)</label>
+          <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-stone-200 px-3 py-2.5 text-sm"><input type="checkbox" [(ngModel)]="form.tiene_vehiculo" name="vehiculo" class="h-4 w-4 accent-teal-700"> Tengo vehículo</label>
+          <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-stone-200 px-3 py-2.5 text-sm"><input type="checkbox" [(ngModel)]="form.busca_alojamiento" name="busca" class="h-4 w-4 accent-teal-700"> Busco cama dentro</label>
+          <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-stone-200 px-3 py-2.5 text-sm"><input type="checkbox" [(ngModel)]="form.alojamiento_propio" name="propio" class="h-4 w-4 accent-teal-700"> Tengo alojamiento propio</label>
+        </div>
+      </section>
+
+      <!-- ===================================================== MÁQUINAS -->
+      <section *ngIf="muestraMaquinas" [ngClass]="ui.card" class="p-4">
+        <h2 class="text-sm font-bold">{{ rol() === 'oficina' ? 'Maquinaria del taller' : 'Máquinas que manejas' }}</h2>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <button type="button" *ngFor="let m of maquinas" (click)="toggleMaquina(m.id)" [attr.aria-pressed]="form.maquinas_maneja.includes(m.id)" [ngClass]="opcion(form.maquinas_maneja.includes(m.id))">
+            <app-icon [nombre]="form.maquinas_maneja.includes(m.id) ? 'check' : 'plus'" clase="w-3.5 h-3.5" /> {{ m.nombre }}
+          </button>
+        </div>
+      </section>
+
+      <!-- ================================================ DATOS FISCALES -->
+      <section *ngIf="esEmpresa" [ngClass]="ui.card" class="space-y-3 p-4">
+        <h2 class="text-sm font-bold">Datos de la empresa</h2>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <label [ngClass]="ui.etiqueta">CNPJ
+            <input type="text" inputmode="numeric" [(ngModel)]="form.cnpj" name="cnpj" maxlength="18" placeholder="00.000.000/0000-00" [ngClass]="ui.inputGrande">
+            <span *ngIf="errores['cnpj']" class="mt-1 block text-xs text-rose-600">{{ errores['cnpj'] }}</span></label>
+          <label [ngClass]="ui.etiqueta">CEP
+            <input type="text" inputmode="numeric" [(ngModel)]="form.cep" name="cep" maxlength="9" placeholder="00000-000" [ngClass]="ui.inputGrande">
+            <span *ngIf="errores['cep']" class="mt-1 block text-xs text-rose-600">{{ errores['cep'] }}</span></label>
+        </div>
+      </section>
+
+      <!-- ==================================================== PRIVACIDAD -->
+      <section [ngClass]="ui.card" class="space-y-3 p-4">
+        <div>
+          <h2 class="text-sm font-bold">Privacidad</h2>
+          <p class="mt-0.5 text-xs text-slate-500">"Conectados" significa personas con quienes tienes una conexión aceptada.</p>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <label [ngClass]="ui.etiqueta">Quién ve tu WhatsApp
+            <select [(ngModel)]="form.visibilidad_whatsapp" name="vwa" [ngClass]="ui.inputGrande">
+              <option value="publico">Todos</option><option value="conectados">Sólo conectados</option><option value="privado">Nadie</option>
+            </select></label>
+          <label [ngClass]="ui.etiqueta">Quién ve tu dirección
+            <select [(ngModel)]="form.visibilidad_direccion" name="vdir" [ngClass]="ui.inputGrande">
+              <option value="publico">Todos</option><option value="conectados">Sólo conectados</option><option value="privado">Nadie</option>
+            </select></label>
+          <label *ngIf="esEmpresa" [ngClass]="ui.etiqueta">Quién ve tu CNPJ
+            <select [(ngModel)]="form.visibilidad_cnpj" name="vcnpj" [ngClass]="ui.inputGrande">
+              <option value="publico">Todos</option><option value="conectados">Sólo conectados</option><option value="privado">Nadie</option>
+            </select></label>
+        </div>
+      </section>
+
+      <!-- ================================================ BARRA DE GUARDADO -->
+      <div class="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 -mx-4 border-t border-stone-200 bg-white/95 px-4 py-3 backdrop-blur md:bottom-0">
+        <div class="flex items-center gap-3">
+          <p class="flex-1 text-xs" [ngClass]="sucio ? 'font-semibold text-amber-700' : 'text-slate-500'">{{ sucio ? 'Tienes cambios sin guardar' : 'Todo guardado' }}</p>
+          <button type="button" (click)="cancelar()" [ngClass]="ui.btnSecundario">Cancelar</button>
+          <button type="submit" [disabled]="!sucio || guardando() || !f.form.valid" [ngClass]="ui.btnPrimario">
+            {{ guardando() ? 'Guardando...' : 'Guardar cambios' }}
+          </button>
+        </div>
+      </div>
+    </form>
   </div>
 </div>

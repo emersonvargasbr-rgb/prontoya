@@ -269,4 +269,16 @@ export class DetalleTrabajoComponent implements OnInit {
     this.aviso.set({ texto, tipo });
     setTimeout(() => this.aviso.set(null), 3500);
   }
+  compartir() {
+  if (navigator.share) {
+    navigator.share({
+      title: this.trabajo()?.titulo || 'CosturaPronta',
+      text: 'Mira esta oferta textil en CosturaPronta:',
+      url: window.location.href,
+    }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(window.location.href);
+    this.notificar('¡Enlace copiado al portapapeles!');
+  }
+}
 }

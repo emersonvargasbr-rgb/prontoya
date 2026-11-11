@@ -1,112 +1,230 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { SupabaseService } from '../../../core/services/supabase.service';
+import { MAQUINAS, ROL_ETIQUETA, ROL_PANEL, UI, ZONAS } from '../../../core/utils/helpers';
+import {
+  AVATAR_ICONOS, COLORES_PORTADA, ESPECIALIDADES, PATRONES_PORTADA, Rol,
+  calcularGamificacion, cnpjValido, completitud, estiloPortada,
+} from '../../../core/utils/gamificacion';
+import { Aviso, ToastComponent } from '../../../shared/components/toast.component';
+import { AvatarComponent } from '../../../shared/components/avatar.component';
+import { IconComponent } from '../../../shared/components/icon.component';
+
+const CAMPOS_COMUNES = [
+  'nombre_completo', 'lema', 'bio_taller', 'especialidad_principal', 'zona_ubicacion',
+  'color_portada', 'color_texto_portada', 'patron_portada', 'avatar_icono', 'avatar_color',
+  'insignias_destacadas', 'maquinas_maneja', 'visibilidad_whatsapp', 'visibilidad_direccion',
+];
+const CAMPOS_POR_ROL: Record<Rol, string[]> = {
+  oficina:      ['cantidad_maquinas', 'cantidad_operarios', 'cep', 'cnpj', 'visibilidad_cnpj'],
+  tienda:       ['tipo_tienda', 'cep', 'cnpj', 'visibilidad_cnpj'],
+  funcionario: ['tiene_vehiculo', 'trabaja_en_casal', 'busca_alojamiento', 'alojamiento_propio', 'modalidad_trabajo'],
+};
 
 @Component({
   selector: 'app-editar-perfil',
   standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './editar-perfil.component.html'
+  imports: [CommonModule, FormsModule, RouterModule, IconComponent, AvatarComponent, ToastComponent],
+  templateUrl: './editar-perfil.component.html',
 })
 export class EditarPerfilComponent implements OnInit {
-  usuarioId: string = '';
-  guardando = false;
+  readonly ui = UI;
+  readonly zonas = ZONAS;
+  readonly maquinas = MAQUINAS;
+  readonly colores = COLORES_PORTADA;
+  readonly patrones = PATRONES_PORTADA;
+  readonly iconos = AVATAR_ICONOS;
+  readonly roles = ROL_ETIQUETA;
+  readonly estiloPortada = estiloPortada;
 
-  coloresDisponibles = [
-    { hex: '#0f172a', nombre: 'Slate Dark' },
-    { hex: '#1e3a8a', nombre: 'Azul Real' },
-    { hex: '#047857', nombre: 'Verde Esmeralda' },
-    { hex: '#7c3aed', nombre: 'Púrpura' },
-    { hex: '#c2410c', nombre: 'Terracota' },
-    { hex: '#be123c', nombre: 'Bordó' }
+  // 👇 Definición local de paletas para evitar errores de compilación
+  readonly paletas = [
+    { id: 'teal', nombre: 'Teal', clase: 'bg-teal-100 text-teal-800' },
+    { id: 'amber', nombre: 'Ámbar', clase: 'bg-amber-100 text-amber-800' },
+    { id: 'sky', nombre: 'Cielo', clase: 'bg-sky-100 text-sky-800' },
+    { id: 'rose', nombre: 'Rosa', clase: 'bg-rose-100 text-rose-800' },
+    { id: 'violet', nombre: 'Violeta', clase: 'bg-violet-100 text-violet-800' },
+    { id: 'lime', nombre: 'Lima', clase: 'bg-lime-100 text-lime-800' },
   ];
 
-  animalesSvg = [
-    { id: 'tigre', emoji: '🐯' },
-    { id: 'leon', emoji: '🦁' },
-    { id: 'oso', emoji: '🐻' },
-    { id: 'zorro', emoji: '🦊' },
-    { id: 'aguila', emoji: '🦅' },
-    { id: 'buho', emoji: '🦉' }
-  ];
+  usuarioId = '';
+  cargando = signal(true);
+  guardando = signal(false);
+  aviso = signal<Aviso | null>(null);
 
-  perfil: any = {
-    nombre_completo: '',
-    especialidad_principal: 'Costura y Confeccion Completa',
-    color_portada: '#0f172a',
-    color_texto_portada: '#ffffff',
-    avatar_svg_id: 'tigre',
-    cantidad_maquinas: 0,
-    cantidad_operarios: 0,
-    cep: '',
-    cnpj: '',
-    visibilidad_whatsapp: 'publico',
-    visibilidad_direccion: 'conectados',
-    visibilidad_cnpj: 'privado'
-  };
+  base = signal<any>(null);
+  form: any = {};
+  private original = '';
+  errores: Record<string, string> = {};
 
-  constructor(
-    private supabaseService: SupabaseService,
-    private router: Router,
-    private cdr: ChangeDetectorRef
-  ) {}
+  rol = computed<Rol>(() => (this.base()?.rol ?? 'funcionario') as Rol);
+  g = computed(() => (this.base() ? calcularGamificacion(this.base()) : null));
+  nivel = computed(() => this.g()?.nivel ?? 1);
+  ganadas = computed(() => (this.g()?.logros ?? []).filter(l => l.desbloqueada));
+  especialidades = computed(() => {
+    const lista = ESPECIALIDADES[this.rol()] ?? [];
+    const actual = this.base()?.especialidad_principal;
+    return actual && !lista.includes(actual) ? [actual, ...lista] : lista;
+  });
+
+  constructor(private supabaseService: SupabaseService, private router: Router) {}
+
+  private get db() { return this.supabaseService.supabase; }
 
   async ngOnInit() {
-    const { data: { user } } = await this.supabaseService.supabase.auth.getUser();
-    if (user) {
-      this.usuarioId = user.id;
-      await this.cargarPerfil();
-    } else {
-      this.router.navigate(['/login']);
+    const { data: { user } } = await this.db.auth.getUser();
+    if (!user) { this.router.navigate(['/login']); return; }
+    this.usuarioId = user.id;
+    await this.cargar();
+  }
+
+  private async cargar() {
+    const { data, error } = await this.db.from('perfiles').select('*').eq('id', this.usuarioId).single();
+    if (error || !data) {
+      this.notificar('No se pudo cargar tu perfil.', 'error');
+      this.cargando.set(false);
+      return;
     }
+    this.base.set(data);
+    this.form = this.extraer(data);
+    this.original = JSON.stringify(this.form);
+    this.cargando.set(false);
   }
 
-  async cargarPerfil() {
-    const { data } = await this.supabaseService.supabase
-      .from('perfiles')
-      .select('*')
-      .eq('id', this.usuarioId)
-      .single();
-
-    if (data) {
-      this.perfil = { ...this.perfil, ...data };
+  private extraer(src: any): any {
+    const rol = (src.rol ?? 'funcionario') as Rol;
+    const out: any = {};
+    for (const k of [...CAMPOS_COMUNES, ...CAMPOS_POR_ROL[rol]]) out[k] = src[k] ?? null;
+    out.lema = out.lema ?? '';
+    out.bio_taller = out.bio_taller ?? '';
+    out.color_portada = out.color_portada || '#134e4a';
+    out.color_texto_portada = '#ffffff';
+    out.patron_portada = out.patron_portada || 'liso';
+    out.insignias_destacadas = [...(out.insignias_destacadas ?? [])];
+    out.maquinas_maneja = [...(out.maquinas_maneja ?? [])];
+    out.visibilidad_whatsapp = out.visibilidad_whatsapp || 'publico';
+    out.visibilidad_direccion = out.visibilidad_direccion || 'conectados';
+    if ('visibilidad_cnpj' in out) out.visibilidad_cnpj = out.visibilidad_cnpj || 'privado';
+    if ('cantidad_maquinas' in out) out.cantidad_maquinas = Number(out.cantidad_maquinas) || 0;
+    if ('cantidad_operarios' in out) out.cantidad_operarios = Number(out.cantidad_operarios) || 0;
+    if ('cep' in out) out.cep = out.cep ?? '';
+    if ('cnpj' in out) out.cnpj = out.cnpj ?? '';
+    if ('modalidad_trabajo' in out) out.modalidad_trabajo = out.modalidad_trabajo || 'Individual';
+    for (const k of ['tiene_vehiculo', 'trabaja_en_casal', 'busca_alojamiento', 'alojamiento_propio']) {
+      if (k in out) out[k] = !!out[k];
     }
-    this.cdr.detectChanges();
+    return out;
   }
 
-  seleccionarColor(hex: string) {
-    this.perfil.color_portada = hex;
-    // Cálculo automático de contraste del texto
-    this.perfil.color_texto_portada = '#ffffff';
+  get sucio(): boolean { return JSON.stringify(this.form) !== this.original; }
+
+  private compCache: { key: string; val: ReturnType<typeof completitud> } = { key: '', val: { pct: 0, faltan: [] } };
+  get comp() {
+    const key = JSON.stringify(this.form);
+    if (key !== this.compCache.key) {
+      this.compCache = { key, val: completitud({ ...this.base(), ...this.form }) };
+    }
+    return this.compCache.val;
   }
 
-  getAvatarSvg(id: string): string {
-    const mapa: any = { tigre: '🐯', leon: '🦁', oso: '🐻', zorro: '🦊', aguila: '🦅', buho: '🦉' };
-    return mapa[id] || '🧵';
+  get esEmpresa(): boolean { return this.rol() === 'tienda' || this.rol() === 'oficina'; }
+  get muestraMaquinas(): boolean { return this.rol() === 'oficina' || this.rol() === 'funcionario'; }
+
+  bloqueado(nivelMin: number): boolean { return this.nivel() < nivelMin; }
+
+  private avisarBloqueo(nivelMin: number) {
+    this.notificar(`Se desbloquea en el nivel ${nivelMin}. Sigue sumando puntos.`, 'error');
   }
 
-  async guardarPerfil() {
-    this.guardando = true;
+  elegirColor(c: { hex: string; nivelMin: number }) {
+    if (this.bloqueado(c.nivelMin)) return this.avisarBloqueo(c.nivelMin);
+    this.form.color_portada = c.hex;
+  }
+
+  elegirPatron(p: { id: string; nivelMin: number }) {
+    if (this.bloqueado(p.nivelMin)) return this.avisarBloqueo(p.nivelMin);
+    this.form.patron_portada = p.id;
+  }
+
+  elegirIcono(i: { id: string; nivelMin: number } | null) {
+    if (i && this.bloqueado(i.nivelMin)) return this.avisarBloqueo(i.nivelMin);
+    this.form.avatar_icono = i ? i.id : null;
+  }
+
+  elegirAvatarColor(id: string | null) { this.form.avatar_color = id; }
+
+  toggleDestacada(id: string) {
+    const lista: string[] = this.form.insignias_destacadas;
+    if (lista.includes(id)) { this.form.insignias_destacadas = lista.filter(x => x !== id); return; }
+    if (lista.length >= 3) return this.notificar('Puedes destacar hasta 3 insignias.', 'error');
+    this.form.insignias_destacadas = [...lista, id];
+  }
+
+  toggleMaquina(id: string) {
+    const lista: string[] = this.form.maquinas_maneja;
+    this.form.maquinas_maneja = lista.includes(id) ? lista.filter(m => m !== id) : [...lista, id];
+  }
+
+  opcion(sel: boolean, bloq = false): string {
+    const base = 'inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 ';
+    if (bloq) return base + 'cursor-not-allowed border-stone-200 bg-stone-100 text-stone-400';
+    return base + (sel ? 'border-teal-700 bg-teal-700 text-white' : 'border-stone-300 bg-white text-slate-700 hover:bg-stone-50 active:scale-95');
+  }
+
+  private validar(): boolean {
+    const f = this.form, e: Record<string, string> = {};
+    if ((f.nombre_completo ?? '').trim().length < 3) e['nombre_completo'] = 'Escribe al menos 3 caracteres.';
+    if ((f.lema ?? '').length > 80) e['lema'] = 'Máximo 80 caracteres.';
+    if ((f.bio_taller ?? '').length > 280) e['bio_taller'] = 'Máximo 280 caracteres.';
+    if ('cep' in f && f.cep && f.cep.replace(/\D/g, '').length !== 8) e['cep'] = 'El CEP tiene 8 dígitos.';
+    if ('cnpj' in f && f.cnpj && !cnpjValido(f.cnpj)) e['cnpj'] = 'El CNPJ no es válido.';
+    if ('cantidad_maquinas' in f && f.cantidad_maquinas < 0) e['cantidad_maquinas'] = 'No puede ser negativo.';
+    if ('cantidad_operarios' in f && f.cantidad_operarios < 0) e['cantidad_operarios'] = 'No puede ser negativo.';
+    this.errores = e;
+    return Object.keys(e).length === 0;
+  }
+
+  async guardar() {
+    if (!this.validar()) {
+      this.notificar('Revisa los campos marcados.', 'error');
+      return;
+    }
+    this.guardando.set(true);
     try {
-      const { error } = await this.supabaseService.supabase
-        .from('perfiles')
-        .update(this.perfil)
-        .eq('id', this.usuarioId);
+      const payload: any = { ...this.form };
+      payload.nombre_completo = payload.nombre_completo.trim();
+      payload.lema = (payload.lema ?? '').trim() || null;
+      payload.bio_taller = (payload.bio_taller ?? '').trim() || null;
+      if ('cep' in payload) payload.cep = payload.cep ? payload.cep.replace(/\D/g, '') : null;
+      if ('cnpj' in payload) payload.cnpj = payload.cnpj ? payload.cnpj.replace(/\D/g, '') : null;
+      const ganadas = new Set(this.ganadas().map(l => l.id));
+      payload.insignias_destacadas = payload.insignias_destacadas.filter((id: string) => ganadas.has(id));
 
+      const { error } = await this.db.from('perfiles').update(payload).eq('id', this.usuarioId);
       if (error) throw error;
-      alert('¡Perfil Pro actualizado con éxito!');
-      this.volverAlPanel();
+
+      this.base.update(b => ({ ...b, ...payload }));
+      this.form = this.extraer(this.base());
+      this.original = JSON.stringify(this.form);
+      this.notificar('Perfil actualizado.');
+      setTimeout(() => this.router.navigate([ROL_PANEL[this.rol()] ?? '/feed']), 900);
     } catch (e: any) {
-      alert('Error al guardar: ' + e?.message);
+      console.error(e);
+      this.notificar(e?.message ?? 'No se pudo guardar. Intenta de nuevo.', 'error');
     } finally {
-      this.guardando = false;
-      this.cdr.detectChanges();
+      this.guardando.set(false);
     }
   }
 
-  volverAlPanel() {
-    this.router.navigate(['/panel-oficina']);
+  cancelar() {
+    if (this.sucio && !confirm('Tienes cambios sin guardar. Salir de todos modos?')) return;
+    this.router.navigate([ROL_PANEL[this.rol()] ?? '/feed']);
+  }
+
+  notificar(texto: string, tipo: 'ok' | 'error' = 'ok') {
+    this.aviso.set({ texto, tipo });
+    setTimeout(() => this.aviso.set(null), 3500);
   }
 }

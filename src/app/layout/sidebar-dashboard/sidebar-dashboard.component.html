@@ -1,92 +1,146 @@
-<!-- ========================================================================= -->
-<!-- EN PANTALLAS GRANDES (PC / Tablet): Barra lateral con toggle de expansión  -->
-<!-- ========================================================================= -->
-<aside [class.w-64]="sidebarExpandido()" [class.w-20]="!sidebarExpandido()" 
-       class="hidden md:flex bg-gray-900 text-gray-300 flex-col h-screen fixed left-0 top-0 border-r border-gray-800 z-50 transition-all duration-300 ease-in-out">
-  
-  <!-- Header del Sidebar con Botón para Contraer/Expandir -->
-  <div class="p-4 border-b border-gray-800 flex items-center justify-between overflow-hidden">
-    <span *ngIf="sidebarExpandido()" class="text-sm font-black text-white tracking-wider uppercase truncate">CosturaPronta</span>
-    <button (click)="toggleSidebar()" class="p-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-white transition mx-auto">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path *ngIf="sidebarExpandido()" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
-        <path *ngIf="!sidebarExpandido()" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
-      </svg>
-    </button>
-  </div>
+<!--
+  Escritorio (md+): columna lateral STICKY. Va dentro del flujo, debajo del header, así que
+  no tapa nada y el contenido no necesita márgenes mágicos.
+  Móvil: barra inferior fija. El layout debe dejar espacio abajo (ver main-layout).
+-->
 
-  <!-- Navegación Principal -->
-  <nav class="flex-1 px-3 py-6 space-y-2 overflow-y-auto overflow-x-hidden">
-    <p *ngIf="sidebarExpandido()" class="px-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Menú</p>
+<!-- ============================================================ ESCRITORIO -->
+<aside class="sticky top-[var(--header-h,4rem)] hidden h-[calc(100dvh-var(--header-h,4rem))] shrink-0 self-start flex-col
+              border-r border-slate-800 bg-slate-900 text-slate-300 transition-[width] duration-200 ease-out md:flex"
+       [ngClass]="expandido() ? 'w-64' : 'w-[4.5rem]'" aria-label="Navegación principal">
 
-    <a routerLink="/feed" routerLinkActive="bg-gray-800 text-white" 
-       class="flex items-center px-3.5 py-3 rounded-xl hover:bg-gray-800 hover:text-white transition font-medium text-sm gap-3">
-      <svg class="w-5 h-5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-      <span *ngIf="sidebarExpandido()" class="truncate">Feed de Trabajos</span>
+  <!-- Tarjeta de usuario -->
+  <div class="border-b border-slate-800 p-3">
+    <a *ngIf="usuario() as u; else invitado" [routerLink]="[rutaPerfil, u.id]"
+       class="flex items-center gap-3 rounded-lg p-1.5 transition hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-500"
+       [attr.title]="expandido() ? null : u.nombre_completo">
+      <app-avatar [nombre]="u.nombre_completo" tamano="md" [verificado]="!!u.verificado" [icono]="u.avatar_icono" [color]="u.avatar_color" />
+      <div *ngIf="expandido()" class="min-w-0">
+        <p class="truncate text-sm font-semibold text-white">{{ u.nombre_completo }}</p>
+        <p *ngIf="g() as x" class="truncate text-[11px] text-slate-400">Nivel {{ x.nivel }} · {{ x.nombre }}</p>
+      </div>
     </a>
 
-    <ng-container *ngIf="!cargando()">
-      <a *ngIf="rolUsuario() === 'tienda'" routerLink="/panel-tienda" routerLinkActive="bg-gray-800 text-white" 
-         class="flex items-center px-3.5 py-3 rounded-xl hover:bg-gray-800 hover:text-white transition font-medium text-sm gap-3">
-        <svg class="w-5 h-5 text-blue-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-        <span *ngIf="sidebarExpandido()" class="truncate">Panel Tienda</span>
-      </a>
+    <ng-template #invitado>
+      <div class="flex items-center gap-3 p-1.5">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-800 text-slate-400"><app-icon nombre="user" clase="w-5 h-5" /></span>
+        <p *ngIf="expandido()" class="text-sm font-semibold text-white">Bienvenido</p>
+      </div>
+    </ng-template>
+  </div>
 
-      <a *ngIf="rolUsuario() === 'oficina'" routerLink="/panel-oficina" routerLinkActive="bg-gray-800 text-white" 
-         class="flex items-center px-3.5 py-3 rounded-xl hover:bg-gray-800 hover:text-white transition font-medium text-sm gap-3">
-        <svg class="w-5 h-5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-        <span *ngIf="sidebarExpandido()" class="truncate">Panel Taller / Oficina</span>
-      </a>
+  <!-- Publicar -->
+  <div *ngIf="logueado()" class="px-3 pt-3">
+    <a routerLink="/crear-publicacion" [attr.title]="expandido() ? null : 'Publicar anuncio'"
+       class="flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-500 active:scale-[0.99] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-400">
+      <app-icon nombre="plus" clase="w-4 h-4 shrink-0" />
+      <span *ngIf="expandido()" class="truncate">Publicar anuncio</span>
+    </a>
+  </div>
 
-      <a *ngIf="rolUsuario() === 'funcionario'" routerLink="/panel-funcionario" routerLinkActive="bg-gray-800 text-white" 
-         class="flex items-center px-3.5 py-3 rounded-xl hover:bg-gray-800 hover:text-white transition font-medium text-sm gap-3">
-        <svg class="w-5 h-5 text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-        <span *ngIf="sidebarExpandido()" class="truncate">Panel Operario</span>
-      </a>
-    </ng-container>
+  <!-- Enlaces -->
+  <nav class="flex-1 space-y-1 overflow-y-auto overflow-x-hidden px-3 py-3" aria-label="Secciones">
+    <a *ngFor="let i of items()" [routerLink]="i.ruta" routerLinkActive="bg-white/10 text-white" ariaCurrentWhenActive="page"
+       [attr.title]="expandido() ? null : i.txt" [attr.aria-label]="i.txt"
+       class="group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-white/5 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-500">
+      <app-icon [nombre]="i.icono" clase="w-5 h-5 shrink-0" />
+      <span *ngIf="expandido()" class="flex-1 truncate">{{ i.txt }}</span>
+      <span *ngIf="expandido() && i.badge" class="rounded-full bg-rose-600 px-1.5 text-[11px] font-bold text-white">{{ i.badge }}</span>
+      <span *ngIf="!expandido() && i.badge" class="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-slate-900" aria-hidden="true"></span>
+    </a>
 
-    <a routerLink="/editar-perfil" routerLinkActive="bg-gray-800 text-white" 
-       class="flex items-center px-3.5 py-3 rounded-xl hover:bg-gray-800 hover:text-white transition font-medium text-sm gap-3">
-      <svg class="w-5 h-5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg>
-      <span *ngIf="sidebarExpandido()" class="truncate">Mi Perfil / Máquinas</span>
+    <a *ngIf="logueado()" routerLink="/editar-perfil" routerLinkActive="bg-white/10 text-white" ariaCurrentWhenActive="page"
+       [attr.title]="expandido() ? null : 'Editar perfil'" aria-label="Editar perfil"
+       class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-white/5 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-500">
+      <app-icon nombre="cog" clase="w-5 h-5 shrink-0" />
+      <span *ngIf="expandido()" class="truncate">Editar perfil</span>
     </a>
   </nav>
 
-  <!-- Botón Cerrar Sesión -->
-  <div class="p-3 border-t border-gray-800">
-    <button (click)="cerrarSesion()" class="w-full flex items-center px-3.5 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition font-medium text-sm gap-3">
-      <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-      <span *ngIf="sidebarExpandido()" class="truncate">Cerrar Sesión</span>
+  <!-- Pie: sesión y colapsar -->
+  <div class="space-y-1 border-t border-slate-800 p-3">
+    <ng-container *ngIf="logueado(); else accesoEscritorio">
+      <button type="button" (click)="cerrarSesion()" [attr.title]="expandido() ? null : 'Cerrar sesión'"
+              class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-rose-300 transition hover:bg-rose-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-rose-400">
+        <app-icon nombre="logout" clase="w-5 h-5 shrink-0" />
+        <span *ngIf="expandido()" class="truncate">Cerrar sesión</span>
+      </button>
+    </ng-container>
+    <ng-template #accesoEscritorio>
+      <a routerLink="/login" [attr.title]="expandido() ? null : 'Iniciar sesión'"
+         class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-white/5 hover:text-white">
+        <app-icon nombre="login" clase="w-5 h-5 shrink-0" /><span *ngIf="expandido()" class="truncate">Iniciar sesión</span>
+      </a>
+      <a routerLink="/registro" [attr.title]="expandido() ? null : 'Crear cuenta'"
+         class="flex items-center gap-3 rounded-lg bg-teal-600 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-500">
+        <app-icon nombre="user-plus" clase="w-5 h-5 shrink-0" /><span *ngIf="expandido()" class="truncate">Crear cuenta</span>
+      </a>
+    </ng-template>
+
+    <button type="button" (click)="toggleSidebar()" [attr.aria-label]="expandido() ? 'Contraer menú' : 'Expandir menú'" [attr.aria-expanded]="expandido()"
+            class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-white/5 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-500">
+      <app-icon [nombre]="expandido() ? 'chevron-left' : 'chevron-right'" clase="w-5 h-5 shrink-0" />
+      <span *ngIf="expandido()" class="truncate">Contraer</span>
     </button>
   </div>
 </aside>
 
-<!-- ========================================================================= -->
-<!-- EN CELULARES (MOBILE BOTTOM NAVBAR): Barra fija abajo                        -->
-<!-- ========================================================================= -->
-<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 text-gray-300 flex justify-around items-center h-16 z-50 px-2 shadow-lg">
-  <a routerLink="/feed" routerLinkActive="text-blue-400" class="flex flex-col items-center justify-center flex-1 py-1 text-xs font-medium">
-    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-    Feed
-  </a>
+<!-- ================================================================== MÓVIL -->
+<!-- Hoja "Más" -->
+<ng-container *ngIf="menuMovil()">
+  <div class="fixed inset-0 z-30 bg-slate-900/40 md:hidden" (click)="menuMovil.set(false)" aria-hidden="true"></div>
+  <div id="menu-movil" role="menu"
+       class="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 rounded-t-2xl border-t border-stone-200 bg-white p-3 shadow-xl md:hidden">
+    <a routerLink="/editar-perfil" role="menuitem" class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-slate-800 hover:bg-stone-100">
+      <app-icon nombre="cog" clase="w-5 h-5 text-slate-500" /> Editar perfil
+    </a>
+    <button type="button" role="menuitem" (click)="cerrarSesion()" class="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-rose-700 hover:bg-rose-50">
+      <app-icon nombre="logout" clase="w-5 h-5" /> Cerrar sesión
+    </button>
+  </div>
+</ng-container>
 
-  <ng-container *ngIf="!cargando()">
-    <a *ngIf="rolUsuario() === 'tienda'" routerLink="/panel-tienda" routerLinkActive="text-blue-400" class="flex flex-col items-center justify-center flex-1 py-1 text-xs font-medium">
-      <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-      Panel
-    </a>
-    <a *ngIf="rolUsuario() === 'oficina'" routerLink="/panel-oficina" routerLinkActive="text-blue-400" class="flex flex-col items-center justify-center flex-1 py-1 text-xs font-medium">
-      <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-      Panel
-    </a>
-    <a *ngIf="rolUsuario() === 'funcionario'" routerLink="/panel-funcionario" routerLinkActive="text-blue-400" class="flex flex-col items-center justify-center flex-1 py-1 text-xs font-medium">
-      <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-      Panel
-    </a>
-  </ng-container>
+<!-- Barra inferior: respeta la zona segura del iPhone -->
+<nav class="fixed inset-x-0 bottom-0 z-40 border-t border-slate-800 bg-slate-900 pb-[env(safe-area-inset-bottom)] text-slate-400 md:hidden" aria-label="Navegación principal">
 
-  <a routerLink="/editar-perfil" routerLinkActive="text-blue-400" class="flex flex-col items-center justify-center flex-1 py-1 text-xs font-medium">
-    <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg>
-    Perfil
-  </a>
+  <ul *ngIf="logueado(); else invitadoMovil" class="mx-auto grid h-16 max-w-md grid-cols-5 items-center">
+    <li *ngFor="let i of itemsMovil()" class="h-full">
+      <a [routerLink]="i.ruta" routerLinkActive="text-white" ariaCurrentWhenActive="page"
+         class="relative flex h-full flex-col items-center justify-center gap-1 text-[11px] font-medium transition active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-500">
+        <app-icon [nombre]="i.icono" clase="w-6 h-6" />
+        {{ i.corto }}
+        <span *ngIf="i.badge" class="absolute right-[26%] top-2 min-w-4 rounded-full bg-rose-600 px-1 text-center text-[10px] font-bold leading-4 text-white">{{ i.badge }}</span>
+      </a>
+    </li>
+
+    <li class="flex justify-center">
+      <a routerLink="/crear-publicacion" aria-label="Publicar anuncio"
+         class="-mt-6 flex h-12 w-12 items-center justify-center rounded-full bg-teal-600 text-white shadow-lg ring-4 ring-slate-900 transition active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-300">
+        <app-icon nombre="plus" clase="w-6 h-6" />
+      </a>
+    </li>
+
+    <li class="h-full">
+      <a [routerLink]="[rutaPerfil, usuario()?.id]" routerLinkActive="text-white" ariaCurrentWhenActive="page"
+         class="flex h-full flex-col items-center justify-center gap-1 text-[11px] font-medium transition active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-500">
+        <app-icon nombre="user" clase="w-6 h-6" /> Perfil
+      </a>
+    </li>
+
+    <li class="h-full">
+      <button type="button" (click)="menuMovil.set(!menuMovil())" [attr.aria-expanded]="menuMovil()" aria-controls="menu-movil"
+              class="flex h-full w-full flex-col items-center justify-center gap-1 text-[11px] font-medium transition active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-500"
+              [class.text-white]="menuMovil()">
+        <app-icon nombre="dots" clase="w-6 h-6" /> Más
+      </button>
+    </li>
+  </ul>
+
+  <ng-template #invitadoMovil>
+    <ul class="mx-auto grid h-16 max-w-md grid-cols-3 items-center">
+      <li class="h-full"><a routerLink="/feed" routerLinkActive="text-white" class="flex h-full flex-col items-center justify-center gap-1 text-[11px] font-medium"><app-icon nombre="home" clase="w-6 h-6" /> Inicio</a></li>
+      <li class="h-full"><a routerLink="/login" routerLinkActive="text-white" class="flex h-full flex-col items-center justify-center gap-1 text-[11px] font-medium"><app-icon nombre="login" clase="w-6 h-6" /> Ingresar</a></li>
+      <li class="h-full"><a routerLink="/registro" routerLinkActive="text-white" class="flex h-full flex-col items-center justify-center gap-1 text-[11px] font-semibold text-teal-400"><app-icon nombre="user-plus" clase="w-6 h-6" /> Registrarme</a></li>
+    </ul>
+  </ng-template>
 </nav>

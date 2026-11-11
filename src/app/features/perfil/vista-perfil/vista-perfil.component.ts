@@ -122,7 +122,7 @@ export class VistaPerfilComponent implements OnInit, OnDestroy {
 
   constructor(
     private route: ActivatedRoute, private router: Router,
-    private supabaseService: SupabaseService, private social: SocialService, private location: Location
+    private supabaseService: SupabaseService, private social: SocialService
   ) {}
 
   private get db() { return this.supabaseService.supabase; }

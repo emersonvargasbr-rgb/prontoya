@@ -29,6 +29,7 @@ export class FeedTrabajosComponent implements OnInit {
   readonly tipos = TIPO_PUBLICACION;
   readonly moneda = moneda;
 
+  mostrarFiltros = signal(false);
   cargando = signal(true);
   error = signal(false);
   lista = signal<any[]>([]);
@@ -114,7 +115,10 @@ export class FeedTrabajosComponent implements OnInit {
       console.error(e);
       this.error.set(true);
     } finally {
-      this.cargando.set(false);
+      // 👇 Usamos queueMicrotask para diferir el cambio de la señal al siguiente ciclo de microtareas
+      queueMicrotask(() => {
+        this.cargando.set(false);
+      });
     }
   }
 
@@ -173,4 +177,6 @@ export class FeedTrabajosComponent implements OnInit {
 
   irAlLogin() { this.router.navigate(['/login']); }
   irAlRegistro() { this.router.navigate(['/registro']); }
+
+
 }

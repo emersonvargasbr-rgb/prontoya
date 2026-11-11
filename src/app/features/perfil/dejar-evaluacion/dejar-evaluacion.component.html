@@ -1,67 +1,89 @@
-<div class="min-h-screen bg-slate-50/70 py-10 px-4 flex justify-center items-center">
-  <div class="w-full max-w-md bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden p-6 sm:p-8 space-y-6">
-    
-    <!-- Encabezado -->
-    <div class="text-center space-y-2">
-      <span class="text-xs font-bold uppercase tracking-wider text-amber-600 bg-amber-50 px-3 py-1 rounded-full">Sistema de Reputación</span>
-      <h2 class="text-2xl font-black text-slate-900">Calificar Experiencia</h2>
-      <p class="text-xs text-slate-500">Tu opinión genera confianza en el mercado textil de São Paulo.</p>
-    </div>
+<div class="min-h-screen bg-stone-50 px-4 py-6 text-slate-900">
+  <app-toast [aviso]="aviso()" />
 
-    <!-- Estado de Carga / Error -->
-    <div *ngIf="cargandoPerfil" class="text-center py-8">
-      <div class="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-    </div>
+  <div class="mx-auto max-w-lg space-y-4">
 
-    <div *ngIf="error" class="bg-rose-50 text-rose-600 p-4 rounded-2xl text-xs font-semibold text-center border border-rose-100">
-      {{ error }}
-    </div>
-
-    <!-- Contenido cuando carga el perfil a evaluar -->
-    <div *ngIf="!cargandoPerfil && usuarioEvaluado" class="space-y-6">
-      
-      <!-- Mini Tarjeta del Usuario Evaluado -->
-      <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/60 flex items-center gap-3">
-        <div class="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-xl shadow-sm">
-          {{ usuarioEvaluado.nombre_completo?.charAt(0) | uppercase }}
-        </div>
-        <div>
-          <h4 class="font-bold text-slate-900 text-sm">{{ usuarioEvaluado.nombre_completo }}</h4>
-          <p class="text-xs text-blue-600 font-semibold capitalize">Rol: {{ usuarioEvaluado.rol }} | 📍 {{ usuarioEvaluado.zona_ubicacion || 'São Paulo' }}</p>
-        </div>
+    <header class="flex items-center justify-between">
+      <div>
+        <h1 class="text-xl font-bold">{{ editando() ? 'Editar tu reseña' : 'Dejar una reseña' }}</h1>
+        <p class="text-sm text-slate-500">Tu opinión ayuda a que la comunidad trabaje con confianza.</p>
       </div>
+      <button type="button" (click)="volver()" aria-label="Cerrar" [ngClass]="ui.btnSecundario" class="!px-2.5"><app-icon nombre="x" clase="w-4 h-4" /></button>
+    </header>
 
-      <!-- Selector Táctil de Estrellas (1 a 5) -->
-      <div class="text-center space-y-2">
-        <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">Calificación General</label>
-        <div class="flex justify-center gap-2">
-          <button type="button" *ngFor="let star of [1,2,3,4,5]" 
-            (click)="seleccionarEstrellas(star)"
-            class="p-2 text-3xl transition transform active:scale-90 focus:outline-none">
-            <span [class.text-amber-400]="star <= estrellas" [class.text-slate-200]="star > estrellas">★</span>
+    <div *ngIf="cargando()" class="space-y-3" aria-busy="true">
+      <div class="h-20 animate-pulse rounded-xl bg-stone-200/70"></div>
+      <div class="h-64 animate-pulse rounded-xl bg-stone-200/70"></div>
+    </div>
+
+    <!-- Error o sin permiso -->
+    <div *ngIf="!cargando() && error()" [ngClass]="ui.vacio">
+      <app-icon nombre="lock" clase="mx-auto h-8 w-8 text-stone-400" />
+      <p class="mx-auto mt-3 max-w-sm text-sm font-semibold">{{ error() }}</p>
+      <button type="button" (click)="volver()" [ngClass]="ui.btnOscuro" class="mt-4">Volver a mi panel</button>
+    </div>
+
+    <ng-container *ngIf="!cargando() && !error() && evaluado() as p">
+
+      <!-- A quién calificas -->
+      <section [ngClass]="ui.card" class="flex items-center gap-3 p-4">
+        <app-avatar [nombre]="p.nombre_completo" tamano="lg" [verificado]="!!p.verificado" [icono]="p.avatar_icono" [color]="p.avatar_color" [anillo]="g()?.claseAnillo ?? ''" />
+        <div class="min-w-0 flex-1">
+          <p class="truncate text-base font-bold">{{ p.nombre_completo }}</p>
+          <p class="text-xs text-slate-500">{{ roles[p.rol]?.txt }}<span *ngIf="p.zona_ubicacion"> · {{ p.zona_ubicacion }}</span></p>
+          <p class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-amber-700">
+            <app-icon nombre="star" [relleno]="true" clase="w-3.5 h-3.5" /> {{ p.promedio_estrellas || '0.0' }}
+            <span class="font-normal text-slate-500">({{ p.total_evaluaciones || 0 }} reseñas)</span>
+          </p>
+        </div>
+      </section>
+
+      <form (ngSubmit)="enviar()" class="space-y-4">
+
+        <!-- Estrellas -->
+        <section [ngClass]="ui.card" class="p-5 text-center">
+          <h2 id="lbl-estrellas" class="text-sm font-bold">¿Cómo fue trabajar con {{ p.nombre_completo }}?</h2>
+          <div class="mt-3 flex justify-center gap-1" role="radiogroup" aria-labelledby="lbl-estrellas" (keydown)="teclado($event)" (mouseleave)="hover.set(0)">
+            <button type="button" *ngFor="let n of estrellasLista" role="radio" [attr.aria-checked]="estrellas() === n" [attr.aria-label]="n + (n === 1 ? ' estrella' : ' estrellas')"
+                    [attr.tabindex]="estrellas() === n ? 0 : -1" (click)="elegirEstrellas(n)" (mouseenter)="hover.set(n)"
+                    class="rounded-md p-1 transition active:scale-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600">
+              <app-icon nombre="star" [relleno]="n <= (hover() || estrellas())" clase="w-10 h-10"
+                        [class.text-amber-500]="n <= (hover() || estrellas())" [class.text-stone-300]="n > (hover() || estrellas())" />
+            </button>
+          </div>
+          <p class="mt-1 h-5 text-sm font-semibold text-slate-700" aria-live="polite">{{ textoEstrellas() }}</p>
+        </section>
+
+        <!-- Etiquetas -->
+        <section [ngClass]="ui.card" class="p-4">
+          <h2 class="text-sm font-bold">Qué destacarías <span class="font-normal text-slate-500">(hasta {{ maxEtiquetas }})</span></h2>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <button type="button" *ngFor="let e of etiquetasDisponibles()" (click)="toggleEtiqueta(e)" [attr.aria-pressed]="etiquetas().includes(e)"
+                    class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-semibold transition active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
+                    [ngClass]="etiquetas().includes(e) ? 'border-teal-700 bg-teal-700 text-white' : 'border-stone-300 bg-white text-slate-700 hover:bg-stone-50'">
+              <app-icon [nombre]="etiquetas().includes(e) ? 'check' : 'plus'" clase="w-3.5 h-3.5" /> {{ e }}
+            </button>
+          </div>
+        </section>
+
+        <!-- Comentario -->
+        <section [ngClass]="ui.card" class="p-4">
+          <label [ngClass]="ui.etiqueta" for="comentario">Cuéntanos tu experiencia</label>
+          <textarea id="comentario" [(ngModel)]="comentario" name="comentario" rows="4" [maxlength]="maxComentario" required
+                    placeholder="Cumplió con los plazos, la calidad fue buena, la comunicación fue clara..." [ngClass]="ui.inputGrande"></textarea>
+          <p class="mt-1 flex justify-between text-[11px]" [ngClass]="comentarioValido || !comentario ? 'text-slate-400' : 'text-amber-700'">
+            <span>Mínimo {{ minComentario }} caracteres</span><span>{{ comentario.trim().length }}/{{ maxComentario }}</span>
+          </p>
+        </section>
+
+        <div class="flex gap-3">
+          <button *ngIf="editando()" type="button" (click)="eliminar()" [ngClass]="ui.btnPeligro" class="!px-3" aria-label="Eliminar reseña"><app-icon nombre="trash" clase="w-4 h-4" /></button>
+          <button type="button" (click)="volver()" [ngClass]="ui.btnSecundario" class="flex-1 !py-3">Cancelar</button>
+          <button type="submit" [disabled]="enviando() || !comentarioValido" [ngClass]="ui.btnPrimario" class="flex-[2] !py-3">
+            {{ enviando() ? 'Enviando...' : (editando() ? 'Guardar cambios' : 'Publicar reseña') }}
           </button>
         </div>
-        <p class="text-xs font-extrabold text-amber-600">{{ estrellas }} de 5 estrellas</p>
-      </div>
-
-      <!-- Comentario / Reseña -->
-      <div class="space-y-1">
-        <label class="block text-xs font-bold text-slate-600 uppercase">Comentario sobre el trabajo o trato</label>
-        <textarea [(ngModel)]="comentario" rows="3" placeholder="Ej: Excelente taller, cumplió con los plazos de entrega y la calidad de costura impecable..."
-          class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition"></textarea>
-      </div>
-
-      <!-- Botón Enviar -->
-      <button (click)="enviarEvaluacion()" [disabled]="cargando"
-        class="w-full bg-slate-900 active:scale-[0.98] text-white font-black py-4 px-6 rounded-2xl shadow-xl shadow-slate-900/20 hover:bg-slate-800 transition duration-200 disabled:opacity-50">
-        {{ cargando ? 'Enviando calificación...' : 'Publicar Calificación' }}
-      </button>
-
-      <button routerLink="/feed" class="w-full text-center text-xs font-bold text-slate-500 hover:text-slate-800 pt-2">
-        Cancelar y volver
-      </button>
-
-    </div>
-
+      </form>
+    </ng-container>
   </div>
 </div>
