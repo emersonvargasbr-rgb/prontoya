@@ -6,7 +6,6 @@ import { SupabaseService } from '../../../core/services/supabase.service';
 import { MAQUINAS, ROL_PANEL, UI, ZONAS } from '../../../core/utils/helpers';
 import { IconComponent } from '../../../shared/components/icon.component';
 
-
 type Tipo = 'busco_oficina' | 'busco_corte' | 'busco_funcionario' | 'busco_trabajo';
 
 interface Opcion { id: Tipo; titulo: string; ayuda: string; icono: string; }
@@ -14,12 +13,12 @@ interface Opcion { id: Tipo; titulo: string; ayuda: string; icono: string; }
 /** Qué puede publicar cada perfil. */
 const OPCIONES_POR_ROL: Record<string, Opcion[]> = {
   tienda: [
-    { id: 'busco_oficina',     titulo: 'Publicar un lote',      ayuda: 'Un taller lo toma y lo confecciona.',   icono: 'bag' },
-    { id: 'busco_funcionario', titulo: 'Contratar costureros',  ayuda: 'Abre una vacante para tu equipo.',      icono: 'briefcase' },
+    { id: 'busco_oficina',     titulo: 'Publicar un lote',     ayuda: 'Un taller lo toma y lo confecciona.',    icono: 'bag' },
+    { id: 'busco_funcionario', titulo: 'Contratar costureros', ayuda: 'Abre una vacante para tu equipo.',      icono: 'briefcase' },
   ],
   oficina: [
-    { id: 'busco_corte',       titulo: 'Ofrecer mi taller',     ayuda: 'Las tiendas te envían propuestas.',     icono: 'scissors' },
-    { id: 'busco_funcionario', titulo: 'Contratar costureros',  ayuda: 'Abre una vacante para tu equipo.',      icono: 'briefcase' },
+    { id: 'busco_corte',        titulo: 'Ofrecer mi taller',     ayuda: 'Las tiendas te envían propuestas.',     icono: 'scissors' },
+    { id: 'busco_funcionario', titulo: 'Contratar costureros', ayuda: 'Abre una vacante para tu equipo.',      icono: 'briefcase' },
   ],
   funcionario: [
     { id: 'busco_trabajo',     titulo: 'Ofrecer mi disponibilidad', ayuda: 'Talleres y tiendas te encuentran.', icono: 'user' },
@@ -38,8 +37,15 @@ export class CrearPublicacionComponent implements OnInit {
   readonly maquinaria = MAQUINAS;
 
   usuarioId = '';
-  rolUsuario = '';
-  opciones: Opcion[] = [];
+
+  // Signals encapsulados con getters y setters para máxima compatibilidad con HTML y reactividad
+  private _rolUsuario = signal<string>('');
+  get rolUsuario(): string { return this._rolUsuario(); }
+  set rolUsuario(v: string) { this._rolUsuario.set(v); }
+
+  private _opciones = signal<Opcion[]>([]);
+  get opciones(): Opcion[] { return this._opciones(); }
+  set opciones(v: Opcion[]) { this._opciones.set(v); }
 
   cargando = signal(false);
   mensajeError = signal('');
@@ -54,18 +60,49 @@ export class CrearPublicacionComponent implements OnInit {
   private get db() { return this.supabaseService.supabase; }
 
   async ngOnInit() {
-    const { data: { user } } = await this.db.auth.getUser();
-    if (!user) { this.router.navigate(['/login']); return; }
-    this.usuarioId = user.id;
+    this.cargando.set(true);
+    try {
+      // 🚀 OPTIMIZACIÓN CLAVE: Consultamos la sesión y la tabla perfiles EN PARALELO con Promise.all
+      const [{ data: authData }, perfilRes] = await Promise.all([
+        this.db.auth.getUser(),
+        this.db.from('perfiles').select('id, rol, zona_ubicacion')
+      ]);
 
-    const { data, error } = await this.db.from('perfiles').select('rol, zona_ubicacion').eq('id', user.id).single();
-    if (error || !data) { this.mensajeError.set('No se pudo cargar tu perfil.'); return; }
+      const user = authData?.user;
+      if (!user) { 
+        this.router.navigate(['/login']); 
+        return; 
+      }
+      
+      this.usuarioId = user.id;
 
-    this.rolUsuario = data.rol;
-    this.opciones = OPCIONES_POR_ROL[data.rol] ?? [];
-    this.publicacion = this.nuevaPublicacion(this.opciones[0]?.id ?? 'busco_oficina');
-    if (data.zona_ubicacion && this.zonas.includes(data.zona_ubicacion)) {
-      this.publicacion.zona_ubicacion = data.zona_ubicacion;
+      const perfiles = perfilRes.data ?? [];
+      const miPerfil = perfiles.find((p: any) => p.id === user.id);
+
+      if (!miPerfil) {
+        this.mensajeError.set('No se pudo encontrar tu perfil.');
+        return;
+      }
+
+      const rol = miPerfil.rol || 'oficina';
+      this.rolUsuario = rol;
+      
+      // Asignar de inmediato las opciones correspondientes al rol evitando retrasos visuales
+      this.opciones = OPCIONES_POR_ROL[rol] ?? OPCIONES_POR_ROL['oficina'];
+      
+      const tipoInicial = this.opciones[0]?.id ?? 'busco_oficina';
+      this.publicacion = this.nuevaPublicacion(tipoInicial);
+      
+      if (miPerfil.zona_ubicacion && this.zonas.includes(miPerfil.zona_ubicacion)) {
+        this.publicacion.zona_ubicacion = miPerfil.zona_ubicacion;
+      }
+    } catch (e) {
+      console.error(e);
+      this.mensajeError.set('Error al cargar los datos del usuario.');
+    } finally {
+      queueMicrotask(() => {
+        this.cargando.set(false);
+      });
     }
   }
 
@@ -186,7 +223,9 @@ export class CrearPublicacionComponent implements OnInit {
       console.error(e);
       this.mensajeError.set(`No se pudo guardar: ${e?.message || 'intenta de nuevo.'}`);
     } finally {
-      this.cargando.set(false);
+      queueMicrotask(() => {
+        this.cargando.set(false);
+      });
     }
   }
 

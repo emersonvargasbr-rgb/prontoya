@@ -1,53 +1,82 @@
-<div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-  
-  <div class="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+<app-toast [aviso]="aviso()" />
+
+<section class="overflow-hidden" [ngClass]="ui.card" aria-labelledby="titulo-lotes">
+
+  <header class="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 bg-stone-50/60 p-5">
     <div>
-      <h2 class="text-xl font-bold text-gray-900">Control de Producción</h2>
-      <p class="text-sm text-gray-500">Lotes actualmente en confección</p>
+      <h2 id="titulo-lotes" class="text-lg font-bold">Control de producción</h2>
+      <p class="text-sm text-slate-500">Lotes que están en confección ahora.</p>
     </div>
-    <span class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full">
-      {{ lotes.length }} Activos
-    </span>
-  </div>
-
-  <div *ngIf="cargando" class="p-10 text-center text-gray-500 animate-pulse">
-    Cargando inventario...
-  </div>
-
-  <div *ngIf="!cargando && lotes.length === 0" class="p-10 text-center">
-    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-      <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+    <div *ngIf="!cargando() && lotes().length > 0" class="flex items-center gap-4 text-right text-xs text-slate-500">
+      <span><strong class="block text-sm text-slate-900">{{ lotes().length }}</strong> lotes</span>
+      <span><strong class="block text-sm text-slate-900">{{ totalPiezas() | number }}</strong> piezas</span>
+      <span><strong class="block text-sm text-teal-800">{{ moneda(totalMonto()) }}</strong> en juego</span>
     </div>
-    <h3 class="text-lg font-bold text-gray-900">Sin lotes en producción</h3>
-    <p class="text-gray-500 text-sm mt-1">No hay piezas asignadas actualmente.</p>
+  </header>
+
+  <!-- Operarios: sus cortes están en su panel -->
+  <div *ngIf="!cargando() && esOperario()" class="p-8 text-center">
+    <app-icon nombre="briefcase" clase="mx-auto h-8 w-8 text-stone-400" />
+    <p class="mt-3 text-sm font-semibold">Tus cortes asignados están en tu panel</p>
+    <a [routerLink]="rutaPanel()" [ngClass]="ui.btnOscuro" class="mt-4">Ir a mi panel</a>
   </div>
 
-  <div *ngIf="!cargando && lotes.length > 0" class="divide-y divide-gray-100">
-    <!-- Fila de Lote -->
-    <div *ngFor="let lote of lotes" class="p-6 hover:bg-gray-50 transition flex flex-col md:flex-row md:items-center justify-between gap-4">
-      
-      <div class="flex-1">
-        <div class="flex items-center gap-3 mb-1">
-          <h4 class="text-lg font-bold text-gray-900">{{ lote.publicaciones.titulo }}</h4>
-          <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-0.5 rounded border border-yellow-200">
-            En Proceso
-          </span>
-        </div>
-        <div class="text-sm text-gray-500 flex items-center gap-4">
-          <span><strong class="text-gray-700">Cant:</strong> {{ lote.cantidad_asignada }} pz</span>
-          <span><strong class="text-gray-700">Pago Est.:</strong> R$ {{ lote.cantidad_asignada * lote.publicaciones.pago_por_pieza | number:'1.2-2' }}</span>
+  <!-- Cargando -->
+  <div *ngIf="cargando()" class="space-y-3 p-5" aria-busy="true">
+    <div class="h-20 animate-pulse rounded-lg bg-stone-200/70"></div>
+    <div class="h-20 animate-pulse rounded-lg bg-stone-200/70"></div>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="!cargando() && error()" class="p-8 text-center">
+    <app-icon nombre="alert" clase="mx-auto h-8 w-8 text-rose-400" />
+    <p class="mt-3 text-sm font-semibold">{{ error() }}</p>
+    <button type="button" (click)="cargar()" [ngClass]="ui.btnOscuro" class="mt-4">Reintentar</button>
+  </div>
+
+  <!-- Vacío -->
+  <div *ngIf="!cargando() && !error() && !esOperario() && lotes().length === 0" class="p-8 text-center">
+    <app-icon nombre="layers" clase="mx-auto h-8 w-8 text-stone-400" />
+    <p class="mt-3 text-sm font-semibold">Sin lotes en producción</p>
+    <p class="mt-1 text-sm text-slate-500">No hay piezas asignadas por el momento.</p>
+    <a routerLink="/feed" [ngClass]="ui.btnSecundario" class="mt-4"><app-icon nombre="search" clase="w-4 h-4" /> Buscar lotes</a>
+  </div>
+
+  <!-- Lista -->
+  <ul *ngIf="!cargando() && !error() && lotes().length > 0" class="divide-y divide-stone-100">
+    <li *ngFor="let l of lotes()" class="flex flex-col gap-4 p-5 transition hover:bg-stone-50/60 md:flex-row md:items-center md:justify-between">
+
+      <div class="flex min-w-0 items-start gap-3">
+        <app-avatar [nombre]="l.contraparte?.nombre_completo" [verificado]="!!l.contraparte?.verificado" />
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <h3 class="truncate text-sm font-bold">{{ l.descripcion_corte }}</h3>
+            <span class="rounded-md px-2 py-0.5 text-[11px] font-semibold" [ngClass]="claseEstado(l.estado)">{{ etiquetaEstado(l) }}</span>
+          </div>
+          <p class="mt-0.5 text-xs text-slate-500">
+            <a *ngIf="l.contraparte?.id" [routerLink]="['/perfil-usuario', l.contraparte.id]" class="font-medium text-slate-700 hover:underline">{{ l.contraparte.nombre_completo }}</a>
+            · {{ l.cantidad_piezas | number }} piezas · {{ moneda(l.pago_por_pieza) }} por pieza
+          </p>
+          <p class="mt-1 text-xs font-semibold text-teal-800">Total {{ moneda(l.total) }}</p>
         </div>
       </div>
 
-      <div class="text-left md:text-right">
-        <p class="text-sm font-bold text-gray-900">Entrega Acordada</p>
-        <p class="text-sm text-gray-600 mb-2">{{ lote.fecha_entrega | date:'longDate' }}</p>
-        
-        <button (click)="marcarComoEntregado(lote.id)" class="text-sm bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition shadow-sm">
-          Marcar Finalizado
+      <div class="flex flex-wrap gap-2 md:justify-end">
+        <button type="button" (click)="whatsapp(l)" [ngClass]="ui.btnSecundario" class="!px-3 !text-xs"><app-icon nombre="chat" clase="w-3.5 h-3.5" /> WhatsApp</button>
+
+        <button *ngIf="puedeTerminar(l)" type="button" (click)="terminar(l)" [disabled]="procesando() === l.id" [ngClass]="ui.btnOscuro" class="!px-3 !text-xs">
+          <app-icon nombre="flag" clase="w-3.5 h-3.5" /> {{ procesando() === l.id ? 'Guardando...' : 'Marcar terminado' }}
         </button>
-      </div>
 
-    </div>
-  </div>
-</div>
+        <button *ngIf="puedeConfirmar(l)" type="button" (click)="confirmar(l)" [disabled]="procesando() === l.id" [ngClass]="ui.btnPrimario" class="!px-3 !text-xs">
+          <app-icon nombre="check" clase="w-3.5 h-3.5" /> {{ procesando() === l.id ? 'Guardando...' : 'Confirmar recepción' }}
+        </button>
+
+        <p *ngIf="!puedeTerminar(l) && !puedeConfirmar(l)" class="inline-flex items-center gap-1.5 px-1 text-xs text-slate-500">
+          <app-icon nombre="clock" clase="w-3.5 h-3.5" />
+          {{ l.estado === 'Terminado' ? 'Esperando confirmación de la tienda' : 'Esperando que el taller termine' }}
+        </p>
+      </div>
+    </li>
+  </ul>
+</section>

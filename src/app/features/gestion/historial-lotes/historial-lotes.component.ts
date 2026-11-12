@@ -1,64 +1,97 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
 import { SupabaseService } from '../../../core/services/supabase.service';
+
+import { UI, moneda } from '../../../core/utils/helpers';
+import { AvatarComponent } from '../../../shared/components/avatar.component';
+import { IconComponent } from '../../../shared/components/icon.component';
+import { FilaHistorial, LotesService } from '../../../core/services/lotes.service';
+
 
 @Component({
   selector: 'app-historial-lotes',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule, RouterModule, IconComponent, AvatarComponent],
   templateUrl: './historial-lotes.component.html',
-  styleUrls: ['./historial-lotes.component.css']
 })
 export class HistorialLotesComponent implements OnInit {
-  usuarioId: string = '';
-  rolUsuario: string = '';
-  lotesFinalizados: any[] = [];
-  cargando = true;
+  readonly ui = UI;
+  readonly moneda = moneda;
 
-  constructor(private supabaseService: SupabaseService) {}
+  usuarioId = '';
+  rol = signal('');
+  cargando = signal(true);
+  error = signal('');
+  filas = signal<FilaHistorial[]>([]);
+  anio = signal<number>(0); // 0 = todos
+
+  esOperario = computed(() => this.rol() === 'funcionario');
+
+  anios = computed(() =>
+    [...new Set(this.filas().map(f => new Date(f.fecha).getFullYear()).filter(a => !isNaN(a)))].sort((a, b) => b - a));
+
+  visibles = computed(() => {
+    const a = this.anio();
+    return a ? this.filas().filter(f => new Date(f.fecha).getFullYear() === a) : this.filas();
+  });
+
+  totales = computed(() => ({
+    trabajos: this.visibles().length,
+    piezas: this.visibles().reduce((t, f) => t + f.piezas, 0),
+    monto: this.visibles().reduce((t, f) => t + f.monto, 0),
+  }));
+
+  constructor(
+    private supabaseService: SupabaseService,
+    private lotesService: LotesService,
+    private router: Router,
+  ) {}
+
+  private get db() { return this.supabaseService.supabase; }
 
   async ngOnInit() {
-    const { data: { user } } = await this.supabaseService.supabase.auth.getUser();
-    if (user) {
-      this.usuarioId = user.id;
-      await this.obtenerRolUsuario();
-      await this.cargarHistorial();
-    }
+    const { data: { user } } = await this.db.auth.getUser();
+    if (!user) { this.router.navigate(['/login']); return; }
+    this.usuarioId = user.id;
+
+    const { data } = await this.db.from('perfiles').select('rol').eq('id', user.id).maybeSingle();
+    this.rol.set(data?.rol ?? '');
+    await this.cargar();
   }
 
-  async obtenerRolUsuario() {
-    const { data } = await this.supabaseService.supabase
-      .from('perfiles')
-      .select('rol')
-      .eq('id', this.usuarioId)
-      .single();
-    if (data) {
-      this.rolUsuario = data.rol;
-    }
-  }
-
-  async cargarHistorial() {
+  async cargar() {
+    this.cargando.set(true);
+    this.error.set('');
     try {
-      this.cargando = true;
-      const columnaFiltro = this.rolUsuario === 'tienda' ? 'tienda_id' : 'oficina_id';
-
-      // Consultamos los lotes que ya tengan estado 'finalizado'
-      const { data, error } = await this.supabaseService.supabase
-        .from('lotes_asignados')
-        .select(`
-          id, estado, cantidad_asignada, fecha_entrega, updated_at,
-          publicaciones ( titulo, pago_por_pieza )
-        `)
-        .eq(columnaFiltro, this.usuarioId)
-        .eq('estado', 'finalizado')
-        .order('updated_at', { ascending: false });
-
-      if (error) throw error;
-      this.lotesFinalizados = data || [];
-    } catch (error) {
-      console.error('Error al cargar historial:', error);
+      this.filas.set(this.esOperario()
+        ? await this.lotesService.historialOperario(this.usuarioId)
+        : await this.lotesService.historialEmpresa(this.usuarioId));
+    } catch (e) {
+      console.error('Error al cargar el historial:', e);
+      this.error.set('No se pudo cargar el historial.');
     } finally {
-      this.cargando = false;
+      this.cargando.set(false);
     }
+  }
+
+  /** Descarga lo que se ve en pantalla como CSV (abre bien en Excel). */
+  exportarCsv() {
+    const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const filas = this.visibles();
+    const lineas = [
+      ['Fecha', 'Trabajo', this.esOperario() ? 'Empleador' : 'Contraparte', 'Piezas', 'Monto (R$)'].map(esc).join(';'),
+      ...filas.map(f => [
+        new Date(f.fecha).toLocaleDateString('pt-BR'), f.titulo, f.contraparte?.nombre_completo ?? '', f.piezas, f.monto.toFixed(2).replace('.', ','),
+      ].map(esc).join(';')),
+    ];
+    const blob = new Blob(['\ufeff' + lineas.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `historial-${this.anio() || 'completo'}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 }

@@ -1,93 +1,114 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { SupabaseService } from '../../../core/services/supabase.service';
+
+import { ROL_PANEL, UI, abrirWhatsApp, claseEstado, moneda } from '../../../core/utils/helpers';
+import { Aviso, ToastComponent } from '../../../shared/components/toast.component';
+import { AvatarComponent } from '../../../shared/components/avatar.component';
+import { IconComponent } from '../../../shared/components/icon.component';
+import { LoteActivo, LotesService } from '../../../core/services/lotes.service';
+
 
 @Component({
   selector: 'app-lotes-activos',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, IconComponent, AvatarComponent, ToastComponent],
   templateUrl: './lotes-activos.component.html',
-  styleUrls: ['./lotes-activos.component.css']
 })
 export class LotesActivosComponent implements OnInit {
-  usuarioId: string = '';
-  rolUsuario: string = '';
-  lotes: any[] = [];
-  cargando = true;
+  readonly ui = UI;
+  readonly claseEstado = claseEstado;
+  readonly moneda = moneda;
+
+  usuarioId = '';
+  rol = signal('');
+
+  cargando = signal(true);
+  error = signal('');
+  lotes = signal<LoteActivo[]>([]);
+  procesando = signal<string | null>(null);   // id del lote con una acción en curso
+  aviso = signal<Aviso | null>(null);
+
+  totalPiezas = computed(() => this.lotes().reduce((t, l) => t + l.cantidad_piezas, 0));
+  totalMonto = computed(() => this.lotes().reduce((t, l) => t + l.total, 0));
+  esOperario = computed(() => this.rol() === 'funcionario');
+  rutaPanel = computed(() => ROL_PANEL[this.rol()] ?? '/feed');
 
   constructor(
     private supabaseService: SupabaseService,
-    private cdr: ChangeDetectorRef // 👈 Inyección clave para el renderizado inmediato
+    private lotesService: LotesService,
+    private router: Router,
   ) {}
 
+  private get db() { return this.supabaseService.supabase; }
+
   async ngOnInit() {
-    const { data: { user } } = await this.supabaseService.supabase.auth.getUser();
-    if (user) {
-      this.usuarioId = user.id;
-      await this.obtenerRolUsuario();
-      await this.cargarLotes();
-    }
+    const { data: { user } } = await this.db.auth.getUser();
+    if (!user) { this.router.navigate(['/login']); return; }
+    this.usuarioId = user.id;
+
+    const { data } = await this.db.from('perfiles').select('rol').eq('id', user.id).maybeSingle();
+    this.rol.set(data?.rol ?? '');
+
+    if (this.esOperario()) { this.cargando.set(false); return; } // sus cortes viven en su panel
+    await this.cargar();
   }
 
-  async obtenerRolUsuario() {
+  async cargar() {
+    this.cargando.set(true);
+    this.error.set('');
     try {
-      const { data } = await this.supabaseService.supabase
-        .from('perfiles')
-        .select('rol')
-        .eq('id', this.usuarioId)
-        .single();
-      if (data) {
-        this.rolUsuario = data.rol;
-      }
-    } catch (error) {
-      console.error('Error al obtener el rol:', error);
-    }
-  }
-
-  async cargarLotes() {
-    this.cargando = true;
-    try {
-      // Filtramos dependiendo de si es tienda u oficina
-      const columnaFiltro = this.rolUsuario === 'tienda' ? 'tienda_id' : 'oficina_id';
-
-      // Traemos el lote y los datos de la publicación asociada
-      const { data, error } = await this.supabaseService.supabase
-        .from('lotes_asignados')
-        .select(`
-          id, estado, cantidad_asignada, fecha_entrega,
-          publicaciones ( titulo, pago_por_pieza )
-        `)
-        .eq(columnaFiltro, this.usuarioId)
-        .eq('estado', 'en_produccion'); // Solo mostramos los activos
-
-      if (error) throw error;
-      this.lotes = data || [];
-    } catch (error) {
-      console.error('Error al cargar los lotes:', error);
+      this.lotes.set(await this.lotesService.activos(this.usuarioId));
+    } catch (e) {
+      console.error('Error al cargar los lotes:', e);
+      this.error.set('No se pudieron cargar los lotes.');
     } finally {
-      this.cargando = false;
-      this.cdr.detectChanges(); // 👈 Actualiza la vista de lotes al instante
+      this.cargando.set(false);
     }
   }
 
-  async marcarComoEntregado(loteId: string) {
-    if (!confirm('¿Confirmas que este lote ha sido finalizado y entregado?')) return;
+  // Quién puede hacer qué: la oficina termina, la tienda confirma la recepción.
+  puedeTerminar(l: LoteActivo) { return l.oficinaId === this.usuarioId && l.estado !== 'Terminado'; }
+  puedeConfirmar(l: LoteActivo) { return l.tiendaId === this.usuarioId && l.estado === 'Terminado'; }
 
+  etiquetaEstado(l: LoteActivo): string {
+    return l.estado === 'Terminado' ? 'Listo para retirar' : 'En producción';
+  }
+
+  async terminar(l: LoteActivo) {
+    if (!confirm('Marcar este lote como terminado? La tienda deberá confirmar la recepción.')) return;
+    await this.ejecutar(l, () => this.lotesService.marcarTerminado(l.id), 'Lote marcado como terminado.');
+  }
+
+  async confirmar(l: LoteActivo) {
+    if (!confirm('Confirmas que recibiste el lote conforme? Se archivará el comprobante.')) return;
+    await this.ejecutar(l, () => this.lotesService.confirmarRecepcion(l), 'Comprobante archivado. Ya puedes calificar al taller.');
+  }
+
+  private async ejecutar(l: LoteActivo, accion: () => Promise<void>, ok: string) {
+    if (this.procesando()) return; // evita doble clic
+    this.procesando.set(l.id);
     try {
-      const { error } = await this.supabaseService.supabase
-        .from('lotes_asignados')
-        .update({ estado: 'finalizado' })
-        .eq('id', loteId);
-
-      if (error) throw error;
-      
-      // Recargamos la lista para que desaparezca de los activos
-      await this.cargarLotes();
-    } catch (error) {
-      alert('Hubo un error al actualizar el estado.');
+      await accion();
+      this.notificar(ok);
+      await this.cargar();
+    } catch (e: any) {
+      console.error(e);
+      this.notificar(e?.message ?? 'No se pudo completar la acción.', 'error');
     } finally {
-      this.cdr.detectChanges(); // 👈 Refresco inmediato tras la acción
+      this.procesando.set(null);
     }
+  }
+
+  whatsapp(l: LoteActivo) {
+    if (!abrirWhatsApp(l.contraparte?.telefono, l.contraparte?.nombre_completo ?? '', l.descripcion_corte)) {
+      this.notificar('Este usuario no tiene teléfono visible.', 'error');
+    }
+  }
+
+  notificar(texto: string, tipo: 'ok' | 'error' = 'ok') {
+    this.aviso.set({ texto, tipo });
+    setTimeout(() => this.aviso.set(null), 3500);
   }
 }

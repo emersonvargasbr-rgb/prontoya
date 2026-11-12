@@ -9,7 +9,6 @@ import { Aviso, ToastComponent } from '../../../shared/components/toast.componen
 import { AvatarComponent } from '../../../shared/components/avatar.component';
 import { IconComponent } from '../../../shared/components/icon.component';
 
-
 type Accion = 'login' | 'mio' | 'proponer' | 'postular_lote' | 'postular_empleo' | 'contactar_operario' | 'ninguna';
 
 const CAMPOS_CREADOR = `id, nombre_completo, rol, verificado, zona_ubicacion, promedio_estrellas,
@@ -27,8 +26,13 @@ export class DetalleTrabajoComponent implements OnInit {
   readonly claseEstado = claseEstado;
 
   trabajoId = '';
-  usuarioId = '';
-  rolUsuario = '';
+  private _usuarioId = signal<string>('');
+  get usuarioId(): string { return this._usuarioId(); }
+  set usuarioId(v: string) { this._usuarioId.set(v); }
+  
+  private _rolUsuario = signal<string>('');
+  get rolUsuario(): string { return this._rolUsuario(); }
+  set rolUsuario(v: string) { this._rolUsuario.set(v); }
 
   cargando = signal(true);
   enviando = signal(false);
@@ -139,7 +143,7 @@ export class DetalleTrabajoComponent implements OnInit {
       console.error(e);
       this.trabajo.set(null);
     } finally {
-      this.cargando.set(false);
+      queueMicrotask(() => this.cargando.set(false));
     }
   }
 
@@ -243,7 +247,11 @@ export class DetalleTrabajoComponent implements OnInit {
         .insert([{ publicacion_id: this.trabajoId, taller_id: this.usuarioId, estado: 'Pendiente', ...extra }])
         .select('id, estado').single();
       if (error) {
-        if (error.code === '23505') { this.notificar('Ya te postulaste a este anuncio.', 'error'); await this.cargarMiPostulacion(); return false; }
+        if (error.code === '23505') { 
+          this.notificar('Ya te postulaste a este anuncio.', 'error'); 
+          await this.cargarMiPostulacion(); 
+          return false; 
+        }
         throw error;
       }
       this.miPostulacion.set(data);
@@ -265,20 +273,21 @@ export class DetalleTrabajoComponent implements OnInit {
     }
   }
 
+  compartir() {
+    if (navigator.share) {
+      navigator.share({
+        title: this.trabajo()?.titulo || 'CosturaPronta',
+        text: 'Mira esta oferta textil en CosturaPronta:',
+        url: window.location.href,
+      }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      this.notificar('¡Enlace copiado al portapapeles!');
+    }
+  }
+
   notificar(texto: string, tipo: 'ok' | 'error' = 'ok') {
     this.aviso.set({ texto, tipo });
     setTimeout(() => this.aviso.set(null), 3500);
   }
-  compartir() {
-  if (navigator.share) {
-    navigator.share({
-      title: this.trabajo()?.titulo || 'CosturaPronta',
-      text: 'Mira esta oferta textil en CosturaPronta:',
-      url: window.location.href,
-    }).catch(() => {});
-  } else {
-    navigator.clipboard.writeText(window.location.href);
-    this.notificar('¡Enlace copiado al portapapeles!');
-  }
-}
 }

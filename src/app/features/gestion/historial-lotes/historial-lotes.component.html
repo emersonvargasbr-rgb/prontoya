@@ -1,44 +1,71 @@
-<div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mt-8">
-  
-  <div class="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+<section class="overflow-hidden" [ngClass]="ui.card" aria-labelledby="titulo-historial">
+
+  <header class="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 bg-stone-50/60 p-5">
     <div>
-      <h2 class="text-xl font-bold text-gray-900">Historial de Trabajos</h2>
-      <p class="text-sm text-gray-500">Lotes completados y entregados</p>
+      <h2 id="titulo-historial" class="text-lg font-bold">Historial de trabajos</h2>
+      <p class="text-sm text-slate-500">{{ esOperario() ? 'Cortes liquidados' : 'Lotes completados y archivados' }}</p>
     </div>
-    <span class="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full">
-      {{ lotesFinalizados.length }} Finalizados
-    </span>
+
+    <div *ngIf="!cargando() && filas().length > 0" class="flex items-center gap-2">
+      <label class="sr-only" for="anio">Filtrar por año</label>
+      <select id="anio" [ngModel]="anio()" (ngModelChange)="anio.set(+$event)" class="rounded-lg border border-stone-300 bg-white px-2.5 py-2 text-sm outline-none focus:border-teal-600">
+        <option [ngValue]="0">Todos los años</option>
+        <option *ngFor="let a of anios()" [ngValue]="a">{{ a }}</option>
+      </select>
+      <button type="button" (click)="exportarCsv()" [ngClass]="ui.btnSecundario"><app-icon nombre="download" clase="w-4 h-4" /> CSV</button>
+    </div>
+  </header>
+
+  <!-- Resumen -->
+  <dl *ngIf="!cargando() && visibles().length > 0" class="grid grid-cols-3 divide-x divide-stone-200 border-b border-stone-200 text-center">
+    <div class="px-2 py-3"><dt class="text-[11px] text-slate-500">Trabajos</dt><dd class="text-base font-bold">{{ totales().trabajos | number }}</dd></div>
+    <div class="px-2 py-3"><dt class="text-[11px] text-slate-500">Piezas</dt><dd class="text-base font-bold">{{ totales().piezas | number }}</dd></div>
+    <div class="px-2 py-3"><dt class="text-[11px] text-slate-500">{{ esOperario() ? 'Cobrado' : 'Movido' }}</dt><dd class="text-base font-bold text-teal-800">{{ moneda(totales().monto) }}</dd></div>
+  </dl>
+
+  <!-- Cargando -->
+  <div *ngIf="cargando()" class="space-y-3 p-5" aria-busy="true">
+    <div class="h-16 animate-pulse rounded-lg bg-stone-200/70"></div>
+    <div class="h-16 animate-pulse rounded-lg bg-stone-200/70"></div>
   </div>
 
-  <div *ngIf="cargando" class="p-10 text-center text-gray-500 animate-pulse">
-    Cargando historial...
+  <!-- Error -->
+  <div *ngIf="!cargando() && error()" class="p-8 text-center">
+    <app-icon nombre="alert" clase="mx-auto h-8 w-8 text-rose-400" />
+    <p class="mt-3 text-sm font-semibold">{{ error() }}</p>
+    <button type="button" (click)="cargar()" [ngClass]="ui.btnOscuro" class="mt-4">Reintentar</button>
   </div>
 
-  <div *ngIf="!cargando && lotesFinalizados.length === 0" class="p-10 text-center">
-    <p class="text-gray-500 text-sm">Aún no hay registros en el historial de lotes.</p>
+  <!-- Vacío -->
+  <div *ngIf="!cargando() && !error() && filas().length === 0" class="p-8 text-center">
+    <app-icon nombre="archive" clase="mx-auto h-8 w-8 text-stone-400" />
+    <p class="mt-3 text-sm font-semibold">Aún no hay trabajos en el historial</p>
+    <p class="mt-1 text-sm text-slate-500">{{ esOperario() ? 'Tus cortes aparecerán aquí cuando tu empleador los liquide.' : 'Aparecerán cuando una tienda confirme la recepción de un lote.' }}</p>
   </div>
 
-  <div *ngIf="!cargando && lotesFinalizados.length > 0" class="divide-y divide-gray-100">
-    <div *ngFor="let lote of lotesFinalizados" class="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-      
-      <div>
-        <div class="flex items-center gap-3 mb-1">
-          <h4 class="text-lg font-bold text-gray-900">{{ lote.publicaciones.titulo }}</h4>
-          <span class="bg-green-100 text-green-800 text-xs font-bold px-2 py-0.5 rounded border border-green-200">
-            Completado
-          </span>
+  <!-- Lista -->
+  <ul *ngIf="!cargando() && !error() && visibles().length > 0" class="divide-y divide-stone-100">
+    <li *ngFor="let f of visibles()" class="flex items-center gap-3 p-5">
+      <app-avatar [nombre]="f.contraparte?.nombre_completo" />
+      <div class="min-w-0 flex-1">
+        <div class="flex flex-wrap items-center gap-2">
+          <h3 class="truncate text-sm font-bold">{{ f.titulo }}</h3>
+          <span class="inline-flex items-center gap-1 rounded-md bg-teal-50 px-2 py-0.5 text-[11px] font-semibold text-teal-800"><app-icon nombre="check" clase="w-3 h-3" /> Completado</span>
         </div>
-        <div class="text-sm text-gray-500 flex items-center gap-4">
-          <span><strong class="text-gray-700">Cant:</strong> {{ lote.cantidad_asignada }} pz</span>
-          <span><strong class="text-gray-700">Total Pagado:</strong> R$ {{ lote.cantidad_asignada * lote.publicaciones.pago_por_pieza | number:'1.2-2' }}</span>
-        </div>
+        <p class="mt-0.5 text-xs text-slate-500">
+          <a *ngIf="f.contraparte?.id" [routerLink]="['/perfil-usuario', f.contraparte.id]" class="font-medium text-slate-700 hover:underline">{{ f.contraparte.nombre_completo }}</a>
+          · {{ f.piezas | number }} piezas
+        </p>
+        <p *ngIf="f.detalle" class="mt-1 inline-flex items-center gap-1 text-xs text-rose-700"><app-icon nombre="alert" clase="w-3.5 h-3.5" /> {{ f.detalle }}</p>
       </div>
 
-      <div class="text-left md:text-right">
-        <p class="text-xs text-gray-400">Entregado el</p>
-        <p class="text-sm font-bold text-gray-700">{{ lote.updated_at | date:'dd/MM/yyyy' }}</p>
+      <div class="shrink-0 text-right">
+        <p class="text-sm font-bold">{{ moneda(f.monto) }}</p>
+        <p class="text-xs text-slate-400">{{ f.fecha | date:'dd/MM/yyyy' }}</p>
+        <a *ngIf="f.contraparte?.id" [routerLink]="['/dejar-evaluacion', f.contraparte.id]" class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline">
+          <app-icon nombre="star" clase="w-3 h-3" /> Calificar
+        </a>
       </div>
-
-    </div>
-  </div>
-</div>
+    </li>
+  </ul>
+</section>

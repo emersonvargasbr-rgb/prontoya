@@ -44,19 +44,19 @@
         <app-icon nombre="alert" clase="w-4 h-4 shrink-0" /> {{ mensajeError() }}
       </div>
 
-      <!-- Tipo de anuncio -->
-      <fieldset *ngIf="opciones.length > 0">
-        <legend class="mb-2 text-sm font-bold">¿Qué quieres publicar?</legend>
-        <div class="grid gap-2" [ngClass]="opciones.length > 1 ? 'sm:grid-cols-2' : ''">
-          <button type="button" *ngFor="let o of opciones" (click)="elegirTipo(o.id)" [attr.aria-pressed]="tipo === o.id"
-                  class="flex items-start gap-3 rounded-xl border p-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
-                  [ngClass]="tipo === o.id ? 'border-teal-600 bg-teal-50/60 ring-1 ring-teal-600' : 'border-stone-200 bg-white hover:border-stone-300'">
-            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-                  [ngClass]="tipo === o.id ? 'bg-teal-700 text-white' : 'bg-stone-100 text-slate-600'"><app-icon [nombre]="o.icono" clase="w-5 h-5" /></span>
-            <span><span class="block text-sm font-bold">{{ o.titulo }}</span><span class="block text-xs text-slate-500">{{ o.ayuda }}</span></span>
-          </button>
-        </div>
-      </fieldset>
+<!-- Tipo de anuncio -->
+<fieldset *ngIf="opciones.length > 0">
+  <legend class="mb-2 text-sm font-bold">¿Qué quieres publicar?</legend>
+  <div class="grid gap-2" [ngClass]="opciones.length > 1 ? 'sm:grid-cols-2' : ''">
+    <button type="button" *ngFor="let o of opciones" (click)="elegirTipo(o.id)" [attr.aria-pressed]="tipo === o.id"
+            class="flex items-start gap-3 rounded-xl border p-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
+            [ngClass]="tipo === o.id ? 'border-teal-600 bg-teal-50/60 ring-1 ring-teal-600' : 'border-stone-200 bg-white hover:border-stone-300'">
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+            [ngClass]="tipo === o.id ? 'bg-teal-700 text-white' : 'bg-stone-100 text-slate-600'"><app-icon [nombre]="o.icono" clase="w-5 h-5" /></span>
+      <span><span class="block text-sm font-bold">{{ o.titulo }}</span><span class="block text-xs text-slate-500">{{ o.ayuda }}</span></span>
+    </button>
+  </div>
+</fieldset>
 
       <div [ngClass]="ui.card" class="space-y-4 p-4">
 

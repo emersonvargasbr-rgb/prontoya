@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, computed, signal, afterNextRender } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -6,7 +6,6 @@ import { SupabaseService } from '../../../core/services/supabase.service';
 import { MAQUINAS, TIPO_PUBLICACION, UI, ZONAS, moneda, uno } from '../../../core/utils/helpers';
 import { AvatarComponent } from '../../../shared/components/avatar.component';
 import { IconComponent } from '../../../shared/components/icon.component';
-
 
 /** Qué anuncios le sirven a cada perfil. Un invitado ve todo en modo lectura. */
 const TIPOS_POR_ROL: Record<string, string[]> = {
@@ -22,7 +21,7 @@ const TODOS = ['busco_oficina', 'busco_corte', 'busco_funcionario', 'busco_traba
   imports: [CommonModule, FormsModule, RouterModule, IconComponent, AvatarComponent],
   templateUrl: './feed-trabajos.component.html',
 })
-export class FeedTrabajosComponent implements OnInit {
+export class FeedTrabajosComponent {
   readonly ui = UI;
   readonly zonas = ZONAS;
   readonly maquinas = MAQUINAS;
@@ -34,13 +33,22 @@ export class FeedTrabajosComponent implements OnInit {
   error = signal(false);
   lista = signal<any[]>([]);
   visibles = signal<any[]>([]);
+  mostrarModalInvitado = signal(false);
+
+  /**
+   * ESTADO REACTIVO. Antes eran propiedades normales (`usuarioLogueado = false`) que se cambiaban
+   * después de un `await`. En una app zoneless Angular no se entera de esos cambios y, en
+   * desarrollo, los detecta como NG0100 (valor distinto entre dos comprobaciones).
+   * Ahora viven en signals; los getters mantienen intacto el template (`usuarioLogueado`
+   * se sigue leyendo igual) pero cada lectura queda registrada como dependencia.
+   */
+  private logueado = signal(false);
+  private rol = signal('');
+  get usuarioLogueado(): boolean { return this.logueado(); }
+  get rolUsuario(): string { return this.rol(); }
 
   usuarioId = '';
-  rolUsuario = '';
-  usuarioLogueado = false;
   seguidos = new Set<string>();
-
-  mostrarModalInvitado = signal(false);
   mensajeInvitado = '';
 
   busquedaTexto = '';
@@ -49,33 +57,36 @@ export class FeedTrabajosComponent implements OnInit {
   filtroMaquina = '';
   soloSeguidos = false;
 
-  /** Los tipos del selector dependen del rol (antes ofrecía opciones imposibles). */
+  /** Los tipos del selector dependen del rol (ahora sí se recalculan al conocer al usuario). */
   tiposDisponibles = computed(() => {
-    const ids = this.usuarioLogueado ? (TIPOS_POR_ROL[this.rolUsuario] ?? TODOS) : TODOS;
+    const ids = this.logueado() ? (TIPOS_POR_ROL[this.rol()] ?? TODOS) : TODOS;
     return ids.map(id => ({ id, ...TIPO_PUBLICACION[id] }));
   });
 
-  constructor(private supabaseService: SupabaseService, public router: Router) {}
+  constructor(private supabaseService: SupabaseService, public router: Router) {
+    // Sólo en el navegador: en el servidor no hay sesión y así no se pide dos veces.
+    afterNextRender(() => { this.inicializarDatos(); });
+  }
 
   private get db() { return this.supabaseService.supabase; }
 
-  async ngOnInit() {
+  private async inicializarDatos() {
     await this.verificarUsuario();
     await this.cargarFeed();
   }
 
   private async verificarUsuario() {
     const { data: { user } } = await this.db.auth.getUser();
-    if (!user) { this.usuarioLogueado = false; return; }
-    this.usuarioLogueado = true;
+    if (!user) { this.logueado.set(false); return; }
     this.usuarioId = user.id;
 
     const [perfil, seg] = await Promise.all([
-      this.db.from('perfiles').select('rol').eq('id', user.id).single(),
+      this.db.from('perfiles').select('rol').eq('id', user.id).maybeSingle(),
       this.db.from('seguidores').select('seguido_id').eq('seguidor_id', user.id),
     ]);
-    if (perfil.data) this.rolUsuario = perfil.data.rol;
     this.seguidos = new Set((seg.data ?? []).map((s: any) => s.seguido_id));
+    this.rol.set(perfil.data?.rol ?? '');
+    this.logueado.set(true); // al final: ya están listos el rol y los seguidos
   }
 
   async cargarFeed() {
@@ -91,8 +102,8 @@ export class FeedTrabajosComponent implements OnInit {
         .order('created_at', { ascending: false })
         .limit(100);
 
-      if (this.usuarioLogueado) {
-        const permitidos = TIPOS_POR_ROL[this.rolUsuario];
+      if (this.logueado()) {
+        const permitidos = TIPOS_POR_ROL[this.rol()];
         if (permitidos) query = query.in('tipo_publicacion', permitidos);
         query = query.neq('creador_id', this.usuarioId); // no mostrar mis propios anuncios
       }
@@ -115,10 +126,7 @@ export class FeedTrabajosComponent implements OnInit {
       console.error(e);
       this.error.set(true);
     } finally {
-      // 👇 Usamos queueMicrotask para diferir el cambio de la señal al siguiente ciclo de microtareas
-      queueMicrotask(() => {
-        this.cargando.set(false);
-      });
+      this.cargando.set(false);
     }
   }
 
@@ -177,6 +185,4 @@ export class FeedTrabajosComponent implements OnInit {
 
   irAlLogin() { this.router.navigate(['/login']); }
   irAlRegistro() { this.router.navigate(['/registro']); }
-
-
 }

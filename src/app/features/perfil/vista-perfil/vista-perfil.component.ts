@@ -6,12 +6,12 @@ import { SupabaseService } from '../../../core/services/supabase.service';
 import { EstadoVinculo, SocialService } from '../../../core/services/social.service';
 import { ROL_ETIQUETA, ROL_PANEL, TIPO_PUBLICACION, UI, abrirWhatsApp, moneda, uno } from '../../../core/utils/helpers';
 import { calcularGamificacion, estiloPortada } from '../../../core/utils/gamificacion';
+
 import { GamificacionComponent } from '../../../shared/components/gamificacion/gamificacion.component';
 import { Aviso, ToastComponent } from '../../../shared/components/toast.component';
 import { TabItem, TabsComponent } from '../../../shared/components/tabs.component';
 import { AvatarComponent } from '../../../shared/components/avatar.component';
 import { IconComponent } from '../../../shared/components/icon.component';
-
 
 type Seccion = 'resumen' | 'insignias' | 'anuncios' | 'resenas' | 'red';
 
@@ -37,8 +37,12 @@ export class VistaPerfilComponent implements OnInit, OnDestroy {
   readonly estiloPortada = estiloPortada;
 
   private sub?: Subscription;
-  yoId = '';
-  perfilId = '';
+  private _yoId = signal<string>('');
+  get yoId(): string { return this._yoId(); }
+  set yoId(v: string) { this._yoId.set(v); }
+  private _perfilId = signal<string>('');
+  get perfilId(): string { return this._perfilId(); }
+  set perfilId(v: string) { this._perfilId.set(v); }
 
   cargando = signal(true);
   noEncontrado = signal(false);
@@ -122,7 +126,7 @@ export class VistaPerfilComponent implements OnInit, OnDestroy {
 
   constructor(
     private route: ActivatedRoute, private router: Router,
-    private supabaseService: SupabaseService, private social: SocialService
+    private supabaseService: SupabaseService, private social: SocialService,
   ) {}
 
   private get db() { return this.supabaseService.supabase; }
@@ -253,11 +257,13 @@ export class VistaPerfilComponent implements OnInit, OnDestroy {
 
   irAMiPanel() { this.router.navigate([ROL_PANEL[this.perfil()?.rol] ?? '/feed']); }
 
+  irAtras() {
+    if (window.history.length > 1) window.history.back();
+    else this.router.navigate(['/feed']);
+  }
+
   notificar(texto: string, tipo: 'ok' | 'error' = 'ok') {
     this.aviso.set({ texto, tipo });
     setTimeout(() => this.aviso.set(null), 3500);
-  }
-irAtras() {
-    window.history.back();
   }
 }
