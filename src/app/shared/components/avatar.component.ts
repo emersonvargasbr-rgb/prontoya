@@ -27,10 +27,9 @@ const TAMANOS = {
       <span [ngClass]="!color ? paleta : ''"
             [style.backgroundColor]="color || null"
             [style.color]="color ? '#ffffff' : null"
-            [class]="tamanoClase + ' inline-flex items-center justify-center rounded-full font-semibold select-none overflow-hidden'">
-        <!-- Si hay icono, lo muestra; si no, muestra las iniciales -->
-        <app-icon *ngIf="icono" [nombre]="icono" clase="w-1/2 h-1/2" />
-        <span *ngIf="!icono">{{ iniciales }}</span>
+            [class]="tamanoClase + ' relative inline-flex items-center justify-center rounded-full font-semibold select-none overflow-hidden'">
+        <!-- Icono perfectamente centrado y con tamaño equilibrado -->
+        <app-icon [nombre]="icono || 'animal-burro-cara'" clase="absolute inset-0 m-auto w-3/5 h-3/5" />
       </span>
       <span *ngIf="verificado"
             class="absolute -bottom-0.5 -right-0.5 rounded-full bg-white p-px text-teal-600 shadow-sm">
@@ -48,12 +47,6 @@ export class AvatarComponent {
   @Input() anillo?: string | null;
 
   get tamanoClase() { return TAMANOS[this.tamano]; }
-
-  get iniciales(): string {
-    const partes = (this.nombre ?? '').trim().split(/\s+/).filter(Boolean);
-    if (!partes.length) return '?';
-    return (partes[0][0] + (partes[1]?.[0] ?? '')).toUpperCase();
-  }
 
   get paleta(): string {
     if (this.color) return '';

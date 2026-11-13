@@ -120,14 +120,22 @@
               </select></label>
           </div>
 
-          <div class="grid gap-3 sm:grid-cols-2">
-            <label [ngClass]="ui.etiqueta">Tipo de pago
-              <select [(ngModel)]="publicacion.modalidad_pago" name="modPago" [ngClass]="ui.inputGrande">
-                <option value="por_pieza">Por pieza</option><option value="salario_semanal">Semanal</option><option value="salario_mensual">Mensual</option>
-              </select></label>
-            <label [ngClass]="ui.etiqueta">{{ tipo === 'busco_funcionario' ? 'Pago estimado (R$)' : 'Pago esperado (R$, opcional)' }}
-              <input type="number" min="0" step="0.01" [(ngModel)]="publicacion.pago_por_pieza" name="pagoFunc" [required]="tipo === 'busco_funcionario'" placeholder="1.50" [ngClass]="ui.inputGrande"></label>
-          </div>
+        <div class="grid gap-3 sm:grid-cols-2">
+  <label [ngClass]="ui.etiqueta">Tipo de pago
+    <select [(ngModel)]="publicacion.modalidad_pago" name="modPago" [ngClass]="ui.inputGrande">
+      <option value="por_pieza">Por pieza</option>
+      <option value="salario_semanal">Semanal</option>
+      <option value="salario_mensual">Mensual</option>
+    </select>
+  </label>
+  
+  <label [ngClass]="ui.etiqueta">
+    {{ publicacion.modalidad_pago === 'por_pieza' ? 'Pago por pieza (R$, máx. 50)' : 'Salario estimado (R$)' }}
+    <input type="number" min="0" [max]="publicacion.modalidad_pago === 'por_pieza' ? 50 : 10000" step="0.01" 
+           [(ngModel)]="publicacion.pago_por_pieza" name="pagoFunc" [required]="tipo === 'busco_funcionario'" 
+           [placeholder]="publicacion.modalidad_pago === 'por_pieza' ? '1.50' : '2000'" [ngClass]="ui.inputGrande">
+  </label>
+</div>
         </ng-container>
 
         <!-- Beneficios (sólo vacante) -->

@@ -118,15 +118,23 @@
           </div>
         </fieldset>
 
-        <!-- Avatar -->
+     <!-- Avatar -->
         <fieldset>
-          <legend class="mb-2 text-xs font-medium text-slate-700">Avatar</legend>
+          <legend class="mb-2 text-xs font-medium text-slate-700">Avatar (Animales)</legend>
           <div class="flex flex-wrap gap-2">
-            <button type="button" (click)="elegirIcono(null)" [ngClass]="opcion(!form.avatar_icono)" [attr.aria-pressed]="!form.avatar_icono">Iniciales</button>
-            <button type="button" *ngFor="let i of iconos" (click)="elegirIcono(i)" [ngClass]="opcion(form.avatar_icono === i.id, bloqueado(i.nivelMin))"
-                    [attr.aria-pressed]="form.avatar_icono === i.id" [attr.aria-label]="i.nombre + (bloqueado(i.nivelMin) ? ', bloqueado hasta nivel ' + i.nivelMin : '')">
-              <app-icon [nombre]="bloqueado(i.nivelMin) ? 'lock' : i.id" clase="w-4 h-4" /> {{ i.nombre }}
-            </button>
+           <button type="button" 
+        *ngFor="let i of iconos; let idx = index" 
+        (click)="elegirIcono(i, idx)" 
+        [ngClass]="[
+          opcion(form.avatar_icono === i.id, idx >= 6 && !base().verificado),
+          (idx >= 6 && !base().verificado) ? 'opacity-60 bg-stone-100' : ''
+        ]"
+        [attr.aria-pressed]="form.avatar_icono === i.id" 
+        [attr.aria-label]="i.nombre + (idx >= 6 && !base().verificado ? ', exclusivo para perfiles verificados' : '')">
+  <app-icon [nombre]="(idx >= 6 && !base().verificado) ? 'lock' : i.id" clase="w-4 h-4" /> 
+  {{ i.nombre }}
+  <span *ngIf="idx >= 6 && !base().verificado" class="ml-1 text-[10px] text-amber-600 font-bold">🔒</span>
+</button>
           </div>
           <div class="mt-3 flex flex-wrap items-center gap-2">
             <span class="text-xs text-slate-500">Color</span>

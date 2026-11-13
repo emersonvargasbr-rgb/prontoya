@@ -5,7 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { MAQUINAS, ROL_ETIQUETA, ROL_PANEL, UI, ZONAS } from '../../../core/utils/helpers';
 import {
-  AVATAR_ICONOS, COLORES_PORTADA, ESPECIALIDADES, PATRONES_PORTADA, Rol,
+  COLORES_PORTADA, ESPECIALIDADES, PATRONES_PORTADA, Rol,
   calcularGamificacion, cnpjValido, completitud, estiloPortada,
 } from '../../../core/utils/gamificacion';
 import { Aviso, ToastComponent } from '../../../shared/components/toast.component';
@@ -35,9 +35,40 @@ export class EditarPerfilComponent implements OnInit {
   readonly maquinas = MAQUINAS;
   readonly colores = COLORES_PORTADA;
   readonly patrones = PATRONES_PORTADA;
-  readonly iconos = AVATAR_ICONOS;
   readonly roles = ROL_ETIQUETA;
   readonly estiloPortada = estiloPortada;
+
+  // 👇 Lista completa de animales (Los primeros 6 son libres, del 7 en adelante piden verificación)
+  readonly iconos = [
+    { id: 'animal-burro-cara', nombre: 'Burro' },
+    { id: 'animal-gato', nombre: 'Gato' },
+    { id: 'animal-oso', nombre: 'Oso' },
+    { id: 'animal-buho', nombre: 'Búho' },
+    { id: 'animal-perro', nombre: 'Perro' },
+    { id: 'animal-leon', nombre: 'León' },
+    // A partir del índice 6 (7mo elemento) se requiere verificación
+    { id: 'animal-hipopotamo', nombre: 'Hipopótamo' },
+    { id: 'animal-caballo', nombre: 'Caballo' },
+    { id: 'animal-burro', nombre: 'Burro silueta' },
+    { id: 'animal-koala', nombre: 'Koala' },
+    { id: 'animal-oveja', nombre: 'Oveja' },
+    { id: 'animal-pantera', nombre: 'Pantera' },
+    { id: 'animal-mono', nombre: 'Mono' },
+    { id: 'animal-carnero', nombre: 'Carnero' },
+    { id: 'animal-raton', nombre: 'Ratón' },
+    { id: 'animal-pulpo', nombre: 'Pulpo' },
+    { id: 'animal-loro', nombre: 'Loro' },
+    { id: 'animal-cerdo', nombre: 'Cerdo' },
+    { id: 'animal-conejo', nombre: 'Conejo' },
+    { id: 'animal-tigre', nombre: 'Tigre' },
+    { id: 'animal-gorila', nombre: 'Gorila' },
+    { id: 'animal-cebra', nombre: 'Cebra' },
+    { id: 'animal-vaca', nombre: 'Vaca' },
+    { id: 'animal-toro', nombre: 'Toro' },
+    { id: 'animal-cabra', nombre: 'Cabra' },
+    { id: 'animal-ciervo', nombre: 'Ciervo' },
+    { id: 'animal-jirafa', nombre: 'Jirafa' },
+  ];
 
   // 👇 Definición local de paletas para evitar errores de compilación
   readonly paletas = [
@@ -148,11 +179,14 @@ export class EditarPerfilComponent implements OnInit {
     this.form.patron_portada = p.id;
   }
 
-  elegirIcono(i: { id: string; nivelMin: number } | null) {
-    if (i && this.bloqueado(i.nivelMin)) return this.avisarBloqueo(i.nivelMin);
-    this.form.avatar_icono = i ? i.id : null;
+ elegirIcono(i: { id: string }, idx: number) {
+    // Si el icono es del índice 6 en adelante y el usuario no está verificado, bloqueamos y avisamos
+    if (idx >= 6 && !this.base()?.verificado) {
+      this.notificar('Icono solo para perfiles verificados', 'error');
+      return;
+    }
+    this.form.avatar_icono = i.id;
   }
-
   elegirAvatarColor(id: string | null) { this.form.avatar_color = id; }
 
   toggleDestacada(id: string) {
@@ -227,4 +261,5 @@ export class EditarPerfilComponent implements OnInit {
     this.aviso.set({ texto, tipo });
     setTimeout(() => this.aviso.set(null), 3500);
   }
+  
 }

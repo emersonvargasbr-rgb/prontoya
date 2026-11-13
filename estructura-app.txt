@@ -1,0 +1,130 @@
+|____app
+| |____app.component.html
+| |____app.component.ts
+| |____app.config.server.ts
+| |____app.config.ts
+| |____app.css
+| |____app.routes.server.ts
+| |____app.routes.ts
+| |____app.spec.ts
+| |____core
+| | |____guards
+| | | |____auth-guard.ts
+| | | |____role-guard.ts
+| | |____services
+| | | |____auth.service.ts
+| | | |____brasil-api.ts
+| | | |____lotes.service.ts
+| | | |____sesion.service.ts
+| | | |____social.service.ts
+| | | |____supabase.service.ts
+| | | |____whatsapp.ts
+| | |____utils
+| | | |____gamificacion.ts
+| | | |____helpers.ts
+| |____features
+| | |____auth
+| | | |____login
+| | | | |____login.component.html
+| | | | |____login.component.ts
+| | | | |____login.css
+| | | |____onboarding-perfil
+| | | | |____onboarding-perfil.css
+| | | | |____onboarding-perfil.html
+| | | | |____onboarding-perfil.spec.ts
+| | | | |____onboarding-perfil.ts
+| | | |____registro
+| | | | |____registro.component.html
+| | | | |____registro.component.ts
+| | | | |____registro.css
+| | | |____verificar-telefono
+| | | | |____verificar-telefono.css
+| | | | |____verificar-telefono.html
+| | | | |____verificar-telefono.spec.ts
+| | | | |____verificar-telefono.ts
+| | |____dashboard
+| | | |____panel-funcionario
+| | | | |____panel-funcionario.component.html
+| | | | |____panel-funcionario.component.ts
+| | | | |____panel-funcionario.css
+| | | |____panel-oficina
+| | | | |____panel-oficina.component.html
+| | | | |____panel-oficina.component.ts
+| | | | |____panel-oficina.css
+| | | |____panel-tienda
+| | | | |____panel-tienda.component.html
+| | | | |____panel-tienda.component.ts
+| | | | |____panel-tienda.css
+| | |____gestion
+| | | |____historial-lotes
+| | | | |____historial-lotes.component.css
+| | | | |____historial-lotes.component.html
+| | | | |____historial-lotes.component.ts
+| | | |____lotes-activos
+| | | | |____lotes-activos.component.css
+| | | | |____lotes-activos.component.html
+| | | | |____lotes-activos.component.ts
+| | |____perfil
+| | | |____dejar-evaluacion
+| | | | |____dejar-evaluacion.component.html
+| | | | |____dejar-evaluacion.component.ts
+| | | | |____dejar-evaluacion.css
+| | | |____editar-perfil
+| | | | |____editar-perfil.component.html
+| | | | |____editar-perfil.component.ts
+| | | | |____editar-perfil.css
+| | | |____vista-perfil
+| | | | |____vista-perfil.component.html
+| | | | |____vista-perfil.component.ts
+| | | | |____vista-perfil.css
+| | |____publicaciones
+| | | |____crear-publicacion
+| | | | |____crear-publicacion.component.html
+| | | | |____crear-publicacion.component.ts
+| | | | |____crear-publicacion.css
+| | | |____detalle-trabajo
+| | | | |____detalle-trabajo.component.html
+| | | | |____detalle-trabajo.component.ts
+| | | | |____detalle-trabajo.css
+| | | |____feed-trabajos
+| | | | |____feed-trabajos.component.html
+| | | | |____feed-trabajos.component.ts
+| | | | |____feed-trabajos.css
+| |____layout
+| | |____main-layout
+| | | |____main-layout.component.css
+| | | |____main-layout.component.html
+| | | |____main-layout.component.ts
+| | |____sidebar-dashboard
+| | | |____sidebar-dashboard.component.css
+| | | |____sidebar-dashboard.component.html
+| | | |____sidebar-dashboard.component.ts
+| |____shared
+| | |____components
+| | | |____avatar.component.ts
+| | | |____badge-verificado
+| | | | |____badge-verificado.css
+| | | | |____badge-verificado.html
+| | | | |____badge-verificado.ts
+| | | |____gamificacion
+| | | | |____gamificacion.component.ts
+| | | |____header
+| | | | |____header.component.html
+| | | | |____header.component.ts
+| | | |____icon.component.ts
+| | | |____modal-confirmacion
+| | | | |____modal-confirmacion.css
+| | | | |____modal-confirmacion.html
+| | | | |____modal-confirmacion.spec.ts
+| | | | |____modal-confirmacion.ts
+| | | |____solicitudes-vinculo.component.ts
+| | | |____star-rating
+| | | | |____star-rating.component.html
+| | | | |____star-rating.component.ts
+| | | | |____star-rating.css
+| | | |____tabs.component.ts
+| | | |____tarjeta-trabajo
+| | | | |____tarjeta-trabajo.component.html
+| | | | |____tarjeta-trabajo.component.ts
+| | | | |____tarjeta-trabajo.css
+| | | |____toast.component.ts

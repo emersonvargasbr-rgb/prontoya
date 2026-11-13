@@ -159,20 +159,26 @@ export class CrearPublicacionComponent implements OnInit {
   cancelarYVolver() { this.router.navigate([ROL_PANEL[this.rolUsuario] ?? '/feed']); }
 
   /** Devuelve un mensaje de error o null si todo está bien. */
-  private validar(): string | null {
+private validar(): string | null {
     const p = this.publicacion;
     if (!p.titulo.trim()) return 'Escribe un título.';
     if (p.maquinas_requeridas.length === 0) return 'Selecciona al menos una máquina.';
+    
     if (p.tipo_publicacion === 'busco_oficina') {
       if (!(Number(p.cantidad_piezas) > 0)) return 'Indica la cantidad de piezas.';
       if (!(Number(p.pago_por_pieza) > 0)) return 'Indica el pago por pieza.';
     }
-    if (p.tipo_publicacion === 'busco_funcionario' && !(Number(p.pago_por_pieza) > 0)) {
-      return 'Indica el pago estimado.';
+
+    if (p.tipo_publicacion === 'busco_funcionario' || p.tipo_publicacion === 'busco_trabajo') {
+      if (!(Number(p.pago_por_pieza) > 0)) return 'Indica el pago estimado.';
+      
+      // Validación estricta para evitar pagos por pieza absurdos (máximo 50 R$)
+      if (p.modalidad_pago === 'por_pieza' && Number(p.pago_por_pieza) > 50) {
+        return 'Para trabajo por pieza, el valor máximo sugerido es R$ 50. Si es salario semanal o mensual, cambia la modalidad de pago.';
+      }
     }
     return null;
   }
-
   async onSubmit() {
     const error = this.validar();
     if (error) { this.mensajeError.set(error); return; }

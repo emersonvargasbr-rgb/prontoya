@@ -7,6 +7,7 @@ import { Component, Input } from '@angular/core';
  * Para agregar un icono nuevo, sólo añade una entrada a ICONOS.
  */
 const ICONOS: Record<string, string> = {
+  // --- TUS ICONOS EXISTENTES ---
   check: 'M5 13l4 4L19 7',
   x: 'M6 18L18 6M6 6l12 12',
   plus: 'M12 4v16m8-8H4',
@@ -46,6 +47,78 @@ const ICONOS: Record<string, string> = {
   'chevron-left': 'M15 19l-7-7 7-7',
   'chevron-right': 'M9 5l7 7-7 7',
   bell: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9',
+
+  // --- 50 ANIMALES DE LA IMAGEN (FILA POR FILA) ---
+  // Fila 1
+  'animal-hipopotamo': 'M4 7a3 3 0 013-3h10a3 3 0 013 3v6a5 5 0 01-5 5H9a5 5 0 01-5-5V7zm3 3h2v2H7v-2zm8 0h2v2h-2v-2zm-6 5h4v1H9v-1z',
+  'animal-caballo': 'M9 3l3 3 3-3v5a4 4 0 01-8 0V3z M11 11h2v8h-2v-8z',
+  'animal-burro': 'M10 2l2 4 2-4v6a3 3 0 01-4 0V2z M11 10h2v9h-2v-9z',
+  'animal-koala': 'M6 5a3 3 0 10-3 3 1 1 0 011 1v1a6 6 0 1010 0v-1a1 1 0 011-1 3 3 0 10-3-3',
+  'animal-oveja': 'M8 4a4 4 0 018 0 3 3 0 013 3 4 4 0 01-1 8 5 5 0 01-10 0 4 4 0 01-1-8 3 3 0 011-3z',
+
+  // Fila 2
+  'animal-pantera': 'M4 6a3 3 0 013-3h10a3 3 0 013 3v7a5 5 0 01-5 5H9a5 5 0 01-5-5V6zm4 4h2v2H8v-2zm6 0h2v2h-2v-2z',
+  'animal-leon': 'M12 2a10 10 0 1010 10A10 10 0 0012 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z',
+  'animal-mono': 'M7 5a5 5 0 1110 0v7a5 5 0 01-10 0V5z M9 9h2v2H9V9zm4 0h2v2h-2V9z',
+  'animal-carnero': 'M7 4a5 5 0 1010 0 5 5 0 00-10 0z M5 8a4 4 0 004 4v2a6 6 0 01-6-6V8z',
+  'animal-raton': 'M4 7a2 2 0 10-4 0 2 2 0 004 0z M20 7a2 2 0 104 0 2 2 0 00-4 0z M7 6a5 5 0 0110 0v7a5 5 0 01-10 0V6z',
+
+  // Fila 3
+  'animal-pulpo': 'M12 2a4 4 0 014 4v2a2 2 0 01-2 2h-4a2 2 0 01-2-2V6a4 4 0 014-4z M4 12c0 3 2 8 2 8s1-4 2-4 1 4 2 4 1-4 2-4 1 4 2 4 2-5 2-8',
+  'animal-buho': 'M6 4a6 6 0 0112 0v8a6 6 0 01-12 0V4z M8 8a2 2 0 104 0 2 2 0 00-4 0z M12 8a2 2 0 104 0 2 2 0 00-4 0z',
+  'animal-oso': 'M5 4a3 3 0 00-3 3v2a3 3 0 003 3h1v2a5 5 0 0010 0v-2h1a3 3 0 003-3V7a3 3 0 00-3-3H5z',
+  'animal-loro': 'M8 4l8 4-4 8-4-4V4z M10 8h2v2h-2V8z',
+  'animal-cerdo': 'M5 5a3 3 0 013-3h8a3 3 0 013 3v8a5 5 0 01-5 5h-4a5 5 0 01-5-5V5zm4 7h6v3H9v-3z',
+
+  // Fila 4
+  'animal-conejo': 'M9 2c-1 0-2 2-2 4v4a4 4 0 008 0V6c0-2-1-4-2-4z M7 12a5 5 0 0010 0v7H7v-7z',
+  'animal-hipopotamo-mini': 'M5 6a3 3 0 013-3h8a3 3 0 013 3v5a4 4 0 01-4 4h-6a4 4 0 01-4-4V6z',
+  'animal-foca': 'M6 7a5 5 0 0110 0v6a4 4 0 01-4 4h-2a4 4 0 01-4-4V7z',
+  'animal-tiburones': 'M3 15h18l-3-6H6l-3 6z M11 4l2 5h-2V4z',
+  'animal-pez-globo': 'M6 6h12v12H6V6z M4 10h2v4H4v-4z M18 10h2v4h-2v-4z',
+
+  // Fila 5
+  'animal-tigre': 'M5 4a4 4 0 018 0v1h2a4 4 0 014 4v8a5 5 0 01-5 5H8a5 5 0 01-5-5V9a4 4 0 012-3V4z',
+  'animal-gorila': 'M6 4a5 5 0 0112 0v10a5 5 0 01-12 0V4z M9 8h2v2H9V8zm4 0h2v2h-2V8z',
+  'animal-ballena': 'M4 10h12a4 4 0 014 4v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-4z M14 6l3 4h-3V6z',
+  'animal-gato-salvaje': 'M5 5l2-2h10l2 2v8a5 5 0 01-5 5h-4a5 5 0 01-5-5V5z',
+  'animal-cebra': 'M9 2l2 4 2-4v16H9V2z M10 6h4v1h-4V6zm0 3h4v1h-4V3z',
+
+  // Fila 6
+  'animal-chimpance': 'M6 5a6 6 0 0112 0v9a6 6 0 01-12 0V5z M9 9h2v2H9V9zm4 0h2v2h-2V9z',
+  'animal-perezoso': 'M6 4h12v12a6 6 0 01-12 0V4z M9 8h2v2H9V8zm4 0h2v2h-2V8z',
+  'animal-oso-pardo': 'M5 4a3 3 0 00-3 3v3a5 5 0 0010 0V7a3 3 0 00-3-3H5z M14 4a3 3 0 00-3 3v3a5 5 0 0010 0V7a3 3 0 00-3-3h-4z',
+  'animal-hormiguero': 'M8 4l8 2-2 10H10L8 4z',
+  'animal-vaca': 'M5 5l-2-2v4a5 5 0 005 5h8a5 5 0 005-5V3l-2 2H5z',
+
+  // Fila 7
+  'animal-toro': 'M3 5l3-2v3a6 6 0 0012 0V3l3 2-2 4H5L3 5z',
+  'animal-cabra': 'M8 2l2 3-2 3h8l-2-3 2-3H8z M9 9h6v9H9V9z',
+  'animal-gato': 'M4 5l3-3h10l3 3v8a5 5 0 01-5 5h-4a5 5 0 01-5-5V5z',
+  'animal-pantera-negra': 'M5 4l3-2h8l3 2v10a5 5 0 01-5 5h-6a5 5 0 01-5-5V4z',
+  'animal-pajaro': 'M10 4l4 4-4 4V4z M8 12h8v8H8v-8z',
+
+  // Fila 8
+  'animal-búfalo': 'M2 6l4-2v4a6 6 0 0012 0V4l4 2-2 5H4L2 6z',
+  'animal-pato': 'M8 4a4 4 0 018 0v6a4 4 0 01-8 0V4z M11 14h2v6h-2v-6z',
+  'animal-ciervo': 'M9 2l3 4 3-4v5a4 4 0 01-6 0V2z M10 9h4v10h-4V9z',
+  'animal-dinosaurio': 'M4 14l6-8h4l6 8v4H4v-4z',
+  'animal-perro': 'M5 5l2-2h10l2 2v10a5 5 0 01-5 5h-4a5 5 0 01-5-5V5z',
+
+  // Fila 9
+  'animal-burro-perfil': 'M8 2l2 4 4-2-2 6a4 4 0 01-4-8z M9 8h6v11H9V8z',
+  'animal-gallina': 'M9 4h6v6a3 3 0 01-6 0V4z M11 10h2v10h-2V10z',
+  'animal-perro-poodle': 'M7 4a5 5 0 0110 0v10a5 5 0 01-10 0V4z M9 14h6v6H9v-6z',
+  'animal-aguila': 'M6 4l6 2 6-2-2 8H8L6 4z M10 12h4v8h-4v-8z',
+  'animal-elefante': 'M7 4a5 5 0 0110 0v8a6 6 0 01-6 6h-2a2 2 0 01-2-2v-6a5 5 0 010-6z',
+
+  // Fila 10
+  'animal-conejo-orejas': 'M8 2l2 4v6a3 3 0 01-6 0V6l2-4z M10 12h4v8h-4v-8z',
+  'animal-rana': 'M4 8a8 8 0 0116 0v6a4 4 0 01-4 4H8a4 4 0 01-4-4V8z',
+  'animal-jirafa': 'M10 2h4v10h-4V2z M8 12h8v8H8v-8z',
+  'animal-carnero-2': 'M7 3l3 3-3 3h10l-3-3 3-3H7z M9 9h6v10H9V9z',
+  'animal-buho-2': 'M7 3l5 3 5-3v8a5 5 0 01-10 0V3z',
+  'animal-burro-cara': 'M7 4h10a3 3 0 013 3v4a7 7 0 01-14 0V7a3 3 0 013-3zm2 5h2v2H9V9zm6 0h2v2h-2V9zm-3 4l-2 3h4l-2-3z',
 };
 
 @Component({
