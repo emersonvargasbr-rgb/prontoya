@@ -8,7 +8,8 @@
       <div class="overflow-hidden p-5" [ngClass]="ui.card">
         <div class="flex items-center justify-between">
           <div class="rounded-full ring-2 ring-stone-200">
-            <app-avatar [nombre]="perfil()?.nombre_completo" tamano="md" [verificado]="!!perfil()?.verificado" />
+           <app-avatar [nombre]="perfil()?.nombre_completo" tamano="md" [verificado]="!!perfil()?.verificado"
+            [icono]="perfil()?.avatar_icono" [color]="perfil()?.avatar_color" />
           </div>
           <a routerLink="/editar-perfil" [ngClass]="ui.btnSecundario" class="!px-3 !py-1.5 !text-xs">
             <app-icon nombre="pencil" clase="w-3.5 h-3.5" /> Editar
@@ -252,6 +253,14 @@
           </article>
         </section>
 
+        <!-- ================================================== CUENTAS Y VALES -->
+        <section *ngIf="seccion() === 'finanzas'" class="space-y-6">
+          <!-- Registro de trabajos / cortes externos (conectando el total en vivo) -->
+          <app-cortes-manuales [usuarioId]="usuarioId" (totalCambio)="totalCortesManuales.set($event)" />
+
+          <!-- Control de vales y cálculo neto sumando plataforma + cortes externos -->
+          <app-control-vales [usuarioId]="usuarioId" [totalGanado]="ganado() + porCobrar() + totalCortesManuales()" />
+        </section>
       </div>
     </main>
   </div>

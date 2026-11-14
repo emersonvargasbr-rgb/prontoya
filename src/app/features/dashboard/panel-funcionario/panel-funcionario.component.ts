@@ -10,8 +10,11 @@ import { TabItem, TabsComponent } from '../../../shared/components/tabs.componen
 import { Aviso, ToastComponent } from '../../../shared/components/toast.component';
 import { SolicitudesVinculoComponent } from '../../../shared/components/solicitudes-vinculo.component';
 
+import { ControlValesComponent } from '../../../shared/control-vales.component';
+import { CortesManualesComponent } from '../../../shared/components/cortes-manuales.component';
 
-type Seccion = 'resumen' | 'trabajos' | 'postulaciones' | 'insignias' | 'resenas';
+
+type Seccion = 'resumen' | 'trabajos' | 'postulaciones' | 'insignias' | 'resenas' | 'finanzas';
 
 export interface Insignia {
   id: string; nombre: string; descripcion: string; icono: string; desbloqueada: boolean;
@@ -28,7 +31,7 @@ const NIVELES = [
 @Component({ selector: 'app-panel-funcionario',
   standalone: true,
   imports: [CommonModule, RouterModule, IconComponent, AvatarComponent, TabsComponent,
-            ToastComponent, SolicitudesVinculoComponent],
+            ToastComponent, SolicitudesVinculoComponent, CortesManualesComponent, ControlValesComponent],
   templateUrl: './panel-funcionario.component.html',
 })
 export class PanelFuncionarioComponent implements OnInit {
@@ -36,7 +39,7 @@ export class PanelFuncionarioComponent implements OnInit {
   readonly claseEstado = claseEstado;
   readonly moneda = moneda;
   usuarioId = '';
-
+totalCortesManuales = signal(0);
   cargando = signal(true);
   seccion = signal<Seccion>('resumen');
   aviso = signal<Aviso | null>(null);
@@ -52,14 +55,12 @@ export class PanelFuncionarioComponent implements OnInit {
   trabajosActivos = computed(() => this.asignaciones().filter(a => a.estado !== 'Cerrado'));
   trabajosCerrados = computed(() => this.asignaciones().filter(a => a.estado === 'Cerrado'));
 
-  /** Plata ya liquidada y plata que falta cobrar (trabajo terminado, sin liquidar). */
   ganado = computed(() => this.trabajosCerrados().reduce((t, a) => t + Number(a.monto_neto ?? a.monto_total ?? 0), 0));
   porCobrar = computed(() => this.asignaciones().filter(a => a.estado === 'Terminado')
     .reduce((t, a) => t + Number(a.monto_total || 0), 0));
 
   postulacionesPendientes = computed(() => this.postulaciones().filter(p => p.estado === 'Pendiente').length);
 
-  /** Motor de gamificación: puntos, nivel y progreso al siguiente. */
   gamificacion = computed(() => {
     const p = this.perfil();
     const cerrados = this.trabajosCerrados();
@@ -103,11 +104,12 @@ export class PanelFuncionarioComponent implements OnInit {
   });
 
   tabs = computed<TabItem[]>(() => [
-    { id: 'resumen',       txt: 'Resumen',        icono: 'user' },
-    { id: 'trabajos',      txt: 'Mis trabajos',   icono: 'layers',    n: this.trabajosActivos().length },
-    { id: 'postulaciones', txt: 'Postulaciones',  icono: 'briefcase', n: this.postulacionesPendientes() },
-    { id: 'insignias',     txt: 'Insignias',      icono: 'verified' },
-    { id: 'resenas',       txt: 'Reseñas',        icono: 'star',      n: this.evaluaciones().length },
+    { id: 'resumen',        txt: 'Resumen',        icono: 'user' },
+    { id: 'trabajos',       txt: 'Mis trabajos',   icono: 'layers',    n: this.trabajosActivos().length },
+    { id: 'postulaciones',  txt: 'Postulaciones',  icono: 'briefcase', n: this.postulacionesPendientes() },
+    { id: 'finanzas',       txt: 'Cuentas y Vales',icono: 'wallet' },
+    { id: 'insignias',      txt: 'Insignias',      icono: 'verified' },
+    { id: 'resenas',        txt: 'Reseñas',        icono: 'star',      n: this.evaluaciones().length },
   ]);
 
   constructor(private supabaseService: SupabaseService, private social: SocialService, private router: Router) {}
@@ -121,7 +123,6 @@ export class PanelFuncionarioComponent implements OnInit {
     await this.cargar();
   }
 
-  // ===================================================================== CARGA
   async cargar() {
     this.cargando.set(true);
     const id = this.usuarioId;
@@ -166,7 +167,6 @@ export class PanelFuncionarioComponent implements OnInit {
     }
   }
 
-  // ================================================================== ACCIONES
   async cambiarEstadoLaboral() {
     const p = this.perfil();
     const nuevo = p.estado_laboral === 'Disponible' ? 'Ocupado' : 'Disponible';
@@ -201,7 +201,6 @@ export class PanelFuncionarioComponent implements OnInit {
     await this.cargar();
   }
 
-  // ==================================================================== HELPERS
   notificar(texto: string, tipo: 'ok' | 'error' = 'ok') {
     this.aviso.set({ texto, tipo });
     setTimeout(() => this.aviso.set(null), 3500);

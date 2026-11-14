@@ -178,9 +178,8 @@ export class EditarPerfilComponent implements OnInit {
     if (this.bloqueado(p.nivelMin)) return this.avisarBloqueo(p.nivelMin);
     this.form.patron_portada = p.id;
   }
-
- elegirIcono(i: { id: string }, idx: number) {
-    // Si el icono es del índice 6 en adelante y el usuario no está verificado, bloqueamos y avisamos
+elegirIcono(i: { id: string }, idx: number) {
+    // Si el icono está en el índice 6 o superior (7mo en adelante) y el usuario no está verificado
     if (idx >= 6 && !this.base()?.verificado) {
       this.notificar('Icono solo para perfiles verificados', 'error');
       return;

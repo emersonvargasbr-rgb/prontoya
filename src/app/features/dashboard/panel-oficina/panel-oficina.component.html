@@ -61,13 +61,14 @@
 
     <!-- NAVEGACIÓN DE SECCIONES (Estilo píldora flotante minimalista) -->
     <nav class="rounded-3xl border border-stone-200/80 bg-white p-2 shadow-sm" aria-label="Secciones">
-      <ul class="grid grid-cols-5 gap-1.5" role="tablist">
+      <ul class="grid grid-cols-6 gap-1" role="tablist">
         <li *ngFor="let t of [
             {id:'produccion', txt:'Producción',   icono:'layers',    n: produccion().length},
             {id:'solicitudes',txt:'Solicitudes', icono:'inbox',     n: pendientes()},
             {id:'equipo',     txt:'Equipo',      icono:'users',     n: equipoActivo().length},
             {id:'anuncios',   txt:'Anuncios',    icono:'megaphone', n: misPublicaciones().length},
-            {id:'historial',  txt:'Historial',   icono:'archive',   n: historial().length}
+            {id:'historial',  txt:'Historial',   icono:'archive',   n: historial().length},
+            {id:'finanzas',   txt:'Cuentas',     icono:'wallet',    n: 0}
           ]">
           <button type="button" role="tab" (click)="irA($any(t.id))"
                   [attr.aria-selected]="seccion() === t.id"
@@ -77,7 +78,7 @@
                     : 'text-stone-500 hover:bg-stone-50 hover:text-slate-800'">
             <app-icon [nombre]="t.icono" clase="w-4 h-4 shrink-0" />
             <span class="truncate w-full text-center">{{ t.txt }}</span>
-            <span class="rounded-full px-1.5 text-[9px] font-bold"
+            <span *ngIf="t.n > 0" class="rounded-full px-1.5 text-[9px] font-bold"
                   [ngClass]="t.id === 'solicitudes' && t.n > 0 ? 'bg-rose-600 text-white' : 'bg-stone-200/80 text-stone-600'">
               {{ t.n }}
             </span>
@@ -417,6 +418,21 @@
         </article>
       </section>
 
+    <!-- ================================================== FINANZAS Y VALES PRO -->
+<!-- ================================================== FINANZAS Y VALES PRO -->
+<section *ngIf="seccion() === 'finanzas'" class="space-y-6">
+  
+  <!-- 1. Componente de Cortes y Servicios Manuales Externos -->
+  <app-cortes-manuales 
+    [usuarioId]="usuarioId" 
+    (totalCambio)="totalCortesManuales.set($event)" />
+
+  <!-- 2. Componente Pro de Liquidación estilo Carrito (Cortes + Vales por Empleado) -->
+  <app-control-liquidacion-carrito 
+    [empleadorId]="usuarioId" 
+    [equipo]="equipoActivo()" />
+
+</section>
     </main>
   </div>
 </div>
