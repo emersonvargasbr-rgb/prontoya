@@ -1,77 +1,111 @@
-<div class="min-h-screen bg-stone-50 px-4 py-6 text-slate-900">
-  <div class="mx-auto max-w-2xl space-y-4">
+<div class="min-h-screen bg-stone-50 px-3 py-4 pb-24 text-slate-900">
+  <div class="mx-auto max-w-3xl space-y-3.5">
 
-    <!-- Banner para invitados -->
-    <div *ngIf="!usuarioLogueado" class="flex items-center justify-between gap-3 rounded-xl bg-slate-900 p-4 text-white">
-      <div>
-        <p class="text-sm font-bold">Explora las ofertas textiles de São Paulo</p>
-        <p class="mt-0.5 text-xs text-slate-300">Regístrate gratis para contactar talleres y marcas.</p>
+    <!-- Banner compacto para invitados -->
+    <div *ngIf="!usuarioLogueado" class="flex items-center justify-between gap-2 rounded-xl bg-slate-900 px-3.5 py-2.5 text-white shadow-sm">
+      <div class="min-w-0">
+        <p class="truncate text-xs font-bold">Ofertas textiles en São Paulo</p>
+        <p class="truncate text-[11px] text-slate-300">Regístrate gratis para contactar talleres.</p>
       </div>
-      <button type="button" (click)="irAlRegistro()" [ngClass]="ui.btnPrimario" class="shrink-0">Crear cuenta</button>
+      <button type="button" (click)="irAlRegistro()" [ngClass]="ui.btnPrimario" class="shrink-0 !px-3 !py-1.5 !text-xs">Crear cuenta</button>
     </div>
 
-    <!-- Encabezado -->
-    <header class="flex items-center justify-between gap-3">
-      <div>
-        <h1 class="text-xl font-bold">Marketplace textil</h1>
-        <p class="text-xs text-slate-500">Brás, Bom Retiro, Pari, Guarulhos y más</p>
-      </div>
-      <button type="button" (click)="publicar()" [ngClass]="ui.btnOscuro">
-        <app-icon nombre="plus" clase="w-4 h-4" /> Publicar
-      </button>
-    </header>
-
-    <!-- BARRA ACORDEÓN DE BÚSQUEDA Y FILTROS -->
-    <section [ngClass]="ui.card" class="overflow-hidden p-3" aria-label="Filtros">
-      <!-- Botón desplegable (Acordeón header) -->
-      <button type="button" (click)="mostrarFiltros.set(!mostrarFiltros())" 
-              class="flex w-full items-center justify-between rounded-lg bg-stone-100 px-3.5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-stone-200/70">
-        <span class="flex items-center gap-2">
-          <app-icon nombre="search" clase="w-4 h-4 text-teal-700" />
-          <span>Filtros y búsqueda</span>
-          <span *ngIf="hayFiltros" class="rounded-full bg-teal-700 px-2 py-0.5 text-[10px] text-white">Activos</span>
-        </span>
-        <app-icon nombre="chevron-down" clase="w-4 h-4 transition-transform duration-200" [class.rotate-180]="mostrarFiltros()" />
-      </button>
-
-      <!-- Contenido desplegable del formulario de búsqueda -->
-      <div *ngIf="mostrarFiltros()" class="mt-3 space-y-3 border-t border-stone-100 pt-3 transition-all">
-        <div class="relative">
+    <!-- 1. BARRA SUPERIOR DE BÚSQUEDA Y FILTROS -->
+    <section aria-label="Búsqueda y filtros" class="space-y-2">
+      <div class="flex items-center gap-2">
+        <div class="relative flex-1">
           <app-icon nombre="search" clase="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input type="search" [(ngModel)]="busquedaTexto" (input)="aplicarFiltros()" placeholder="Buscar prendas, talleres o puestos"
-                 class="w-full rounded-lg border border-stone-300 bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20">
+          <input type="search" [(ngModel)]="busquedaTexto" (input)="aplicarFiltros()"
+                 placeholder="Buscar lotes, talleres, máquinas..."
+                 class="w-full rounded-xl border border-stone-200 bg-white py-2.5 pl-9 pr-3 text-xs font-medium shadow-sm outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20">
         </div>
 
+        <button type="button" (click)="mostrarFiltros.set(!mostrarFiltros())"
+                class="relative flex h-9.5 shrink-0 items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-stone-50">
+          <app-icon nombre="sliders" clase="h-4 w-4 text-teal-700" />
+          <span class="hidden sm:inline">Filtros</span>
+          <span *ngIf="hayFiltros" class="absolute -right-1 -top-1 flex h-2.5 w-2.5 rounded-full bg-teal-600 ring-2 ring-white"></span>
+        </button>
+      </div>
+
+      <!-- Panel desplegable de filtros -->
+      <div *ngIf="mostrarFiltros()" class="space-y-2.5 rounded-xl border border-stone-200 bg-white p-3 shadow-sm transition-all">
         <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
-          <select [(ngModel)]="filtroZona" (change)="aplicarFiltros()" aria-label="Zona" class="rounded-lg border border-stone-300 bg-white px-2.5 py-2 text-sm outline-none focus:border-teal-600">
+          <select [(ngModel)]="filtroZona" (change)="aplicarFiltros()" aria-label="Zona" class="rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-2 text-xs font-medium outline-none focus:border-teal-600">
             <option value="">Todas las zonas</option>
             <option *ngFor="let z of zonas" [value]="z">{{ z }}</option>
           </select>
-          <select [(ngModel)]="filtroTipo" (change)="aplicarFiltros()" aria-label="Tipo de anuncio" class="rounded-lg border border-stone-300 bg-white px-2.5 py-2 text-sm outline-none focus:border-teal-600">
+          <select [(ngModel)]="filtroTipo" (change)="aplicarFiltros()" aria-label="Tipo de anuncio" class="rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-2 text-xs font-medium outline-none focus:border-teal-600">
             <option value="">Todos los tipos</option>
             <option *ngFor="let t of tiposDisponibles()" [value]="t.id">{{ t.txt }}</option>
           </select>
-          <select [(ngModel)]="filtroMaquina" (change)="aplicarFiltros()" aria-label="Maquinaria" class="rounded-lg border border-stone-300 bg-white px-2.5 py-2 text-sm outline-none focus:border-teal-600">
+          <select [(ngModel)]="filtroMaquina" (change)="aplicarFiltros()" aria-label="Maquinaria" class="rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-2 text-xs font-medium outline-none focus:border-teal-600">
             <option value="">Toda la maquinaria</option>
             <option *ngFor="let m of maquinas" [value]="m.id">{{ m.nombre }}</option>
           </select>
         </div>
 
-        <div class="flex items-center justify-between pt-1">
-          <label *ngIf="usuarioLogueado" class="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
-            <input type="checkbox" [(ngModel)]="soloSeguidos" (change)="aplicarFiltros()" class="h-4 w-4 accent-teal-700">
+        <div class="flex items-center justify-between pt-0.5">
+          <label *ngIf="usuarioLogueado" class="flex cursor-pointer items-center gap-2 text-xs font-medium text-slate-600">
+            <input type="checkbox" [(ngModel)]="soloSeguidos" (change)="aplicarFiltros()" class="h-3.5 w-3.5 rounded accent-teal-700">
             Solo de quienes sigo
           </label>
-          <button *ngIf="hayFiltros" type="button" (click)="limpiarFiltros()" class="ml-auto text-xs font-semibold text-teal-700 hover:underline">Limpiar filtros</button>
+          <button *ngIf="hayFiltros" type="button" (click)="limpiarFiltros()" class="ml-auto text-[11px] font-bold text-teal-700 hover:underline">Limpiar filtros</button>
         </div>
       </div>
     </section>
 
-    <!-- Carga -->
-    <div *ngIf="cargando()" class="space-y-3" aria-busy="true">
-      <div class="h-36 animate-pulse rounded-xl bg-stone-200/70"></div>
-      <div class="h-36 animate-pulse rounded-xl bg-stone-200/70"></div>
-      <div class="h-36 animate-pulse rounded-xl bg-stone-200/70"></div>
+    <!-- 2. CARRUSEL DE ANUNCIOS DESTACADOS / VIP -->
+    <section *ngIf="!cargando() && destacados().length > 0" aria-label="Anuncios destacados" class="space-y-2">
+      <div #carruselVip (scroll)="onScrollCarrusel()"
+           class="flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth rounded-2xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        
+        <article *ngFor="let vip of destacados()" (click)="abrirPublicacion(vip.id)"
+                 class="relative w-full shrink-0 snap-center cursor-pointer overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-700 via-teal-700 to-teal-800 p-4 text-white shadow-md transition active:scale-[0.99]">
+          
+          <div class="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/10 blur-xl"></div>
+          
+          <div class="flex items-center justify-between gap-3">
+            <div class="min-w-0 flex-1 space-y-1">
+              <div class="flex items-center gap-1.5">
+                <span class="rounded-md bg-amber-400 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-slate-900">
+                  {{ vip.es_promo ? '★ Espacio VIP' : 'VIP Destacado' }}
+                </span>
+                <span class="truncate text-[11px] font-medium text-teal-100">• {{ vip.zona }}</span>
+              </div>
+
+              <h2 class="line-clamp-1 text-base font-extrabold leading-tight tracking-tight">
+                {{ vip.titulo }}
+              </h2>
+              <p class="line-clamp-1 text-xs text-teal-100/90">
+                {{ vip.es_promo ? vip.empresa : (vip.empresa + ' · ' + dato(vip)) }}
+              </p>
+            </div>
+
+            <div class="flex shrink-0 flex-col items-end gap-1.5">
+              <app-avatar *ngIf="!vip.es_promo" [nombre]="vip.empresa" tamano="md" [verificado]="true" />
+              <span class="rounded-lg bg-white px-2.5 py-1 text-[11px] font-bold text-teal-900 shadow-sm">
+                {{ vip.es_promo ? 'Destacar' : 'Ver oferta' }}
+              </span>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div *ngIf="destacados().length > 1" class="flex items-center justify-center gap-1.5">
+        <button *ngFor="let item of destacados(); let i = index"
+                type="button"
+                (click)="irASlide(i)"
+                [attr.aria-label]="'Ir al anuncio destacado ' + (i + 1)"
+                class="h-1.5 rounded-full transition-all duration-300"
+                [ngClass]="slideActual() === i ? 'w-4 bg-slate-900' : 'w-1.5 bg-stone-300 hover:bg-stone-400'">
+        </button>
+      </div>
+    </section>
+
+    <!-- Estado de Carga -->
+    <div *ngIf="cargando()" class="grid grid-cols-2 gap-3 sm:grid-cols-3" aria-busy="true">
+      <div *ngFor="let n of [1,2,3,4,5,6]" class="h-48 animate-pulse rounded-2xl bg-stone-200/70"></div>
     </div>
 
     <!-- Error -->
@@ -85,57 +119,80 @@
     <div *ngIf="!cargando() && !error() && visibles().length === 0" [ngClass]="ui.vacio">
       <app-icon nombre="search" clase="mx-auto h-8 w-8 text-stone-400" />
       <p class="mt-3 text-sm font-semibold">No hay anuncios con esos filtros</p>
-      <p class="mt-1 text-sm text-slate-500">Prueba con otra zona o quita algún filtro.</p>
+      <p class="mt-1 text-xs text-slate-500">Prueba con otra zona o quita algún filtro.</p>
       <button *ngIf="hayFiltros" type="button" (click)="limpiarFiltros()" [ngClass]="ui.btnSecundario" class="mt-4">Limpiar filtros</button>
     </div>
 
-    <!-- Tarjetas -->
-    <ul *ngIf="!cargando() && visibles().length > 0" class="space-y-3">
+    <!-- 3. CUADRÍCULA DE 2 COLUMNAS POR FILA -->
+    <ul *ngIf="!cargando() && visibles().length > 0" class="grid grid-cols-2 gap-3 sm:grid-cols-3">
       <li *ngFor="let t of visibles()">
         <article (click)="abrirPublicacion(t.id)" (keydown.enter)="abrirPublicacion(t.id)" tabindex="0" role="link"
-                 class="cursor-pointer space-y-3 p-4 transition hover:border-stone-300 hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
-                 [ngClass]="ui.card">
+                 class="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
+                 [ngClass]="t.verificado ? 'border-amber-400/60 ring-1 ring-amber-400/30' : 'border-stone-200/80 hover:border-teal-300'">
 
-          <div class="flex items-center gap-3">
-            <app-avatar [nombre]="t.empresa" tamano="md" [verificado]="t.verificado" />
-            <div class="min-w-0 flex-1">
-              <p class="truncate text-sm font-bold">{{ t.empresa }}</p>
-              <p class="flex items-center gap-2 text-xs text-slate-500">
-                <span class="inline-flex items-center gap-1"><app-icon nombre="pin" clase="w-3.5 h-3.5" /> {{ t.zona }}</span>
-                <span class="inline-flex items-center gap-0.5 text-amber-700"><app-icon nombre="star" [relleno]="true" clase="w-3.5 h-3.5" /> {{ t.rating || '0.0' }}</span>
-              </p>
+          <!-- Cabecera Visual con gradiente CSS nativo, cobertura completa y tijera arriba a la derecha -->
+          <div class="relative h-24 w-full p-2.5 transition-colors"
+               [style.background]="obtenerFondoCabecera(t)"
+               style="background-repeat: no-repeat; background-size: cover;">
+            
+            <div class="flex items-center gap-1.5 pr-6">
+              <app-avatar [nombre]="t.empresa" tamano="sm" [verificado]="t.verificado" />
+              <span class="truncate text-[11px] font-semibold text-white/95">{{ t.empresa }}</span>
             </div>
-            <span *ngIf="tipos[t.tipo_publicacion] as tp" class="inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-semibold" [ngClass]="tp.clase">
-              <app-icon [nombre]="tp.icono" clase="w-3.5 h-3.5" /> {{ tp.txt }}
+
+            <!-- Icono superior derecho cambiado a Tijera (scissors) -->
+            <span *ngIf="tipos[t.tipo_publicacion] as tp"
+                  class="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/95 text-slate-800 shadow-sm"
+                  [title]="tp.txt">
+              <app-icon nombre="scissors" clase="h-3.5 w-3.5 text-teal-700" />
             </span>
+
+            <div class="absolute bottom-0 left-0 inline-flex max-w-[85%] items-center gap-1 rounded-tr-xl bg-white px-2.5 py-1 text-[10px] font-bold"
+                 [ngClass]="t.verificado ? 'text-amber-900' : 'text-slate-700'">
+              <app-icon nombre="pin" clase="h-3 w-3 shrink-0" [ngClass]="t.verificado ? 'text-amber-600' : 'text-teal-600'" />
+              <span class="truncate">{{ t.zona }}</span>
+            </div>
           </div>
 
-          <div>
-            <h2 class="text-base font-bold leading-snug">{{ t.titulo }}</h2>
-            <p *ngIf="t.descripcion" class="mt-1 line-clamp-2 text-sm text-slate-500">{{ t.descripcion }}</p>
+          <!-- Cuerpo de la Tarjeta -->
+          <div class="flex flex-1 flex-col justify-between p-2.5 pt-2">
+            <div>
+              <h2 class="line-clamp-2 text-xs font-extrabold leading-snug text-slate-900 group-hover:text-teal-800">
+                {{ t.titulo }}
+              </h2>
+
+              <div class="mt-1 flex items-center gap-1 text-[11px] text-slate-500">
+                <app-icon nombre="star" [relleno]="true" clase="h-3 w-3 shrink-0 text-amber-500" />
+                <span class="font-bold text-slate-700">{{ t.rating || '0.0' }}</span>
+                <span *ngIf="t.maquinas_requeridas?.length" class="truncate text-[10px] text-slate-400">
+                  · {{ t.maquinas_requeridas[0] }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Pie de Tarjeta con icono de Tijera -->
+            <div class="mt-2.5 flex items-center justify-between gap-1.5 border-t border-stone-100 pt-2">
+              <span class="truncate text-xs font-extrabold text-slate-900">
+                {{ dato(t) }}
+              </span>
+
+              <span class="inline-flex shrink-0 items-center gap-1 rounded-lg bg-emerald-600 px-2 py-1 text-[10px] font-bold text-white shadow-sm transition group-hover:bg-emerald-700">
+                <app-icon nombre="scissors" clase="h-3 w-3" />
+                <span>{{ usuarioLogueado ? 'Ver' : 'Entrar' }}</span>
+              </span>
+            </div>
           </div>
 
-          <div *ngIf="t.maquinas_requeridas?.length" class="flex flex-wrap gap-1.5">
-            <span *ngFor="let m of t.maquinas_requeridas | slice:0:4" [ngClass]="ui.chip">{{ m }}</span>
-            <span *ngIf="t.maquinas_requeridas.length > 4" [ngClass]="ui.chip">+{{ t.maquinas_requeridas.length - 4 }}</span>
-          </div>
-
-          <div class="flex items-center justify-between border-t border-stone-100 pt-3">
-            <span class="text-sm font-bold text-teal-800">{{ dato(t) }}</span>
-            <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600">
-              <app-icon [nombre]="usuarioLogueado ? 'chevron-down' : 'lock'" clase="w-3.5 h-3.5" [class.-rotate-90]="usuarioLogueado" />
-              {{ usuarioLogueado ? 'Ver detalles' : 'Inicia sesión para ver' }}
-            </span>
-          </div>
         </article>
       </li>
     </ul>
+
   </div>
 
   <!-- Modal invitados -->
   <div *ngIf="mostrarModalInvitado()" class="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 p-4 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="titulo-invitado">
     <div class="w-full max-w-sm space-y-4 rounded-2xl bg-white p-6 text-center shadow-xl">
-      <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-teal-50 text-teal-700"><app-icon nombre="lock" clase="w-6 h-6" /></span>
+      <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-teal-50 text-teal-700"><app-icon nombre="lock" clase="h-6 w-6" /></span>
       <div>
         <h3 id="titulo-invitado" class="text-base font-bold">Únete a CosturaPronta</h3>
         <p class="mt-1 text-sm text-slate-500">{{ mensajeInvitado }}</p>
