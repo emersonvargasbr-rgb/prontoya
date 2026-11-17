@@ -274,6 +274,7 @@ obtenerFondoCabecera(t: any): string {
     // Respaldo por defecto (Oscuro elegante)
     return 'linear-gradient(to bottom right, #1e293b, #0f172a, #042f2e)';
   }
+  
   irAlLogin() { this.router.navigate(['/login']); }
   irAlRegistro() { this.router.navigate(['/registro']); }
 }

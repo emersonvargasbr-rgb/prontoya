@@ -1,13 +1,7 @@
 /**
- * Motor de gamificación de CosturaPronta.
- *
- * Es una función PURA del registro de `perfiles` (las métricas las mantienen
- * triggers en la base de datos, ver 003_gamificacion_perfiles.sql). Por eso
- * funciona igual para el propio usuario y para cualquiera que vea su perfil,
- * y no hace falta ninguna consulta extra.
- *
- * Para agregar una insignia nueva: añade una entrada a LOGROS. Nada más.
- * Para agregar un nivel: añade un valor a NIVEL_UMBRAL, NIVEL_ESTILO y NIVEL_NOMBRE.
+ * Motor de gamificación y planes de CosturaPronta.
+ * Fusiona la lógica de roles, insignias, planes de suscripción (Tiendas y Operarios),
+ * avatares ilustrados y validaciones corporativas.
  */
 
 export type Rol = 'tienda' | 'oficina' | 'funcionario';
@@ -36,14 +30,14 @@ export function completitud(p: any): Completitud {
     checks.push(
       { id: 'maq',  etq: 'Indica cuántas máquinas tienes',  ok: Number(p?.cantidad_maquinas) > 0 },
       { id: 'oper', etq: 'Indica cuántos operarios tienes', ok: Number(p?.cantidad_operarios) > 0 },
-      { id: 'tipos', etq: 'Marca tus máquinas',             ok: (p?.maquinas_maneja ?? []).length > 0 },
+      { id: 'tipos', etq: 'Marca tus máquinas',              ok: (p?.maquinas_maneja ?? []).length > 0 },
     );
   } else if (rol === 'tienda') {
     checks.push({ id: 'tipo', etq: 'Indica si eres firma o feirinha', ok: !!p?.tipo_tienda });
   } else if (rol === 'funcionario') {
     checks.push(
       { id: 'tipos', etq: 'Marca las máquinas que manejas', ok: (p?.maquinas_maneja ?? []).length > 0 },
-      { id: 'mod',   etq: 'Indica cómo trabajas',           ok: !!p?.modalidad_trabajo },
+      { id: 'mod',   etq: 'Indica cómo trabajas',            ok: !!p?.modalidad_trabajo },
     );
   }
   const ok = checks.filter(c => c.ok).length;
@@ -210,37 +204,56 @@ export function calcularGamificacion(p: any): Gamificacion {
   };
 }
 
-// ============================================================== COSMÉTICOS
-/** Lo que se desbloquea al subir de nivel: personalizar es la recompensa. */
+// ============================================================== COSMÉTICOS Y PLANES
+export const NOMBRE_TIER: Record<number, string> = { 1: 'Gratis', 2: 'Pro', 3: 'Gold' };
+
 export const COLORES_PORTADA = [
-  { hex: '#134e4a', nombre: 'Verde hilo',  nivelMin: 1 },
-  { hex: '#0f172a', nombre: 'Tinta',       nivelMin: 1 },
-  { hex: '#1e3a8a', nombre: 'Azul real',   nivelMin: 1 },
-  { hex: '#047857', nombre: 'Esmeralda',   nivelMin: 2 },
-  { hex: '#c2410c', nombre: 'Terracota',   nivelMin: 2 },
-  { hex: '#be123c', nombre: 'Bordó',       nivelMin: 2 },
-  { hex: '#6d28d9', nombre: 'Púrpura',     nivelMin: 3 },
-  { hex: '#3730a3', nombre: 'Índigo',      nivelMin: 3 },
-  { hex: '#a16207', nombre: 'Oro viejo',   nivelMin: 4 },
-  { hex: '#27272a', nombre: 'Grafito',     nivelMin: 4 },
+  { hex: '#134e4a', nombre: 'Verde hilo',   nivelMin: 1 },
+  { hex: '#0f172a', nombre: 'Tinta',        nivelMin: 1 },
+  { hex: '#1e3a8a', nombre: 'Azul real',    nivelMin: 1 },
+  { hex: '#047857', nombre: 'Esmeralda',    nivelMin: 1 },
+  { hex: '#c2410c', nombre: 'Terracota',    nivelMin: 1 },
+  { hex: '#be123c', nombre: 'Bordó',        nivelMin: 1 },
+  { hex: '#6d28d9', nombre: 'Púrpura',      nivelMin: 1 },
+  { hex: '#3730a3', nombre: 'Índigo',       nivelMin: 1 },
+  { hex: '#a16207', nombre: 'Oro viejo',    nivelMin: 1 },
+  { hex: '#27272a', nombre: 'Grafito',      nivelMin: 1 },
+  { hex: '#92400e', nombre: 'Cobre',        nivelMin: 3 },
+  { hex: '#854d0e', nombre: 'Oro oscuro',   nivelMin: 3 },
 ];
 
 export const PATRONES_PORTADA = [
-  { id: 'liso',       nombre: 'Liso',       nivelMin: 1 },
+  { id: 'liso',        nombre: 'Liso',        nivelMin: 1 },
   { id: 'diagonales', nombre: 'Diagonales', nivelMin: 2 },
-  { id: 'puntos',     nombre: 'Puntos',     nivelMin: 3 },
-  { id: 'costura',    nombre: 'Costura',    nivelMin: 4 },
+  { id: 'puntos',      nombre: 'Puntos',      nivelMin: 2 },
+  { id: 'costura',     nombre: 'Costura',     nivelMin: 2 },
+  { id: 'oro',         nombre: 'Reflejo oro', nivelMin: 3 },
+  { id: 'seda',        nombre: 'Seda',         nivelMin: 3 },
 ];
 
+/** Las iniciales están siempre disponibles por defecto. */
 export const AVATAR_ICONOS = [
-  { id: 'user',      nombre: 'Persona',  nivelMin: 1 },
-  { id: 'scissors',  nombre: 'Tijera',   nivelMin: 1 },
-  { id: 'cog',       nombre: 'Máquina',  nivelMin: 1 },
+  { id: 'user',      nombre: 'Persona',  nivelMin: 2 },
+  { id: 'scissors',  nombre: 'Tijera',   nivelMin: 2 },
+  { id: 'cog',       nombre: 'Máquina',  nivelMin: 2 },
   { id: 'bag',       nombre: 'Tienda',   nivelMin: 2 },
   { id: 'building',  nombre: 'Taller',   nivelMin: 2 },
-  { id: 'layers',    nombre: 'Lotes',    nivelMin: 3 },
-  { id: 'flag',      nombre: 'Bandera',  nivelMin: 3 },
-  { id: 'star',      nombre: 'Estrella', nivelMin: 4 },
+  { id: 'layers',    nombre: 'Lotes',    nivelMin: 2 },
+  { id: 'flag',      nombre: 'Bandera',  nivelMin: 2 },
+  { id: 'crown',     nombre: 'Corona',   nivelMin: 3 },
+  { id: 'star',      nombre: 'Estrella', nivelMin: 3 },
+  { id: 'coin',      nombre: 'Moneda',   nivelMin: 3 },
+];
+
+/** 
+ * Avatares ilustrados (tus SVG de Illustrator o dinámicos). 
+ * Se puede integrar aquí tu lógica de 5 seguidores para desbloquear extras si el usuario lo desea.
+ */
+export const AVATARES_ILUSTRADOS: { id: string; nombre: string; nivelMin: number }[] = [];
+
+export const AVATAR_MARCOS = [
+  { id: 'nivel', nombre: 'Marco de nivel',      nivelMin: 1 },
+  { id: 'gold',  nombre: 'Marco dorado animado', nivelMin: 3 },
 ];
 
 /** Estilo CSS de la portada (color + patrón), listo para [ngStyle]. */
@@ -259,6 +272,10 @@ export function estiloPortada(color?: string | null, patron?: string | null): Re
         backgroundPosition: '0 30%, 10px 70%',
         backgroundRepeat: 'no-repeat',
       };
+    case 'oro':
+      return { backgroundColor: c, backgroundImage: 'linear-gradient(120deg, rgba(251,191,36,.55), transparent 45%, rgba(251,191,36,.35) 70%, transparent)' };
+    case 'seda':
+      return { backgroundColor: c, backgroundImage: 'repeating-linear-gradient(115deg, rgba(255,255,255,.08) 0 2px, transparent 2px 7px), linear-gradient(180deg, rgba(255,255,255,.14), transparent)' };
     default:
       return { backgroundColor: c };
   }
@@ -278,6 +295,7 @@ export const ETIQUETAS_EVALUACION: Record<Rol, string[]> = {
   tienda:      ['Paga a tiempo', 'Buena comunicación', 'Lotes claros', 'Respeta acuerdos', 'Buen trato', 'Material en orden'],
 };
 
+/** Validación oficial de CNPJ Brasil */
 export function cnpjValido(valor: string): boolean {
   const c = (valor ?? '').replace(/\D/g, '');
   if (c.length !== 14 || /^(\d)\1+$/.test(c)) return false;

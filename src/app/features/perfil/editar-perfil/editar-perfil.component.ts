@@ -10,7 +10,7 @@ import {
 } from '../../../core/utils/gamificacion';
 import { Aviso, ToastComponent } from '../../../shared/components/toast.component';
 import { AvatarComponent } from '../../../shared/components/avatar.component';
-import { IconComponent } from '../../../shared/components/icon.component';
+import { IconComponent, ICONOS_DISPONIBLES } from '../../../shared/components/icon.component'; // 👈 Importamos la lista o el tipo desde tu IconComponent
 
 const CAMPOS_COMUNES = [
   'nombre_completo', 'lema', 'bio_taller', 'especialidad_principal', 'zona_ubicacion',
@@ -38,37 +38,14 @@ export class EditarPerfilComponent implements OnInit {
   readonly roles = ROL_ETIQUETA;
   readonly estiloPortada = estiloPortada;
 
-  // 👇 Lista completa de animales (Los primeros 6 son libres, del 7 en adelante piden verificación)
-  readonly iconos = [
-    { id: 'animal-burro-cara', nombre: 'Burro' },
-    { id: 'animal-gato', nombre: 'Gato' },
-    { id: 'animal-oso', nombre: 'Oso' },
-    { id: 'animal-buho', nombre: 'Búho' },
-    { id: 'animal-perro', nombre: 'Perro' },
-    { id: 'animal-leon', nombre: 'León' },
-    // A partir del índice 6 (7mo elemento) se requiere verificación
-    { id: 'animal-hipopotamo', nombre: 'Hipopótamo' },
-    { id: 'animal-caballo', nombre: 'Caballo' },
-    { id: 'animal-burro', nombre: 'Burro silueta' },
-    { id: 'animal-koala', nombre: 'Koala' },
-    { id: 'animal-oveja', nombre: 'Oveja' },
-    { id: 'animal-pantera', nombre: 'Pantera' },
-    { id: 'animal-mono', nombre: 'Mono' },
-    { id: 'animal-carnero', nombre: 'Carnero' },
-    { id: 'animal-raton', nombre: 'Ratón' },
-    { id: 'animal-pulpo', nombre: 'Pulpo' },
-    { id: 'animal-loro', nombre: 'Loro' },
-    { id: 'animal-cerdo', nombre: 'Cerdo' },
-    { id: 'animal-conejo', nombre: 'Conejo' },
-    { id: 'animal-tigre', nombre: 'Tigre' },
-    { id: 'animal-gorila', nombre: 'Gorila' },
-    { id: 'animal-cebra', nombre: 'Cebra' },
-    { id: 'animal-vaca', nombre: 'Vaca' },
-    { id: 'animal-toro', nombre: 'Toro' },
-    { id: 'animal-cabra', nombre: 'Cabra' },
-    { id: 'animal-ciervo', nombre: 'Ciervo' },
-    { id: 'animal-jirafa', nombre: 'Jirafa' },
-  ];
+  // 👇 AUTOMATIZACIÓN: Extraemos todos los iconos que comiencen con 'animal-' directamente del diccionario centralizado
+  readonly iconos = Object.keys(ICONOS_DISPONIBLES)
+    .filter(id => id.startsWith('animal-'))
+    .map(id => ({
+      id,
+      // Generamos un nombre bonito formateando el texto (ej: 'animal-hipopotamo' -> 'Hipopotamo')
+      nombre: id.replace('animal-', '').replace(/-/g, ' ').replace(/^./, str => str.toUpperCase())
+    }));
 
   // 👇 Definición local de paletas para evitar errores de compilación
   readonly paletas = [
@@ -178,7 +155,8 @@ export class EditarPerfilComponent implements OnInit {
     if (this.bloqueado(p.nivelMin)) return this.avisarBloqueo(p.nivelMin);
     this.form.patron_portada = p.id;
   }
-elegirIcono(i: { id: string }, idx: number) {
+
+  elegirIcono(i: { id: string }, idx: number) {
     // Si el icono está en el índice 6 o superior (7mo en adelante) y el usuario no está verificado
     if (idx >= 6 && !this.base()?.verificado) {
       this.notificar('Icono solo para perfiles verificados', 'error');
@@ -186,6 +164,7 @@ elegirIcono(i: { id: string }, idx: number) {
     }
     this.form.avatar_icono = i.id;
   }
+
   elegirAvatarColor(id: string | null) { this.form.avatar_color = id; }
 
   toggleDestacada(id: string) {
@@ -260,5 +239,4 @@ elegirIcono(i: { id: string }, idx: number) {
     this.aviso.set({ texto, tipo });
     setTimeout(() => this.aviso.set(null), 3500);
   }
-  
 }

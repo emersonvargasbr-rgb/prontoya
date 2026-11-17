@@ -83,7 +83,9 @@
             </ng-container>
 
             <button *ngIf="telefono()" type="button" (click)="whatsapp()" [ngClass]="ui.btnSecundario"><app-icon nombre="chat" clase="w-4 h-4" /> WhatsApp</button>
-            <a *ngIf="puedoEvaluar()" [routerLink]="['/dejar-evaluacion', p.id]" [ngClass]="ui.btnSecundario"><app-icon nombre="star" clase="w-4 h-4" /> Calificar</a>
+          <a *ngIf="puedoEvaluar()" [routerLink]="['/evaluar', p.id]" [ngClass]="ui.btnSecundario">
+  <app-icon nombre="star" clase="w-4 h-4" /> Calificar
+</a>
           </div>
         </div>
       </section>

@@ -60,10 +60,10 @@ export const ROL_PANEL: Record<string, string> = {
 };
 
 export const TIPO_PUBLICACION: Record<string, { txt: string; icono: string; clase: string }> = {
-  busco_oficina:     { txt: 'Lote de tienda',      icono: 'bag',       clase: 'bg-sky-50 text-sky-800' },
-  busco_corte:       { txt: 'Taller disponible',   icono: 'scissors',  clase: 'bg-teal-50 text-teal-800' },
-  busco_funcionario: { txt: 'Vacante',             icono: 'briefcase', clase: 'bg-amber-50 text-amber-800' },
-  busco_trabajo:     { txt: 'Operario disponible', icono: 'user',      clase: 'bg-violet-50 text-violet-800' },
+  busco_oficina:     { txt: 'Lote de tienda',      icono: 'store',     clase: 'bg-sky-50 text-sky-800' },     // <-- Cambiado de 'bag' a 'store' (para la tienda/oficina)
+  busco_corte:       { txt: 'Taller disponible',    icono: 'scissors',  clase: 'bg-teal-50 text-teal-800' },   // <-- 'scissors' para la tijera de corte
+  busco_funcionario: { txt: 'Vacante',              icono: 'user',      clase: 'bg-amber-50 text-amber-800' }, // <-- 'user' para la personita del funcionario
+  busco_trabajo:     { txt: 'Operario disponible',  icono: 'briefcase', clase: 'bg-violet-50 text-violet-800' },
 };
 
 /** Clases Tailwind reutilizables (literales completos para que Tailwind las detecte). */
