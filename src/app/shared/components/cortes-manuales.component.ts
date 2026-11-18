@@ -5,7 +5,6 @@ import { Aviso, ToastComponent } from './toast.component';
 import { IconComponent } from './icon.component';
 import { SupabaseService } from '../../core/services/supabase.service';
 
-
 interface CorteManual {
   id?: string;
   usuario_id: string;
@@ -126,7 +125,7 @@ interface CorteManual {
   `
 })
 export class CortesManualesComponent implements OnInit {
-  @Input() usuarioId = '';
+  @Input() oficinaId = ''; // Coincide exactamente con el binding [oficinaId] del panel
   @Output() totalCambio = new EventEmitter<number>();
   
   lista: CorteManual[] = [];
@@ -139,7 +138,7 @@ export class CortesManualesComponent implements OnInit {
   constructor(private supabase: SupabaseService) {}
 
   async ngOnInit() {
-    if (this.usuarioId) await this.cargarCortes();
+    if (this.oficinaId) await this.cargarCortes();
   }
 
   get totalPrendas() { return this.lista.reduce((acc, item) => acc + Number(item.cantidad), 0); }
@@ -147,7 +146,12 @@ export class CortesManualesComponent implements OnInit {
 
   async cargarCortes() {
     this.cargando.set(true);
-    const { data, error } = await this.supabase.supabase.from('cortes_manuales').select('*').eq('usuario_id', this.usuarioId).order('fecha', { ascending: false });
+    const { data, error } = await this.supabase.supabase
+      .from('cortes_manuales')
+      .select('*')
+      .eq('usuario_id', this.oficinaId)
+      .order('fecha', { ascending: false });
+      
     if (!error && data) {
       this.lista = data;
       this.totalCambio.emit(this.totalIngresos);
@@ -166,7 +170,7 @@ export class CortesManualesComponent implements OnInit {
       return;
     }
     const total = Number(this.form.cantidad) * Number(this.form.precio_unitario);
-    const payload = { usuario_id: this.usuarioId, ...this.form, total };
+    const payload = { usuario_id: this.oficinaId, ...this.form, total };
 
     const { error } = await this.supabase.supabase.from('cortes_manuales').insert([payload]);
     if (error) {

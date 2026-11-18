@@ -13,6 +13,8 @@ import { DejarEvaluacionComponent } from './features/perfil/dejar-evaluacion/dej
 import { CrearPublicacionComponent } from './features/publicaciones/crear-publicacion/crear-publicacion.component';
 import { EditarPerfilComponent } from './features/perfil/editar-perfil/editar-perfil.component';
 import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
+import { PlanesComponent } from './features/planes/planes.component';
+import { CheckoutSuscripcionComponent } from './features/planes/checkout-suscripcion.component'; // <--- Importado aquí
 
 export const routes: Routes = [
   // 1. Rutas de Autenticación (Públicas, sin layout)
@@ -31,9 +33,22 @@ export const routes: Routes = [
       { path: 'feed', component: FeedTrabajosComponent },
       { path: 'trabajo/:id', component: DetalleTrabajoComponent },
       
-      // 👇 AQUÍ PONES LAS RUTAS DE PERFIL (Principal y el alias)
+      // Rutas de PERFIL
       { path: 'perfil/:id', component: VistaPerfilComponent },
-      { path: 'perfil-usuario/:id', component: VistaPerfilComponent }, // <--- Añadido aquí
+      { path: 'perfil-usuario/:id', component: VistaPerfilComponent },
+
+      // RUTA DE PLANES / MEJORAR CUENTA
+      { 
+        path: 'planes', 
+        component: PlanesComponent, 
+        canActivate: [authGuard] 
+      },
+      { 
+        path: 'checkout-suscripcion', 
+        component: CheckoutSuscripcionComponent, // <--- Ruta añadida para el pago por comprobante
+        canActivate: [authGuard] 
+      },
+      { path: 'suscripcion', redirectTo: 'planes', pathMatch: 'full' }, // Alias útil
 
       // Rutas PRIVADAS
       { 

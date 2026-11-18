@@ -1,65 +1,65 @@
-<div class="min-h-screen bg-stone-50 text-slate-900">
+<div class="min-h-screen bg-stone-50 text-slate-900 pb-16">
   <app-toast [aviso]="aviso()" />
 
   <div class="mx-auto max-w-6xl px-4 py-6 lg:grid lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-6">
 
-    <!-- ================================================= PERFIL (lateral compacto estilo oficina/tienda) -->
+    <!-- ================================================= PERFIL (lateral compacto) -->
     <aside class="mb-6 lg:mb-0 lg:sticky lg:top-6 lg:self-start">
-      <div class="overflow-hidden p-5" [ngClass]="ui.card">
+      <div class="overflow-hidden p-5 rounded-2xl border border-stone-200/80 bg-white shadow-sm" [ngClass]="ui.card">
         <div class="flex items-center justify-between">
           <div class="rounded-full ring-2 ring-stone-200">
-           <app-avatar [nombre]="perfil()?.nombre_completo" tamano="md" [verificado]="!!perfil()?.verificado"
-            [icono]="perfil()?.avatar_icono" [color]="perfil()?.avatar_color" />
+            <app-avatar [nombre]="perfil()?.nombre_completo" tamano="md" [verificado]="!!perfil()?.verificado"
+                        [icono]="perfil()?.avatar_icono" [color]="perfil()?.avatar_color" [marco]="perfil()?.avatar_marco" />
           </div>
           <a routerLink="/editar-perfil" [ngClass]="ui.btnSecundario" class="!px-3 !py-1.5 !text-xs">
             <app-icon nombre="pencil" clase="w-3.5 h-3.5" /> Editar
           </a>
         </div>
 
-        <h1 class="mt-3 text-base font-bold leading-tight">{{ perfil()?.nombre_completo || 'Operario de confección' }}</h1>
-        <p class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
-          <span class="inline-flex items-center gap-1"><app-icon nombre="user" clase="w-3.5 h-3.5" /> {{ perfil()?.especialidad_principal || 'Costura general' }}</span>
-          <span *ngIf="perfil()?.zona_ubicacion" class="inline-flex items-center gap-1"><app-icon nombre="pin" clase="w-3.5 h-3.5" /> {{ perfil()?.zona_ubicacion }}</span>
+        <h1 class="mt-3 text-base font-bold leading-tight text-slate-900">{{ perfil()?.nombre_completo || 'Operario de confección' }}</h1>
+        <p class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-stone-500">
+          <span class="inline-flex items-center gap-1"><app-icon nombre="user" clase="w-3.5 h-3.5 text-teal-700" /> {{ perfil()?.especialidad_principal || 'Costura general' }}</span>
+          <span *ngIf="perfil()?.zona_ubicacion" class="inline-flex items-center gap-1 text-stone-600"><app-icon nombre="pin" clase="w-3.5 h-3.5" /> {{ perfil()?.zona_ubicacion }}</span>
         </p>
-        <p class="mt-2.5 text-xs leading-relaxed text-slate-600">{{ perfil()?.bio_taller || 'Cuéntales a talleres y tiendas tu experiencia.' }}</p>
+        <p class="mt-2.5 text-xs leading-relaxed text-stone-600">{{ perfil()?.bio_taller || 'Cuéntales a talleres y tiendas tu experiencia.' }}</p>
 
         <div class="mt-2.5 flex flex-wrap gap-1" *ngIf="perfil()?.maquinas_maneja?.length">
-          <span *ngFor="let m of perfil().maquinas_maneja" [ngClass]="ui.chip" class="!text-[10px] !py-0.5"><app-icon nombre="cog" clase="w-2.5 h-2.5" /> {{ m }}</span>
+          <span *ngFor="let m of perfil().maquinas_maneja" [ngClass]="ui.chip" class="!text-[10px] !py-0.5"><app-icon nombre="cog" clase="w-2.5 h-2.5 text-stone-500" /> {{ m }}</span>
         </div>
 
-        <dl class="mt-4 grid grid-cols-3 divide-x divide-stone-200 rounded-lg border border-stone-200 text-center">
-          <div class="px-1 py-2"><dt class="text-[10px] text-slate-500">Seguidores</dt><dd class="text-xs font-bold">{{ stats().seguidores }}</dd></div>
-          <div class="px-1 py-2"><dt class="text-[10px] text-slate-500">Siguiendo</dt><dd class="text-xs font-bold">{{ stats().siguiendo }}</dd></div>
-          <div class="px-1 py-2"><dt class="text-[10px] text-slate-500">Valoración</dt>
-            <dd class="flex items-center justify-center gap-0.5 text-xs font-bold">
+        <dl class="mt-4 grid grid-cols-3 divide-x divide-stone-200 rounded-xl border border-stone-200/80 text-center bg-stone-50/50">
+          <div class="px-1 py-2"><dt class="text-[10px] font-medium text-stone-500">Seguidores</dt><dd class="text-xs font-bold text-slate-900">{{ stats().seguidores }}</dd></div>
+          <div class="px-1 py-2"><dt class="text-[10px] font-medium text-stone-500">Siguiendo</dt><dd class="text-xs font-bold text-slate-900">{{ stats().siguiendo }}</dd></div>
+          <div class="px-1 py-2"><dt class="text-[10px] font-medium text-stone-500">Valoración</dt>
+            <dd class="flex items-center justify-center gap-0.5 text-xs font-bold text-slate-900">
               <app-icon nombre="star" [relleno]="true" clase="w-3 h-3 text-amber-500" /> {{ perfil()?.promedio_estrellas || '0.0' }}
             </dd></div>
         </dl>
 
         <!-- Disponibilidad -->
         <button type="button" (click)="cambiarEstadoLaboral()" role="switch" [attr.aria-checked]="perfil()?.estado_laboral === 'Disponible'"
-                class="mt-4 flex w-full items-center justify-between rounded-lg border px-3 py-2 text-xs font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
-                [ngClass]="perfil()?.estado_laboral === 'Disponible' ? 'border-teal-200 bg-teal-50 text-teal-900' : 'border-stone-300 bg-stone-100 text-slate-700'">
+                class="mt-4 flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-xs font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 shadow-sm"
+                [ngClass]="perfil()?.estado_laboral === 'Disponible' ? 'border-teal-200 bg-teal-50 text-teal-900' : 'border-stone-300 bg-stone-100 text-stone-700'">
           <span>{{ perfil()?.estado_laboral === 'Disponible' ? 'Disponible para trabajar' : 'Ocupado por ahora' }}</span>
           <span class="relative h-4 w-8 rounded-full transition" [ngClass]="perfil()?.estado_laboral === 'Disponible' ? 'bg-teal-600' : 'bg-stone-400'">
-            <span class="absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all"
+            <span class="absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all shadow-sm"
                   [ngClass]="perfil()?.estado_laboral === 'Disponible' ? 'left-[18px]' : 'left-0.5'"></span>
           </span>
         </button>
 
-        <a routerLink="/crear-publicacion" [ngClass]="ui.btnPrimario" class="mt-3 w-full !py-2 !text-xs">
+        <a routerLink="/crear-publicacion" [ngClass]="ui.btnPrimario" class="mt-3 w-full !py-2.5 !text-xs shadow-sm">
           <app-icon nombre="megaphone" clase="w-4 h-4" /> Publicar mi disponibilidad
         </a>
       </div>
     </aside>
 
     <!-- ===================================================== CONTENIDO -->
-    <main class="min-w-0">
+    <main class="min-w-0 space-y-5">
       <app-tabs [items]="tabs()" [activo]="seccion()" (cambio)="seccion.set($any($event))" />
 
       <div *ngIf="cargando()" class="space-y-3" aria-busy="true">
-        <div class="h-24 animate-pulse rounded-xl bg-stone-200/70"></div>
-        <div class="h-24 animate-pulse rounded-xl bg-stone-200/70"></div>
+        <div class="h-24 animate-pulse rounded-2xl bg-stone-200/70"></div>
+        <div class="h-24 animate-pulse rounded-2xl bg-stone-200/70"></div>
       </div>
 
       <div *ngIf="!cargando()">
@@ -69,19 +69,19 @@
           <app-solicitudes-vinculo />
 
           <!-- Nivel -->
-          <div [ngClass]="ui.card" class="p-4">
+          <div [ngClass]="ui.card" class="p-4 sm:p-5 rounded-2xl border border-stone-200/80 bg-white shadow-sm">
             <div class="flex items-center justify-between gap-3">
               <div>
-                <p class="text-xs text-slate-500">Nivel {{ gamificacion().nivel }} de 5</p>
-                <p class="text-base font-bold">{{ gamificacion().nombre }}</p>
+                <p class="text-xs font-medium text-stone-500">Nivel {{ gamificacion().nivel }} de 5</p>
+                <p class="text-base font-bold text-slate-900">{{ gamificacion().nombre }}</p>
               </div>
-              <p class="text-right text-sm"><strong>{{ gamificacion().xp }}</strong> <span class="text-slate-500">puntos</span></p>
+              <p class="text-right text-sm font-semibold text-slate-900"><strong>{{ gamificacion().xp }}</strong> <span class="text-stone-500 font-normal">puntos</span></p>
             </div>
-            <div class="mt-3 h-2 overflow-hidden rounded-full bg-stone-200" role="progressbar"
+            <div class="mt-3 h-2 overflow-hidden rounded-full bg-stone-100" role="progressbar"
                  [attr.aria-valuenow]="gamificacion().pct" aria-valuemin="0" aria-valuemax="100">
               <div class="h-full rounded-full bg-teal-600 transition-[width] duration-500" [style.width.%]="gamificacion().pct"></div>
             </div>
-            <p class="mt-2 text-xs text-slate-500">
+            <p class="mt-2.5 text-xs text-stone-500">
               <ng-container *ngIf="gamificacion().siguiente">Te faltan {{ gamificacion().faltan }} puntos para {{ gamificacion().siguiente }}.</ng-container>
               <ng-container *ngIf="!gamificacion().siguiente">Llegaste al nivel máximo.</ng-container>
             </p>
@@ -89,33 +89,42 @@
 
           <!-- Dinero -->
           <div class="grid grid-cols-2 gap-3">
-            <div [ngClass]="ui.card" class="p-4">
-              <p class="text-xs text-slate-500">Liquidado</p>
+            <div [ngClass]="ui.card" class="p-4 rounded-2xl border border-stone-200/80 bg-white shadow-sm">
+              <p class="text-xs font-medium text-stone-500">Liquidado</p>
               <p class="mt-1 text-lg font-bold text-teal-800">{{ moneda(ganado()) }}</p>
             </div>
-            <div [ngClass]="ui.card" class="p-4">
-              <p class="text-xs text-slate-500">Por cobrar</p>
+            <div [ngClass]="ui.card" class="p-4 rounded-2xl border border-stone-200/80 bg-white shadow-sm">
+              <p class="text-xs font-medium text-stone-500">Por cobrar</p>
               <p class="mt-1 text-lg font-bold text-amber-700">{{ moneda(porCobrar()) }}</p>
             </div>
           </div>
 
+          <!-- Mis ingresos (Operario Pro) -->
+          <a routerLink="/mis-ingresos" [ngClass]="ui.card" class="flex items-center justify-between gap-3 p-4 rounded-2xl border border-stone-200/80 bg-white shadow-sm transition hover:border-stone-300">
+            <span class="flex items-center gap-3">
+              <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-700 shadow-sm"><app-icon nombre="coin" clase="w-5 h-5" /></span>
+              <span><span class="block text-sm font-bold text-slate-900">Mis ingresos</span><span class="block text-xs text-stone-500">Trabajos particulares y resumen mensual</span></span>
+            </span>
+            <app-icon nombre="chevron-right" clase="w-4 h-4 text-stone-400" />
+          </a>
+
           <!-- Empleadores -->
-          <div>
-            <h2 class="mb-2 text-sm font-bold">Trabajo con</h2>
-            <div *ngIf="empleadores().length === 0" [ngClass]="ui.vacio">
+          <div class="space-y-2.5">
+            <h2 class="text-sm font-bold text-slate-900">Trabajo con</h2>
+            <div *ngIf="empleadores().length === 0" [ngClass]="ui.vacio" class="rounded-3xl border border-dashed border-stone-300 bg-white p-8 text-center shadow-sm">
               <app-icon nombre="building" clase="mx-auto h-8 w-8 text-stone-400" />
-              <p class="mt-3 text-sm font-semibold">Aún no formas parte de ningún equipo</p>
-              <a routerLink="/feed" [ngClass]="ui.btnOscuro" class="mt-4"><app-icon nombre="search" clase="w-4 h-4" /> Buscar vacantes</a>
+              <p class="mt-3 text-sm font-semibold text-slate-800">Aún no formas parte de ningún equipo</p>
+              <a routerLink="/feed" [ngClass]="ui.btnOscuro" class="mt-4 inline-flex items-center gap-2"><app-icon nombre="search" clase="w-4 h-4" /> Buscar vacantes</a>
             </div>
-            <ul class="grid gap-2 sm:grid-cols-2">
-              <li *ngFor="let e of empleadores()" [ngClass]="ui.card" class="flex items-center gap-3 p-3">
+            <ul class="grid gap-2.5 sm:grid-cols-2">
+              <li *ngFor="let e of empleadores()" [ngClass]="ui.card" class="flex items-center gap-3.5 p-3.5 rounded-2xl border border-stone-200/80 bg-white shadow-sm">
                 <app-avatar [nombre]="e.empleador?.nombre_completo" />
                 <a [routerLink]="['/perfil-usuario', e.empleador?.id]" class="min-w-0 flex-1">
-                  <p class="truncate text-sm font-bold hover:underline">{{ e.empleador?.nombre_completo }}</p>
-                  <p class="text-xs text-slate-500">Desde {{ e.fecha_ingreso | date:'dd/MM/yyyy' }}</p>
+                  <p class="truncate text-sm font-bold text-slate-900 hover:underline">{{ e.empleador?.nombre_completo }}</p>
+                  <p class="text-xs text-stone-500 mt-0.5">Desde {{ e.fecha_ingreso | date:'dd/MM/yyyy' }}</p>
                 </a>
                 <button type="button" (click)="whatsapp(e.empleador?.telefono, e.empleador?.nombre_completo, 'trabajo en equipo')"
-                        aria-label="WhatsApp" [ngClass]="ui.btnSecundario" class="!px-2.5"><app-icon nombre="chat" clase="w-4 h-4" /></button>
+                        aria-label="WhatsApp" [ngClass]="ui.btnSecundario" class="!px-2.5"><app-icon nombre="chat" clase="w-4 h-4 text-emerald-600" /></button>
               </li>
             </ul>
           </div>
@@ -123,144 +132,209 @@
 
         <!-- ============================================== MIS TRABAJOS -->
         <section *ngIf="seccion() === 'trabajos'" class="space-y-6">
-          <div *ngIf="trabajosActivos().length === 0" [ngClass]="ui.vacio">
-            <app-icon nombre="layers" clase="mx-auto h-8 w-8 text-stone-400" />
-            <p class="mt-3 text-sm font-semibold">No tienes cortes asignados</p>
-            <p class="mt-1 text-sm text-slate-500">Cuando una tienda o taller te asigne trabajo, aparecerá aquí con piezas y tarifa.</p>
+          <div *ngIf="trabajosActivos().length === 0" [ngClass]="ui.vacio" class="rounded-3xl border border-dashed border-stone-300 bg-white p-10 text-center shadow-sm">
+            <app-icon nombre="layers" clase="mx-auto h-10 w-10 text-stone-400" />
+            <p class="mt-3 text-base font-bold text-slate-800">No tienes cortes asignados</p>
+            <p class="mt-1 text-sm text-stone-500">Cuando una tienda o taller te asigne trabajo, aparecerá aquí con piezas y tarifa.</p>
           </div>
 
-          <ul class="space-y-2">
-            <li *ngFor="let a of trabajosActivos()" [ngClass]="ui.card" class="p-4">
-              <div class="flex items-start gap-3">
+          <ul class="space-y-3">
+            <li *ngFor="let a of trabajosActivos()" [ngClass]="ui.card" class="p-4 sm:p-5 rounded-2xl border border-stone-200/80 bg-white shadow-sm space-y-3">
+              <div class="flex items-start gap-3.5">
                 <app-avatar [nombre]="a.empleador?.nombre_completo" />
                 <div class="min-w-0 flex-1">
                   <div class="flex flex-wrap items-center gap-2">
-                    <h3 class="truncate text-sm font-bold">{{ a.descripcion_corte }}</h3>
+                    <h3 class="truncate text-sm font-bold text-slate-900">{{ a.descripcion_corte }}</h3>
                     <span class="rounded-md px-2 py-0.5 text-[11px] font-semibold" [ngClass]="claseEstado(a.estado)">{{ a.estado }}</span>
                   </div>
-                  <p class="mt-0.5 text-xs text-slate-500">
+                  <p class="mt-0.5 text-xs text-stone-500">
                     {{ a.empleador?.nombre_completo }}
                     <span *ngIf="a.operacion_maquina && a.operacion_maquina !== 'General'"> · {{ a.operacion_maquina }}</span>
                     · {{ a.cantidad_piezas | number }} pzas
                   </p>
                   <p class="mt-1 text-xs font-semibold text-teal-800">
-                    {{ moneda(a.monto_total) }} <span class="font-normal text-slate-500">({{ moneda(a.pago_por_pieza) }} por pieza)</span>
+                    {{ moneda(a.monto_total) }} <span class="font-normal text-stone-500">({{ moneda(a.pago_por_pieza) }} por pieza)</span>
                   </p>
                 </div>
               </div>
-              <div class="mt-3 flex flex-wrap gap-2">
-                <button type="button" (click)="whatsapp(a.empleador?.telefono, a.empleador?.nombre_completo, a.descripcion_corte)" [ngClass]="ui.btnSecundario">
-                  <app-icon nombre="chat" clase="w-4 h-4" /> Contactar
+              <div class="flex flex-wrap gap-2 pt-2 border-t border-stone-100">
+                <button type="button" (click)="whatsapp(a.empleador?.telefono, a.empleador?.nombre_completo, a.descripcion_corte)" [ngClass]="ui.btnSecundario" class="!py-2">
+                  <app-icon nombre="chat" clase="w-4 h-4 text-emerald-600" /> Contactar
                 </button>
-                <button *ngIf="a.estado === 'Asignado'" type="button" (click)="iniciar(a)" [ngClass]="ui.btnPrimario" class="ml-auto">
+                <button *ngIf="a.estado === 'Asignado'" type="button" (click)="iniciar(a)" [ngClass]="ui.btnPrimario" class="ml-auto !py-2 shadow-sm">
                   <app-icon nombre="scissors" clase="w-4 h-4" /> Iniciar confección
                 </button>
-                <button *ngIf="a.estado === 'En Confección'" type="button" (click)="terminar(a)" [ngClass]="ui.btnOscuro" class="ml-auto">
+                <button *ngIf="a.estado === 'En Confección'" type="button" (click)="terminar(a)" [ngClass]="ui.btnOscuro" class="ml-auto !py-2 shadow-sm">
                   <app-icon nombre="flag" clase="w-4 h-4" /> Marcar terminado
                 </button>
-                <p *ngIf="a.estado === 'Terminado'" class="ml-auto inline-flex items-center gap-1.5 text-xs text-slate-500">
-                  <app-icon nombre="clock" clase="w-3.5 h-3.5" /> Esperando liquidación
+                <p *ngIf="a.estado === 'Terminado'" class="ml-auto inline-flex items-center gap-1.5 text-xs font-medium text-stone-500">
+                  <app-icon nombre="clock" clase="w-3.5 h-3.5 text-amber-600" /> Esperando liquidación
                 </p>
               </div>
             </li>
           </ul>
 
-          <div *ngIf="trabajosCerrados().length > 0">
-            <h2 class="mb-2 text-sm font-bold">Liquidados</h2>
-            <ul class="space-y-2">
-              <li *ngFor="let a of trabajosCerrados()" [ngClass]="ui.card" class="flex items-center gap-3 p-4">
+          <div *ngIf="trabajosCerrados().length > 0" class="space-y-2.5">
+            <h2 class="text-sm font-bold text-slate-900">Liquidados</h2>
+            <ul class="space-y-2.5">
+              <li *ngFor="let a of trabajosCerrados()" [ngClass]="ui.card" class="flex items-center gap-3.5 p-4 rounded-2xl border border-stone-200/80 bg-white shadow-sm">
                 <div class="min-w-0 flex-1">
-                  <p class="truncate text-sm font-bold">{{ a.descripcion_corte }}</p>
-                  <p class="text-xs text-slate-500">
+                  <p class="truncate text-sm font-bold text-slate-900">{{ a.descripcion_corte }}</p>
+                  <p class="text-xs text-stone-500 mt-0.5">
                     {{ a.empleador?.nombre_completo }} · {{ a.cantidad_piezas | number }} pzas · {{ a.fecha_cierre | date:'dd/MM/yyyy' }}
                   </p>
-                  <p *ngIf="a.monto_descuento > 0" class="mt-1 inline-flex items-center gap-1 text-xs text-rose-700">
+                  <p *ngIf="a.monto_descuento > 0" class="mt-1 inline-flex items-center gap-1 text-xs text-rose-700 font-medium">
                     <app-icon nombre="alert" clase="w-3.5 h-3.5" />
                     Descuento {{ moneda(a.monto_descuento) }} por {{ a.piezas_defectuosas }} pzas<span *ngIf="a.motivo_descuento"> ({{ a.motivo_descuento }})</span>
                   </p>
                 </div>
-                <p class="shrink-0 text-sm font-bold">{{ moneda(a.monto_neto ?? a.monto_total) }}</p>
+                <p class="shrink-0 text-sm font-bold text-slate-900">{{ moneda(a.monto_neto ?? a.monto_total) }}</p>
               </li>
             </ul>
+          </div>
+
+          <!-- SECCIÓN DE CORTES MANUALES (Protegida por Plan Pro) -->
+          <div class="pt-4 border-t border-stone-200">
+            <div class="mb-3">
+              <h2 class="text-sm font-bold text-slate-900">Registro Manual de Cortes y Particulares</h2>
+              <p class="text-xs text-stone-500">Registra trabajos independientes que realices fuera de talleres asignados.</p>
+            </div>
+
+            <!-- Si es PRO: Muestra el componente -->
+            <div *ngIf="esPlanPro(); else bannerCortesBloqueado">
+              <app-cortes-manuales />
+            </div>
+
+            <!-- Si es GRATIS: Vista bloqueada elegante -->
+            <ng-template #bannerCortesBloqueado>
+              <div class="relative overflow-hidden rounded-3xl border border-stone-200 bg-white p-8 text-center shadow-sm space-y-4">
+                <div class="absolute inset-0 opacity-20 pointer-events-none filter blur-[2px] p-6 space-y-3">
+                  <div class="h-12 bg-stone-200 rounded-xl"></div>
+                  <div class="h-20 bg-stone-100 rounded-xl"></div>
+                </div>
+                <div class="relative z-10 max-w-md mx-auto space-y-3">
+                  <span class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-teal-700 shadow-sm border border-teal-100">
+                    <app-icon nombre="lock" clase="w-6 h-6" />
+                  </span>
+                  <h3 class="text-base font-bold text-slate-900">Desbloquea el Registro de Cortes Manuales</h3>
+                  <p class="text-xs text-stone-500 leading-relaxed">
+                    Lleva el control de tus propios encargos particulares, calcula ganancias independientes y mantén todo tu historial organizado en un solo lugar.
+                  </p>
+                  <div class="pt-2">
+                    <a routerLink="/planes" [ngClass]="ui.btnPrimario" class="inline-flex items-center gap-2 shadow-sm !text-xs !py-2.5">
+                      <app-icon nombre="verified" clase="w-4 h-4" /> Ver planes y mejorar cuenta
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </ng-template>
           </div>
         </section>
 
         <!-- ============================================ POSTULACIONES -->
-        <section *ngIf="seccion() === 'postulaciones'" class="space-y-2">
-          <div *ngIf="postulaciones().length === 0" [ngClass]="ui.vacio">
-            <app-icon nombre="briefcase" clase="w-8 h-8 mx-auto text-stone-400" />
-            <p class="mt-3 text-sm font-semibold">No te has postulado a ninguna vacante</p>
-            <a routerLink="/feed" [ngClass]="ui.btnOscuro" class="mt-4"><app-icon nombre="search" clase="w-4 h-4" /> Buscar empleos</a>
+        <section *ngIf="seccion() === 'postulaciones'" class="space-y-3">
+          <div *ngIf="postulaciones().length === 0" [ngClass]="ui.vacio" class="rounded-3xl border border-dashed border-stone-300 bg-white p-10 text-center shadow-sm">
+            <app-icon nombre="briefcase" clase="w-10 h-10 mx-auto text-stone-400" />
+            <p class="mt-3 text-base font-bold text-slate-800">No te has postulado a ninguna vacante</p>
+            <a routerLink="/feed" [ngClass]="ui.btnOscuro" class="mt-4 inline-flex items-center gap-2"><app-icon nombre="search" clase="w-4 h-4" /> Buscar empleos</a>
           </div>
 
-          <article *ngFor="let p of postulaciones()" [ngClass]="ui.card" class="p-4">
-            <div class="flex items-start gap-3">
+          <article *ngFor="let p of postulaciones()" [ngClass]="ui.card" class="p-4 sm:p-5 rounded-2xl border border-stone-200/80 bg-white shadow-sm space-y-3">
+            <div class="flex items-start gap-3.5">
               <app-avatar [nombre]="p.publicacion?.creador?.nombre_completo" [verificado]="!!p.publicacion?.creador?.verificado" />
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
-                  <a [routerLink]="['/trabajo', p.publicacion?.id]" class="truncate text-sm font-bold hover:underline">{{ p.publicacion?.titulo }}</a>
+                  <a [routerLink]="['/trabajo', p.publicacion?.id]" class="truncate text-sm font-bold text-slate-900 hover:underline">{{ p.publicacion?.titulo }}</a>
                   <span class="rounded-md px-2 py-0.5 text-[11px] font-semibold" [ngClass]="claseEstado(p.estado)">{{ p.estado }}</span>
                 </div>
-                <p class="mt-0.5 text-xs text-slate-500">
+                <p class="mt-0.5 text-xs text-stone-500">
                   {{ p.publicacion?.creador?.nombre_completo }} · {{ p.publicacion?.creador?.zona_ubicacion }} · enviada {{ p.created_at | date:'dd/MM/yyyy' }}
                 </p>
               </div>
             </div>
-            <div class="mt-3 flex flex-wrap gap-2">
+            <div class="flex flex-wrap gap-2 pt-2 border-t border-stone-100">
               <button *ngIf="p.estado === 'Aceptado'" type="button"
-                      (click)="whatsapp(p.publicacion?.creador?.telefono, p.publicacion?.creador?.nombre_completo, p.publicacion?.titulo)" [ngClass]="ui.btnPrimario">
-                <app-icon nombre="chat" clase="w-4 h-4" /> Escribir por WhatsApp
+                      (click)="whatsapp(p.publicacion?.creador?.telefono, p.publicacion?.creador?.nombre_completo, p.publicacion?.titulo)" [ngClass]="ui.btnPrimario" class="!py-2 shadow-sm">
+                <app-icon nombre="chat" clase="w-4 h-4 text-emerald-600" /> Escribir por WhatsApp
               </button>
-              <button *ngIf="p.estado === 'Pendiente'" type="button" (click)="retirarPostulacion(p)" [ngClass]="ui.btnPeligro">
+              <button *ngIf="p.estado === 'Pendiente'" type="button" (click)="retirarPostulacion(p)" [ngClass]="ui.btnPeligro" class="!py-2">
                 <app-icon nombre="x" clase="w-4 h-4" /> Retirar postulación
               </button>
             </div>
           </article>
         </section>
 
+        <!-- ============================================== FINANZAS / VALES -->
+        <section *ngIf="seccion() === 'finanzas'" class="space-y-4">
+          <!-- Si es PRO: Muestra el componente completo -->
+          <div *ngIf="esPlanPro(); else bannerBloqueado" class="space-y-4">
+            <div class="rounded-2xl border border-teal-200 bg-teal-50/40 p-4">
+              <p class="text-xs font-bold text-teal-900 uppercase tracking-wide">Acceso Pro Habilitado</p>
+              <p class="text-xs text-stone-600 mt-0.5">Control avanzado de vales, anticipos y balance de caja de taller.</p>
+            </div>
+            <app-control-vales />
+          </div>
+
+          <!-- Si es GRATIS: Vista bloqueada / opacada atractiva -->
+          <ng-template #bannerBloqueado>
+            <div class="relative overflow-hidden rounded-3xl border border-stone-200 bg-white p-8 text-center shadow-sm space-y-4">
+              <div class="absolute inset-0 opacity-20 pointer-events-none filter blur-[2px] p-6 space-y-3">
+                <div class="h-12 bg-stone-200 rounded-xl"></div>
+                <div class="h-28 bg-stone-100 rounded-xl"></div>
+              </div>
+              <div class="relative z-10 max-w-md mx-auto space-y-3">
+                <span class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-teal-700 shadow-sm border border-teal-100">
+                  <app-icon nombre="lock" clase="w-6 h-6" />
+                </span>
+                <h2 class="text-base font-bold text-slate-900">Control de Vales y Finanzas Avanzadas</h2>
+                <p class="text-xs text-stone-500 leading-relaxed">
+                  Lleva un registro detallado de tus anticipos, préstamos, vales y liquidaciones exactas. Esta herramienta está disponible en los planes profesionales de CosturaPronta.
+                </p>
+                <div class="pt-2">
+                  <a routerLink="/planes" [ngClass]="ui.btnPrimario" class="inline-flex items-center gap-2 shadow-sm !text-xs !py-2.5">
+                    <app-icon nombre="verified" clase="w-4 h-4" /> Ver planes y mejorar cuenta
+                  </a>
+                </div>
+              </div>
+            </div>
+          </ng-template>
+        </section>
+
         <!-- ================================================ INSIGNIAS -->
         <section *ngIf="seccion() === 'insignias'" class="grid gap-3 sm:grid-cols-2">
-          <article *ngFor="let i of insignias()" class="flex items-start gap-3 rounded-xl border p-4"
-                   [ngClass]="i.desbloqueada ? 'border-teal-200 bg-white' : 'border-stone-200 bg-stone-100/60'">
-            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+          <article *ngFor="let i of insignias()" class="flex items-start gap-3.5 rounded-2xl border p-4 sm:p-5 shadow-sm bg-white"
+                   [ngClass]="i.desbloqueada ? 'border-teal-200/80 bg-white' : 'border-stone-200/80 bg-stone-50/60'">
+            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-sm"
                   [ngClass]="i.desbloqueada ? 'bg-teal-700 text-white' : 'bg-stone-200 text-stone-400'">
               <app-icon [nombre]="i.desbloqueada ? i.icono : 'lock'" clase="w-5 h-5" />
             </span>
             <div class="min-w-0">
-              <h3 class="text-sm font-bold">{{ i.nombre }}</h3>
-              <p class="mt-0.5 text-xs leading-snug text-slate-500">{{ i.descripcion }}</p>
-              <p *ngIf="i.desbloqueada" class="mt-1 text-xs font-semibold text-teal-800">Desbloqueada</p>
+              <h3 class="text-sm font-bold text-slate-900">{{ i.nombre }}</h3>
+              <p class="mt-0.5 text-xs leading-snug text-stone-500">{{ i.descripcion }}</p>
+              <p *ngIf="i.desbloqueada" class="mt-1.5 text-xs font-semibold text-teal-800">Desbloqueada</p>
             </div>
           </article>
         </section>
 
         <!-- ================================================== RESEÑAS -->
-        <section *ngIf="seccion() === 'resenas'" class="space-y-2">
-          <div *ngIf="evaluaciones().length === 0" [ngClass]="ui.vacio">
-            <app-icon nombre="star" clase="mx-auto h-8 w-8 text-stone-400" />
-            <p class="mt-3 text-sm font-semibold">Aún no tienes reseñas</p>
-            <p class="mt-1 text-sm text-slate-500">Aparecerán cuando talleres o tiendas califiquen tu trabajo.</p>
+        <section *ngIf="seccion() === 'resenas'" class="space-y-3">
+          <div *ngIf="evaluaciones().length === 0" [ngClass]="ui.vacio" class="rounded-3xl border border-dashed border-stone-300 bg-white p-10 text-center shadow-sm">
+            <app-icon nombre="star" clase="mx-auto h-10 w-10 text-stone-400" />
+            <p class="mt-3 text-base font-bold text-slate-800">Aún no tienes reseñas</p>
+            <p class="mt-1 text-sm text-stone-500">Aparecerán cuando talleres o tiendas califiquen tu trabajo.</p>
           </div>
-          <article *ngFor="let e of evaluaciones()" [ngClass]="ui.card" class="p-4">
+          <article *ngFor="let e of evaluaciones()" [ngClass]="ui.card" class="p-4 sm:p-5 rounded-2xl border border-stone-200/80 bg-white shadow-sm space-y-2">
             <div class="flex items-center justify-between">
-              <p class="text-sm font-bold">{{ e.evaluador?.nombre_completo || 'Usuario' }}</p>
-              <p class="inline-flex items-center gap-0.5 text-sm font-bold text-amber-600">
+              <p class="text-sm font-bold text-slate-900">{{ e.evaluador?.nombre_completo || 'Usuario' }}</p>
+              <p class="inline-flex items-center gap-1 text-sm font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200/60">
                 <app-icon nombre="star" [relleno]="true" clase="w-4 h-4" /> {{ e.estrellas }}
               </p>
             </div>
-            <p *ngIf="e.comentario" class="mt-1 text-sm text-slate-600">{{ e.comentario }}</p>
-            <p class="mt-1 text-xs text-slate-400">{{ e.created_at | date:'dd/MM/yyyy' }}</p>
+            <p *ngIf="e.comentario" class="text-sm text-stone-600">{{ e.comentario }}</p>
+            <p class="text-xs text-stone-400">{{ e.created_at | date:'dd/MM/yyyy' }}</p>
           </article>
         </section>
 
-        <!-- ================================================== CUENTAS Y VALES -->
-        <section *ngIf="seccion() === 'finanzas'" class="space-y-6">
-          <!-- Registro de trabajos / cortes externos (conectando el total en vivo) -->
-          <app-cortes-manuales [usuarioId]="usuarioId" (totalCambio)="totalCortesManuales.set($event)" />
-
-          <!-- Control de vales y cálculo neto sumando plataforma + cortes externos -->
-          <app-control-vales [usuarioId]="usuarioId" [totalGanado]="ganado() + porCobrar() + totalCortesManuales()" />
-        </section>
       </div>
     </main>
   </div>

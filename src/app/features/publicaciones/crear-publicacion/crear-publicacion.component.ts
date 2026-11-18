@@ -1,8 +1,9 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { SupabaseService } from '../../../core/services/supabase.service';
+import { PlanService } from '../../../core/services/plan.service';
 import { MAQUINAS, ROL_PANEL, UI, ZONAS } from '../../../core/utils/helpers';
 import { IconComponent } from '../../../shared/components/icon.component';
 
@@ -55,7 +56,17 @@ export class CrearPublicacionComponent implements OnInit {
 
   publicacion = this.nuevaPublicacion('busco_oficina');
 
-  constructor(private supabaseService: SupabaseService, private router: Router) {}
+  /** Anuncios VIP (destacados) usados este mes. El tope lo define el plan; el servidor lo hace cumplir. */
+  vipUsados = signal(0);
+  vipTope = computed<number | null>(() => {
+    const t = this.plan.limites().anuncios_vip_mes;
+    return t === null ? null : (t ?? 0); // null = ilimitados
+  });
+  vipDisponible = computed(() => this.vipTope() === null || this.vipUsados() < (this.vipTope() as number));
+  /** Sólo tiendas y talleres destacan anuncios. */
+  puedeDestacar = computed(() => this.rolUsuario === 'tienda' || this.rolUsuario === 'oficina');
+
+  constructor(private supabaseService: SupabaseService, private router: Router, readonly plan: PlanService) {}
 
   private get db() { return this.supabaseService.supabase; }
 
@@ -87,7 +98,11 @@ export class CrearPublicacionComponent implements OnInit {
       const rol = miPerfil.rol || 'oficina';
       this.rolUsuario = rol;
       
-      // Asignar de inmediato las opciones correspondientes al rol evitando retrasos visuales
+      // Cargar límites de planes y anuncios VIP de forma paralela/secuencial segura
+      await this.plan.cargar();
+      await this.cargarVip(user.id);
+
+      // Asignar opciones correspondientes al rol evitando retrasos visuales
       this.opciones = OPCIONES_POR_ROL[rol] ?? OPCIONES_POR_ROL['oficina'];
       
       const tipoInicial = this.opciones[0]?.id ?? 'busco_oficina';
@@ -133,14 +148,22 @@ export class CrearPublicacionComponent implements OnInit {
       ofrece_wifi: false,
       ofrece_banio_privado: false,
       cantidad_hijos_permitidos: 0,
+      destacado: false,
     };
   }
 
   elegirTipo(id: Tipo) {
-    // conserva zona y máquinas al cambiar de tipo
+    // Conserva zona y máquinas al cambiar de tipo
     const { zona_ubicacion, maquinas_requeridas } = this.publicacion;
     this.publicacion = { ...this.nuevaPublicacion(id), zona_ubicacion, maquinas_requeridas };
     this.mensajeError.set('');
+  }
+
+  private async cargarVip(id: string) {
+    const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0, 0, 0, 0);
+    const { count } = await this.db.from('publicaciones').select('id', { count: 'exact', head: true })
+      .eq('creador_id', id).gte('destacado_en', inicioMes.toISOString());
+    this.vipUsados.set(count ?? 0);
   }
 
   get tipo(): Tipo { return this.publicacion.tipo_publicacion; }
@@ -159,7 +182,7 @@ export class CrearPublicacionComponent implements OnInit {
   cancelarYVolver() { this.router.navigate([ROL_PANEL[this.rolUsuario] ?? '/feed']); }
 
   /** Devuelve un mensaje de error o null si todo está bien. */
-private validar(): string | null {
+  private validar(): string | null {
     const p = this.publicacion;
     if (!p.titulo.trim()) return 'Escribe un título.';
     if (p.maquinas_requeridas.length === 0) return 'Selecciona al menos una máquina.';
@@ -179,6 +202,7 @@ private validar(): string | null {
     }
     return null;
   }
+
   async onSubmit() {
     const error = this.validar();
     if (error) { this.mensajeError.set(error); return; }
@@ -198,6 +222,7 @@ private validar(): string | null {
       zona_ubicacion: p.zona_ubicacion,
       logistica_entrega: p.logistica_entrega,
       estado: 'Activo',
+      destacado: this.puedeDestacar() && !!p.destacado,
     };
 
     if (p.tipo_publicacion === 'busco_corte') {

@@ -44,19 +44,19 @@
         <app-icon nombre="alert" clase="w-4 h-4 shrink-0" /> {{ mensajeError() }}
       </div>
 
-<!-- Tipo de anuncio -->
-<fieldset *ngIf="opciones.length > 0">
-  <legend class="mb-2 text-sm font-bold">¿Qué quieres publicar?</legend>
-  <div class="grid gap-2" [ngClass]="opciones.length > 1 ? 'sm:grid-cols-2' : ''">
-    <button type="button" *ngFor="let o of opciones" (click)="elegirTipo(o.id)" [attr.aria-pressed]="tipo === o.id"
-            class="flex items-start gap-3 rounded-xl border p-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
-            [ngClass]="tipo === o.id ? 'border-teal-600 bg-teal-50/60 ring-1 ring-teal-600' : 'border-stone-200 bg-white hover:border-stone-300'">
-      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-            [ngClass]="tipo === o.id ? 'bg-teal-700 text-white' : 'bg-stone-100 text-slate-600'"><app-icon [nombre]="o.icono" clase="w-5 h-5" /></span>
-      <span><span class="block text-sm font-bold">{{ o.titulo }}</span><span class="block text-xs text-slate-500">{{ o.ayuda }}</span></span>
-    </button>
-  </div>
-</fieldset>
+      <!-- Tipo de anuncio -->
+      <fieldset *ngIf="opciones.length > 0">
+        <legend class="mb-2 text-sm font-bold">¿Qué quieres publicar?</legend>
+        <div class="grid gap-2" [ngClass]="opciones.length > 1 ? 'sm:grid-cols-2' : ''">
+          <button type="button" *ngFor="let o of opciones" (click)="elegirTipo(o.id)" [attr.aria-pressed]="tipo === o.id"
+                  class="flex items-start gap-3 rounded-xl border p-3 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
+                  [ngClass]="tipo === o.id ? 'border-teal-600 bg-teal-50/60 ring-1 ring-teal-600' : 'border-stone-200 bg-white hover:border-stone-300'">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                  [ngClass]="tipo === o.id ? 'bg-teal-700 text-white' : 'bg-stone-100 text-slate-600'"><app-icon [nombre]="o.icono" clase="w-5 h-5" /></span>
+            <span><span class="block text-sm font-bold">{{ o.titulo }}</span><span class="block text-xs text-slate-500">{{ o.ayuda }}</span></span>
+          </button>
+        </div>
+      </fieldset>
 
       <div [ngClass]="ui.card" class="space-y-4 p-4">
 
@@ -120,22 +120,22 @@
               </select></label>
           </div>
 
-        <div class="grid gap-3 sm:grid-cols-2">
-  <label [ngClass]="ui.etiqueta">Tipo de pago
-    <select [(ngModel)]="publicacion.modalidad_pago" name="modPago" [ngClass]="ui.inputGrande">
-      <option value="por_pieza">Por pieza</option>
-      <option value="salario_semanal">Semanal</option>
-      <option value="salario_mensual">Mensual</option>
-    </select>
-  </label>
-  
-  <label [ngClass]="ui.etiqueta">
-    {{ publicacion.modalidad_pago === 'por_pieza' ? 'Pago por pieza (R$, máx. 50)' : 'Salario estimado (R$)' }}
-    <input type="number" min="0" [max]="publicacion.modalidad_pago === 'por_pieza' ? 50 : 10000" step="0.01" 
-           [(ngModel)]="publicacion.pago_por_pieza" name="pagoFunc" [required]="tipo === 'busco_funcionario'" 
-           [placeholder]="publicacion.modalidad_pago === 'por_pieza' ? '1.50' : '2000'" [ngClass]="ui.inputGrande">
-  </label>
-</div>
+          <div class="grid gap-3 sm:grid-cols-2">
+            <label [ngClass]="ui.etiqueta">Tipo de pago
+              <select [(ngModel)]="publicacion.modalidad_pago" name="modPago" [ngClass]="ui.inputGrande">
+                <option value="por_pieza">Por pieza</option>
+                <option value="salario_semanal">Semanal</option>
+                <option value="salario_mensual">Mensual</option>
+              </select>
+            </label>
+            
+            <label [ngClass]="ui.etiqueta">
+              {{ publicacion.modalidad_pago === 'por_pieza' ? 'Pago por pieza (R$, máx. 50)' : 'Salario estimado (R$)' }}
+              <input type="number" min="0" [max]="publicacion.modalidad_pago === 'por_pieza' ? 50 : 10000" step="0.01" 
+                     [(ngModel)]="publicacion.pago_por_pieza" name="pagoFunc" [required]="tipo === 'busco_funcionario'" 
+                     [placeholder]="publicacion.modalidad_pago === 'por_pieza' ? '1.50' : '2000'" [ngClass]="ui.inputGrande">
+            </label>
+          </div>
         </ng-container>
 
         <!-- Beneficios (sólo vacante) -->
@@ -176,6 +176,23 @@
           </button>
         </div>
       </fieldset>
+
+      <!-- Anuncio VIP (Controlado por Planes y Límites) -->
+      <section *ngIf="puedeDestacar()" [ngClass]="ui.card" class="p-4">
+        <label class="flex cursor-pointer items-start gap-3" [class.opacity-60]="!vipDisponible()">
+          <input type="checkbox" [(ngModel)]="publicacion.destacado" name="destacado" [disabled]="!vipDisponible()" class="mt-1 h-4 w-4 shrink-0 accent-teal-700">
+          <span>
+            <span class="flex items-center gap-1.5 text-sm font-bold"><app-icon nombre="star" [relleno]="true" clase="w-4 h-4 text-amber-500" /> Anuncio VIP (destacado)</span>
+            <span class="mt-0.5 block text-xs text-slate-500">Aparece arriba en el feed.
+              <ng-container *ngIf="vipTope() === null">Tu plan incluye anuncios VIP ilimitados.</ng-container>
+              <ng-container *ngIf="vipTope() !== null">Este mes usaste {{ vipUsados() }} de {{ vipTope() }}.</ng-container>
+            </span>
+          </span>
+        </label>
+        <a *ngIf="!vipDisponible()" routerLink="/planes" class="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-teal-700 hover:underline">
+          <app-icon nombre="verified" clase="w-3.5 h-3.5" /> {{ vipTope() === 0 ? 'Los anuncios VIP se incluyen con un plan de pago' : 'Mejora tu plan para tener más anuncios VIP' }}
+        </a>
+      </section>
 
       <!-- Notas -->
       <label [ngClass]="ui.etiqueta">Notas adicionales (opcional)

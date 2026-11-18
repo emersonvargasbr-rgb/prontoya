@@ -4,12 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { SocialService } from '../../../core/services/social.service';
+import { PlanService } from '../../../core/services/plan.service';
 import { AvatarComponent } from '../../../shared/components/avatar.component';
 import { IconComponent } from '../../../shared/components/icon.component';
 
 import { ControlLiquidacionCarritoComponent } from '../../../shared/control-liquidacion-carrito.component';
 import { CortesManualesComponent } from '../../../shared/components/cortes-manuales.component';
-
 
 type Seccion = 'produccion' | 'solicitudes' | 'equipo' | 'anuncios' | 'historial' | 'finanzas';
 
@@ -22,34 +22,48 @@ export const OPERACIONES = [
 @Component({
   selector: 'app-panel-oficina',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, IconComponent, AvatarComponent, ControlLiquidacionCarritoComponent, CortesManualesComponent],
+  imports: [
+    CommonModule, 
+    FormsModule, 
+    RouterModule, 
+    IconComponent, 
+    AvatarComponent, 
+    ControlLiquidacionCarritoComponent, 
+    CortesManualesComponent
+  ],
   templateUrl: './panel-oficina.component.html',
 })
 export class PanelOficinaComponent implements OnInit {
   usuarioId = '';
   readonly operaciones = OPERACIONES;
-totalCortesManuales = signal(0);
-  // Calcula el total ganado en la oficina (ej. sumando el historial de operaciones cerradas)
-  totalGanadoPlataforma = computed(() =>
-    this.historial().reduce((t, h) => t + Number(h.monto_total || 0), 0)
-  );
+
+  // ---------------------------------------------------------------- estado UI
   cargando = signal(true);
   seccion = signal<Seccion>('produccion');
   aviso = signal<{ texto: string; tipo: 'ok' | 'error' } | null>(null);
   loteAbierto = signal<string | null>(null);
   loteConFormulario = signal<string | null>(null);
 
+  // --------------------------------------------------------------------- datos
   perfil = signal<any>(null);
   stats = signal({ seguidores: 0, siguiendo: 0 });
-  lotes = signal<any[]>([]);
-  asignaciones = signal<any[]>([]);
+  lotes = signal<any[]>([]);              // todas las postulaciones donde participo
+  asignaciones = signal<any[]>([]);       // sub-cortes y cortes a operarios
   equipo = signal<any[]>([]);
   misPublicaciones = signal<any[]>([]);
   historial = signal<any[]>([]);
+  totalCortesManuales = signal(0);
 
+  // ------------------------------------------------- formularios (no signals)
   nuevoSub = { funcionario_id: '', operacion_maquina: 'Overlock', cantidad_piezas: 0, pago_por_pieza: 0 };
   private borradores: Record<string, { piezas: number; motivo: string }> = {};
 
+  // ------------------------------------------------------------- derivados
+  totalGanadoPlataforma = computed(() =>
+    this.historial().reduce((t, h) => t + Number(h.monto_total || 0), 0)
+  );
+
+  /** Lo que la oficina está produciendo ahora (excluye vacantes de empleo). */
   produccion = computed(() =>
     this.lotes().filter(l =>
       ['Aceptado', 'En Proceso', 'Terminado'].includes(l.estado) &&
@@ -68,9 +82,11 @@ totalCortesManuales = signal(0);
       };
     }));
 
+  /** Propuestas de tiendas a un anuncio mío "busco_corte". */
   ofertasRecibidas = computed(() =>
     this.lotes().filter(l => l.estado === 'Pendiente' && !l.soyEmisor && l.tipo === 'busco_corte'));
 
+  /** Mis postulaciones a lotes de tiendas, esperando respuesta. */
   postulacionesEnviadas = computed(() =>
     this.lotes().filter(l => l.estado === 'Pendiente' && l.soyEmisor && l.tipo === 'busco_oficina'));
 
@@ -85,6 +101,7 @@ totalCortesManuales = signal(0);
     private supabaseService: SupabaseService,
     private social: SocialService,
     private router: Router,
+    readonly plan: PlanService,
   ) {}
 
   private get db() { return this.supabaseService.supabase; }
@@ -93,9 +110,10 @@ totalCortesManuales = signal(0);
     const { data: { session } } = await this.db.auth.getSession();
     if (!session?.user) { this.router.navigate(['/login']); return; }
     this.usuarioId = session.user.id;
-    await this.cargar();
+    await Promise.all([this.cargar(), this.plan.cargar()]);
   }
 
+  // ===================================================================== CARGA
   async cargar() {
     this.cargando.set(true);
     const id = this.usuarioId;
@@ -104,12 +122,14 @@ totalCortesManuales = signal(0);
         this.db.from('perfiles').select('*').eq('id', id).single(),
         this.db.from('publicaciones').select('*').eq('creador_id', id).order('created_at', { ascending: false }),
         this.db.from('postulaciones_lotes').select(`
-          id, estado, created_at, descripcion_corte, cantidad_piezas, pago_por_pieza,
-          taller_id, receptor_id, publicacion_id,
-          publicacion:publicacion_id (id, titulo, tipo_publicacion, creador_id,
-            creador:creador_id (${PERFIL_MIN})),
-          emisor:taller_id (${PERFIL_MIN})
-        `).order('created_at', { ascending: false }),
+            id, estado, created_at, descripcion_corte, cantidad_piezas, pago_por_pieza,
+            taller_id, receptor_id, publicacion_id,
+            publicacion:publicacion_id (id, titulo, tipo_publicacion, creador_id,
+              creador:creador_id (${PERFIL_MIN})),
+            emisor:taller_id (${PERFIL_MIN})
+          `)
+          .or(`taller_id.eq.${id},receptor_id.eq.${id}`)
+          .order('created_at', { ascending: false }),
         this.db.from('historial_operaciones')
           .select('*, tienda:tienda_id (nombre_completo, zona_ubicacion)')
           .eq('oficina_id', id).order('fecha_cierre', { ascending: false }),
@@ -152,6 +172,7 @@ totalCortesManuales = signal(0);
     }
   }
 
+  // ================================================================ SOLICITUDES
   async responderLote(l: any, aceptar: boolean) {
     if (!confirm(aceptar ? 'Aceptar este lote y comenzar la producción?' : 'Rechazar esta propuesta?')) return;
     await this.actualizar('postulaciones_lotes', l.id, { estado: aceptar ? 'Aceptado' : 'Rechazado' },
@@ -188,6 +209,7 @@ totalCortesManuales = signal(0);
       { estado: 'Inactivo', fecha_salida: new Date().toISOString() }, 'Operario retirado del equipo.');
   }
 
+  // ============================================================ PRODUCCIÓN / CADENA
   toggleLote(id: string) {
     this.loteAbierto.update(v => (v === id ? null : id));
     this.loteConFormulario.set(null);
@@ -286,6 +308,7 @@ totalCortesManuales = signal(0);
       'Lote marcado como terminado. La tienda debe confirmar la recepción.');
   }
 
+  // ================================================================== ANUNCIOS
   async alternarAnuncio(p: any) {
     const estado = p.estado === 'Activo' ? 'Pausado' : 'Activo';
     await this.actualizar('publicaciones', p.id, { estado });
@@ -298,6 +321,7 @@ totalCortesManuales = signal(0);
     this.misPublicaciones.update(l => l.filter(p => p.id !== id));
   }
 
+  // ==================================================================== HELPERS
   private async actualizar(tabla: string, id: string, cambios: object, ok?: string) {
     try {
       const { error } = await this.db.from(tabla).update(cambios).eq('id', id);
@@ -335,7 +359,7 @@ totalCortesManuales = signal(0);
   contactarWhatsApp(telefono: string | null | undefined, nombre: string, concepto: string) {
     if (!telefono) return this.notificar('Este usuario no tiene teléfono registrado.', 'error');
     let n = telefono.replace(/\D/g, '');
-    if (n.length <= 11) n = '55' + n;
+    if (n.length <= 11) n = '55' + n; // Brasil por defecto
     const msg = `Hola ${nombre}, te escribo desde CosturaPronta por: "${concepto}".`;
     window.open(`https://wa.me/${n}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
   }

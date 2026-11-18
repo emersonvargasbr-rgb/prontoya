@@ -245,10 +245,7 @@ export const AVATAR_ICONOS = [
   { id: 'coin',      nombre: 'Moneda',   nivelMin: 3 },
 ];
 
-/** 
- * Avatares ilustrados (tus SVG de Illustrator o dinámicos). 
- * Se puede integrar aquí tu lógica de 5 seguidores para desbloquear extras si el usuario lo desea.
- */
+/** Avatares ilustrados (tus SVG de Illustrator o dinámicos). */
 export const AVATARES_ILUSTRADOS: { id: string; nombre: string; nivelMin: number }[] = [];
 
 export const AVATAR_MARCOS = [

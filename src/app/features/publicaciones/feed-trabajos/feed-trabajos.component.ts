@@ -42,11 +42,7 @@ export class FeedTrabajosComponent implements OnInit, OnDestroy {
   private intervaloCarrusel?: ReturnType<typeof setInterval>;
 
   /**
-   * ESTADO REACTIVO. Antes eran propiedades normales (`usuarioLogueado = false`) que se cambiaban
-   * después de un `await`. En una app zoneless Angular no se entera de esos cambios y, en
-   * desarrollo, los detecta como NG0100 (valor distinto entre dos comprobaciones).
-   * Ahora viven en signals; los getters mantienen intacto el template (`usuarioLogueado`
-   * se sigue leyendo igual) pero cada lectura queda registrada como dependencia.
+   * ESTADO REACTIVO con Signals para evitar conflictos NG0100 en modo zoneless.
    */
   private logueado = signal(false);
   private rol = signal('');
@@ -63,7 +59,7 @@ export class FeedTrabajosComponent implements OnInit, OnDestroy {
   filtroMaquina = '';
   soloSeguidos = false;
 
-  /** Los tipos del selector dependen del rol (ahora sí se recalculan al conocer al usuario). */
+  /** Los tipos del selector dependen del rol y se recalculan al conocer al usuario. */
   tiposDisponibles = computed(() => {
     const ids = this.logueado() ? (TIPOS_POR_ROL[this.rol()] ?? TODOS) : TODOS;
     return ids.map(id => ({ id, ...TIPO_PUBLICACION[id] }));
@@ -250,8 +246,8 @@ export class FeedTrabajosComponent implements OnInit, OnDestroy {
     this.mensajeInvitado = mensaje;
     this.mostrarModalInvitado.set(true);
   }
-obtenerFondoCabecera(t: any): string {
-    // Si está verificado: Dorado / Ámbar oscuro elegante
+
+  obtenerFondoCabecera(t: any): string {
     if (t.verificado) {
       return 'linear-gradient(to bottom right, #0f172a, #1c1917, #451a03)';
     }
@@ -259,19 +255,18 @@ obtenerFondoCabecera(t: any): string {
     const tipo = (t.tipo_publicacion || '').toLowerCase().trim();
 
     if (tipo.includes('corte')) {
-      return 'linear-gradient(to bottom right, #065f46, #115e59, #042f2e)'; // Verde esmeralda oscuro
+      return 'linear-gradient(to bottom right, #065f46, #115e59, #042f2e)';
     }
     if (tipo.includes('oficina')) {
-      return 'linear-gradient(to bottom right, #3730a3, #581c87, #0f172a)'; // Morado / Índico
+      return 'linear-gradient(to bottom right, #3730a3, #581c87, #0f172a)';
     }
     if (tipo.includes('funcionario')) {
-      return 'linear-gradient(to bottom right, #1e40af, #312e81, #0f172a)'; // Azul corporativo
+      return 'linear-gradient(to bottom right, #1e40af, #312e81, #0f172a)';
     }
     if (tipo.includes('trabajo')) {
-      return 'linear-gradient(to bottom right, #115e59, #155e75, #0f172a)'; // Turquesa / Cian oscuro
+      return 'linear-gradient(to bottom right, #115e59, #155e75, #0f172a)';
     }
 
-    // Respaldo por defecto (Oscuro elegante)
     return 'linear-gradient(to bottom right, #1e293b, #0f172a, #042f2e)';
   }
   

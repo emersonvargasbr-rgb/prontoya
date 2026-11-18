@@ -3,23 +3,26 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { SupabaseService } from '../../../core/services/supabase.service';
+
 import { MAQUINAS, ROL_ETIQUETA, ROL_PANEL, UI, ZONAS } from '../../../core/utils/helpers';
 import {
-  COLORES_PORTADA, ESPECIALIDADES, PATRONES_PORTADA, Rol,
-  calcularGamificacion, cnpjValido, completitud, estiloPortada,
+  AVATARES_ILUSTRADOS, AVATAR_ICONOS, AVATAR_MARCOS, COLORES_PORTADA, ESPECIALIDADES, NOMBRE_TIER, PATRONES_PORTADA, Rol,
+  calcularGamificacion, completitud, estiloPortada,
 } from '../../../core/utils/gamificacion';
+import { IconComponent } from '../../../shared/components/icon.component';
+import { AVATAR_PALETAS, AvatarComponent } from '../../../shared/components/avatar.component';
 import { Aviso, ToastComponent } from '../../../shared/components/toast.component';
-import { AvatarComponent } from '../../../shared/components/avatar.component';
-import { IconComponent, ICONOS_DISPONIBLES } from '../../../shared/components/icon.component'; // 👈 Importamos la lista o el tipo desde tu IconComponent
+import { PlanService } from '../../../core/services/plan.service';
 
+/** Lo que cada tipo de cuenta puede editar. Todo lo demás es del servidor. */
 const CAMPOS_COMUNES = [
   'nombre_completo', 'lema', 'bio_taller', 'especialidad_principal', 'zona_ubicacion',
-  'color_portada', 'color_texto_portada', 'patron_portada', 'avatar_icono', 'avatar_color',
-  'insignias_destacadas', 'maquinas_maneja', 'visibilidad_whatsapp', 'visibilidad_direccion',
+  'color_portada', 'color_texto_portada', 'patron_portada', 'avatar_icono', 'avatar_color', 'avatar_marco',
+  'insignias_destacadas', 'maquinas_maneja', 'visibilidad_whatsapp', 'visibilidad_direccion', 'visibilidad_cnpj',
 ];
 const CAMPOS_POR_ROL: Record<Rol, string[]> = {
-  oficina:      ['cantidad_maquinas', 'cantidad_operarios', 'cep', 'cnpj', 'visibilidad_cnpj'],
-  tienda:       ['tipo_tienda', 'cep', 'cnpj', 'visibilidad_cnpj'],
+  oficina:     ['cantidad_maquinas', 'cantidad_operarios', 'cep', 'cnpj'],
+  tienda:      ['tipo_tienda', 'cep', 'cnpj'],
   funcionario: ['tiene_vehiculo', 'trabaja_en_casal', 'busca_alojamiento', 'alojamiento_propio', 'modalidad_trabajo'],
 };
 
@@ -35,49 +38,41 @@ export class EditarPerfilComponent implements OnInit {
   readonly maquinas = MAQUINAS;
   readonly colores = COLORES_PORTADA;
   readonly patrones = PATRONES_PORTADA;
+  readonly iconos = [...AVATAR_ICONOS, ...AVATARES_ILUSTRADOS];
+  readonly marcos = AVATAR_MARCOS;
+  readonly nombreTier = (n: number) => NOMBRE_TIER[n] ?? 'Pro';
+  readonly paletas = AVATAR_PALETAS;
   readonly roles = ROL_ETIQUETA;
   readonly estiloPortada = estiloPortada;
-
-  // 👇 AUTOMATIZACIÓN: Extraemos todos los iconos que comiencen con 'animal-' directamente del diccionario centralizado
-  readonly iconos = Object.keys(ICONOS_DISPONIBLES)
-    .filter(id => id.startsWith('animal-'))
-    .map(id => ({
-      id,
-      // Generamos un nombre bonito formateando el texto (ej: 'animal-hipopotamo' -> 'Hipopotamo')
-      nombre: id.replace('animal-', '').replace(/-/g, ' ').replace(/^./, str => str.toUpperCase())
-    }));
-
-  // 👇 Definición local de paletas para evitar errores de compilación
-  readonly paletas = [
-    { id: 'teal', nombre: 'Teal', clase: 'bg-teal-100 text-teal-800' },
-    { id: 'amber', nombre: 'Ámbar', clase: 'bg-amber-100 text-amber-800' },
-    { id: 'sky', nombre: 'Cielo', clase: 'bg-sky-100 text-sky-800' },
-    { id: 'rose', nombre: 'Rosa', clase: 'bg-rose-100 text-rose-800' },
-    { id: 'violet', nombre: 'Violeta', clase: 'bg-violet-100 text-violet-800' },
-    { id: 'lime', nombre: 'Lima', clase: 'bg-lime-100 text-lime-800' },
-  ];
 
   usuarioId = '';
   cargando = signal(true);
   guardando = signal(false);
   aviso = signal<Aviso | null>(null);
 
+  /** Lo que está guardado en la base de datos. */
   base = signal<any>(null);
+  /** Lo que se está editando. */
   form: any = {};
   private original = '';
   errores: Record<string, string> = {};
 
+  docVerificado = computed(() => !!this.base()?.documento_verificado || !!this.base()?.verificado);
+  docTipo = computed(() => (this.rol() === 'funcionario' ? 'CPF' : 'CNPJ'));
   rol = computed<Rol>(() => (this.base()?.rol ?? 'funcionario') as Rol);
+  
+  /** El nivel se calcula sobre lo guardado. */
   g = computed(() => (this.base() ? calcularGamificacion(this.base()) : null));
   nivel = computed(() => this.g()?.nivel ?? 1);
   ganadas = computed(() => (this.g()?.logros ?? []).filter(l => l.desbloqueada));
+  
   especialidades = computed(() => {
     const lista = ESPECIALIDADES[this.rol()] ?? [];
     const actual = this.base()?.especialidad_principal;
     return actual && !lista.includes(actual) ? [actual, ...lista] : lista;
   });
 
-  constructor(private supabaseService: SupabaseService, private router: Router) {}
+  constructor(private supabaseService: SupabaseService, private router: Router, readonly plan: PlanService) {}
 
   private get db() { return this.supabaseService.supabase; }
 
@@ -85,7 +80,7 @@ export class EditarPerfilComponent implements OnInit {
     const { data: { user } } = await this.db.auth.getUser();
     if (!user) { this.router.navigate(['/login']); return; }
     this.usuarioId = user.id;
-    await this.cargar();
+    await Promise.all([this.cargar(), this.plan.cargar()]);
   }
 
   private async cargar() {
@@ -110,11 +105,12 @@ export class EditarPerfilComponent implements OnInit {
     out.color_portada = out.color_portada || '#134e4a';
     out.color_texto_portada = '#ffffff';
     out.patron_portada = out.patron_portada || 'liso';
+    out.avatar_marco = out.avatar_marco || 'nivel';
     out.insignias_destacadas = [...(out.insignias_destacadas ?? [])];
     out.maquinas_maneja = [...(out.maquinas_maneja ?? [])];
     out.visibilidad_whatsapp = out.visibilidad_whatsapp || 'publico';
     out.visibilidad_direccion = out.visibilidad_direccion || 'conectados';
-    if ('visibilidad_cnpj' in out) out.visibilidad_cnpj = out.visibilidad_cnpj || 'privado';
+    out.visibilidad_cnpj = out.visibilidad_cnpj || 'conectados';
     if ('cantidad_maquinas' in out) out.cantidad_maquinas = Number(out.cantidad_maquinas) || 0;
     if ('cantidad_operarios' in out) out.cantidad_operarios = Number(out.cantidad_operarios) || 0;
     if ('cep' in out) out.cep = out.cep ?? '';
@@ -140,10 +136,10 @@ export class EditarPerfilComponent implements OnInit {
   get esEmpresa(): boolean { return this.rol() === 'tienda' || this.rol() === 'oficina'; }
   get muestraMaquinas(): boolean { return this.rol() === 'oficina' || this.rol() === 'funcionario'; }
 
-  bloqueado(nivelMin: number): boolean { return this.nivel() < nivelMin; }
+  bloqueado(nivelMin: number): boolean { return this.plan.rangoCosmeticos() < nivelMin; }
 
   private avisarBloqueo(nivelMin: number) {
-    this.notificar(`Se desbloquea en el nivel ${nivelMin}. Sigue sumando puntos.`, 'error');
+    this.notificar(`Incluido en el plan ${NOMBRE_TIER[nivelMin] ?? 'Pro'}. Mejora tu plan para usarlo.`, 'error');
   }
 
   elegirColor(c: { hex: string; nivelMin: number }) {
@@ -156,16 +152,17 @@ export class EditarPerfilComponent implements OnInit {
     this.form.patron_portada = p.id;
   }
 
-  elegirIcono(i: { id: string }, idx: number) {
-    // Si el icono está en el índice 6 o superior (7mo en adelante) y el usuario no está verificado
-    if (idx >= 6 && !this.base()?.verificado) {
-      this.notificar('Icono solo para perfiles verificados', 'error');
-      return;
-    }
-    this.form.avatar_icono = i.id;
+  elegirIcono(i: { id: string; nivelMin: number } | null) {
+    if (i && this.bloqueado(i.nivelMin)) return this.avisarBloqueo(i.nivelMin);
+    this.form.avatar_icono = i ? i.id : null;
   }
 
   elegirAvatarColor(id: string | null) { this.form.avatar_color = id; }
+
+  elegirMarco(m: { id: string; nivelMin: number }) {
+    if (this.bloqueado(m.nivelMin)) return this.avisarBloqueo(m.nivelMin);
+    this.form.avatar_marco = m.id;
+  }
 
   toggleDestacada(id: string) {
     const lista: string[] = this.form.insignias_destacadas;
@@ -191,7 +188,6 @@ export class EditarPerfilComponent implements OnInit {
     if ((f.lema ?? '').length > 80) e['lema'] = 'Máximo 80 caracteres.';
     if ((f.bio_taller ?? '').length > 280) e['bio_taller'] = 'Máximo 280 caracteres.';
     if ('cep' in f && f.cep && f.cep.replace(/\D/g, '').length !== 8) e['cep'] = 'El CEP tiene 8 dígitos.';
-    if ('cnpj' in f && f.cnpj && !cnpjValido(f.cnpj)) e['cnpj'] = 'El CNPJ no es válido.';
     if ('cantidad_maquinas' in f && f.cantidad_maquinas < 0) e['cantidad_maquinas'] = 'No puede ser negativo.';
     if ('cantidad_operarios' in f && f.cantidad_operarios < 0) e['cantidad_operarios'] = 'No puede ser negativo.';
     this.errores = e;
@@ -211,8 +207,9 @@ export class EditarPerfilComponent implements OnInit {
       payload.bio_taller = (payload.bio_taller ?? '').trim() || null;
       if ('cep' in payload) payload.cep = payload.cep ? payload.cep.replace(/\D/g, '') : null;
       if ('cnpj' in payload) payload.cnpj = payload.cnpj ? payload.cnpj.replace(/\D/g, '') : null;
-      const ganadas = new Set(this.ganadas().map(l => l.id));
-      payload.insignias_destacadas = payload.insignias_destacadas.filter((id: string) => ganadas.has(id));
+      
+      const ganadasSet = new Set(this.ganadas().map(l => l.id));
+      payload.insignias_destacadas = payload.insignias_destacadas.filter((id: string) => ganadasSet.has(id));
 
       const { error } = await this.db.from('perfiles').update(payload).eq('id', this.usuarioId);
       if (error) throw error;

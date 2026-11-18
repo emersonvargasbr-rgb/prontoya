@@ -2,20 +2,20 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from './icon.component';
 
-const PALETAS = [
-  'bg-teal-100 text-teal-800',
-  'bg-amber-100 text-amber-800',
-  'bg-sky-100 text-sky-800',
-  'bg-rose-100 text-rose-800',
-  'bg-violet-100 text-violet-800',
-  'bg-lime-100 text-lime-800',
+export const AVATAR_PALETAS = [
+  { id: 'teal',   nombre: 'Verde',    clase: 'bg-teal-100 text-teal-800' },
+  { id: 'amber',  nombre: 'Ámbar',    clase: 'bg-amber-100 text-amber-800' },
+  { id: 'sky',    nombre: 'Celeste',  clase: 'bg-sky-100 text-sky-800' },
+  { id: 'rose',   nombre: 'Rosa',     clase: 'bg-rose-100 text-rose-800' },
+  { id: 'violet', nombre: 'Violeta',  clase: 'bg-violet-100 text-violet-800' },
+  { id: 'lime',   nombre: 'Lima',     clase: 'bg-lime-100 text-lime-800' },
 ];
 
 const TAMANOS = {
-  sm: 'w-8 h-8 text-xs',
-  md: 'w-10 h-10 text-sm',
-  lg: 'w-16 h-16 text-xl',
-  xl: 'w-20 h-20 text-2xl',
+  sm: { caja: 'w-8 h-8 text-xs',    icono: 'w-4 h-4' },
+  md: { caja: 'w-10 h-10 text-sm',  icono: 'w-5 h-5' },
+  lg: { caja: 'w-16 h-16 text-xl',  icono: 'w-8 h-8' },
+  xl: { caja: 'w-20 h-20 text-2xl', icono: 'w-10 h-10' },
 };
 
 @Component({
@@ -23,17 +23,25 @@ const TAMANOS = {
   standalone: true,
   imports: [CommonModule, IconComponent],
   template: `
-    <span class="relative inline-flex shrink-0" [ngClass]="anillo">
-      <span [ngClass]="!color ? paleta : ''"
-            [style.backgroundColor]="color || null"
-            [style.color]="color ? '#ffffff' : null"
-            [class]="tamanoClase + ' relative inline-flex items-center justify-center rounded-full font-semibold select-none overflow-hidden'">
-        <!-- Icono perfectamente centrado y con tamaño equilibrado -->
-        <app-icon [nombre]="icono || 'animal-burro-cara'" clase="absolute inset-0 m-auto w-3/5 h-3/5" />
+    <span class="relative inline-flex shrink-0">
+      <span [ngClass]="[tam.caja, paletaFondo, aro]"
+            [style.backgroundColor]="colorHex || null"
+            [style.color]="colorHex ? '#ffffff' : null"
+            class="inline-flex items-center justify-center overflow-hidden rounded-full font-semibold select-none relative">
+        
+        <!-- Si es imagen ilustrada por archivo SVG externo -->
+        <img *ngIf="esImagen; else renderIcono" [src]="rutaImagen" alt="" class="h-full w-full object-cover">
+        
+        <!-- Si usa el sistema de iconos SVG del diccionario (Animales / UI) -->
+        <ng-template #renderIcono>
+          <app-icon [nombre]="icono || 'animal-burro-cara'" clase="absolute inset-0 m-auto w-3/5 h-3/5" />
+        </ng-template>
+
       </span>
-      <span *ngIf="verificado"
-            class="absolute -bottom-0.5 -right-0.5 rounded-full bg-white p-px text-teal-600 shadow-sm">
-        <app-icon nombre="verified" clase="w-4 h-4" [relleno]="false" />
+
+      <!-- Insignia de Verificado -->
+      <span *ngIf="verificado" class="absolute -bottom-0.5 -right-0.5 rounded-full bg-white p-px text-teal-600 shadow-sm">
+        <app-icon nombre="verified" clase="w-4 h-4" />
       </span>
     </span>
   `,
@@ -42,16 +50,36 @@ export class AvatarComponent {
   @Input() nombre: string | null | undefined = '';
   @Input() tamano: keyof typeof TAMANOS = 'md';
   @Input() verificado = false;
-  @Input() color?: string | null;
   @Input() icono?: string | null;
-  @Input() anillo?: string | null;
+  @Input() color?: string | null;     // Puede ser ID de paleta o un HEX plano
+  @Input() anillo?: string | null;    // Clase ring-* del nivel
+  @Input() marco?: string | null;     // 'gold' para marco dorado animado de planes élite
 
-  get tamanoClase() { return TAMANOS[this.tamano]; }
+  get tam() { return TAMANOS[this.tamano] || TAMANOS.md; }
 
-  get paleta(): string {
-    if (this.color) return '';
+  get esImagen(): boolean { return !!this.icono && this.icono.startsWith('img:'); }
+  get rutaImagen(): string { return `assets/avatars/${(this.icono ?? '').slice(4)}.svg`; }
+
+  get colorHex(): string | null {
+    // Si mandan un código hexadecimal directo
+    if (this.color && this.color.startsWith('#')) return this.color;
+    return null;
+  }
+
+  get paletaFondo(): string {
+    if (this.colorHex) return '';
+    // Buscar si el color coincide con una paleta predefinida
+    const elegida = AVATAR_PALETAS.find(p => p.id === this.color);
+    if (elegida) return elegida.clase;
+
+    // Si no hay color definido, generar hash basado en el nombre
     let h = 0;
     for (const c of this.nombre ?? '') h = (h * 31 + c.charCodeAt(0)) >>> 0;
-    return PALETAS[h % PALETAS.length];
+    return AVATAR_PALETAS[h % AVATAR_PALETAS.length].clase;
+  }
+
+  get aro(): string {
+    if (this.marco === 'gold') return 'marco-gold';
+    return this.anillo ? 'ring-2 ring-offset-2 ' + this.anillo : '';
   }
 }

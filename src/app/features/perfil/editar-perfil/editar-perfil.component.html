@@ -23,8 +23,8 @@
         <div class="h-20" [ngStyle]="estiloPortada(form.color_portada, form.patron_portada)"></div>
         <div class="flex items-end gap-4 px-5 pb-5">
           <div class="-mt-8 rounded-full bg-white p-1">
-            <app-avatar [nombre]="form.nombre_completo" tamano="lg" [verificado]="!!base().verificado"
-                        [icono]="form.avatar_icono" [color]="form.avatar_color" [anillo]="g()?.claseAnillo ?? ''" />
+            <app-avatar [nombre]="form.nombre_completo" tamano="lg" [verificado]="docVerificado()"
+                        [icono]="form.avatar_icono" [color]="form.avatar_color" [anillo]="g()?.claseAnillo ?? ''" [marco]="form.avatar_marco" />
           </div>
           <div class="min-w-0 pt-3">
             <p class="truncate text-base font-bold">{{ form.nombre_completo || 'Tu nombre' }}</p>
@@ -85,7 +85,7 @@
       <section [ngClass]="ui.card" class="space-y-5 p-4">
         <div>
           <h2 class="text-sm font-bold">Apariencia</h2>
-          <p class="mt-0.5 text-xs text-slate-500">Subir de nivel desbloquea más colores, patrones e iconos. Eres nivel {{ nivel() }}.</p>
+          <p class="mt-0.5 text-xs text-slate-500">Tu plan: <strong>{{ nombreTier(plan.rangoCosmeticos()) }}</strong>. Los patrones e iconos se desbloquean con Taller Pro y Operario Pro; la colección exclusiva, con Élite / Gold.</p>
         </div>
 
         <!-- Color de portada -->
@@ -93,7 +93,7 @@
           <legend class="mb-2 text-xs font-medium text-slate-700">Color de portada</legend>
           <div class="grid grid-cols-5 gap-2 sm:grid-cols-10">
             <button type="button" *ngFor="let c of colores" (click)="elegirColor(c)"
-                    [attr.aria-label]="c.nombre + (bloqueado(c.nivelMin) ? ', bloqueado hasta nivel ' + c.nivelMin : '')" [attr.aria-pressed]="form.color_portada === c.hex"
+                    [attr.aria-label]="c.nombre + (bloqueado(c.nivelMin) ? ', requiere el plan ' + nombreTier(c.nivelMin) : '')" [attr.aria-pressed]="form.color_portada === c.hex"
                     class="relative flex h-10 items-center justify-center rounded-lg ring-offset-2 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
                     [ngClass]="form.color_portada === c.hex ? 'ring-2 ring-teal-600' : ''" [style.backgroundColor]="c.hex" [class.opacity-40]="bloqueado(c.nivelMin)">
               <app-icon *ngIf="bloqueado(c.nivelMin)" nombre="lock" clase="w-4 h-4 text-white" />
@@ -112,29 +112,21 @@
               <span class="block h-10" [ngStyle]="estiloPortada(form.color_portada, p.id)"></span>
               <span class="flex items-center justify-between px-2 py-1.5 text-xs font-semibold">
                 {{ p.nombre }}
-                <span *ngIf="bloqueado(p.nivelMin)" class="inline-flex items-center gap-0.5 text-[10px] text-slate-400"><app-icon nombre="lock" clase="w-3 h-3" /> Nv {{ p.nivelMin }}</span>
+                <span *ngIf="bloqueado(p.nivelMin)" class="inline-flex items-center gap-0.5 text-[10px] text-slate-400"><app-icon nombre="lock" clase="w-3 h-3" /> {{ nombreTier(p.nivelMin) }}</span>
               </span>
             </button>
           </div>
         </fieldset>
 
-     <!-- Avatar -->
+        <!-- Avatar (Animales y vectoriales) -->
         <fieldset>
-          <legend class="mb-2 text-xs font-medium text-slate-700">Avatar (Animales)</legend>
+          <legend class="mb-2 text-xs font-medium text-slate-700">Avatar</legend>
           <div class="flex flex-wrap gap-2">
-           <button type="button" 
-        *ngFor="let i of iconos; let idx = index" 
-        (click)="elegirIcono(i, idx)" 
-        [ngClass]="[
-          opcion(form.avatar_icono === i.id, idx >= 6 && !base().verificado),
-          (idx >= 6 && !base().verificado) ? 'opacity-60 bg-stone-100' : ''
-        ]"
-        [attr.aria-pressed]="form.avatar_icono === i.id" 
-        [attr.aria-label]="i.nombre + (idx >= 6 && !base().verificado ? ', exclusivo para perfiles verificados' : '')">
-  <app-icon [nombre]="(idx >= 6 && !base().verificado) ? 'lock' : i.id" clase="w-4 h-4" /> 
-  {{ i.nombre }}
-  <span *ngIf="idx >= 6 && !base().verificado" class="ml-1 text-[10px] text-amber-600 font-bold">🔒</span>
-</button>
+            <button type="button" (click)="elegirIcono(null)" [ngClass]="opcion(!form.avatar_icono)" [attr.aria-pressed]="!form.avatar_icono">Iniciales</button>
+            <button type="button" *ngFor="let i of iconos" (click)="elegirIcono(i)" [ngClass]="opcion(form.avatar_icono === i.id, bloqueado(i.nivelMin))"
+                    [attr.aria-pressed]="form.avatar_icono === i.id" [attr.aria-label]="i.nombre + (bloqueado(i.nivelMin) ? ', requiere el plan ' + nombreTier(i.nivelMin) : '')">
+              <app-icon [nombre]="bloqueado(i.nivelMin) ? 'lock' : (i.id.startsWith('img:') ? 'user' : i.id)" clase="w-4 h-4" /> {{ i.nombre }}
+            </button>
           </div>
           <div class="mt-3 flex flex-wrap items-center gap-2">
             <span class="text-xs text-slate-500">Color</span>
@@ -143,6 +135,16 @@
                     class="h-7 w-7 rounded-full ring-offset-2 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
                     [ngClass]="[c.clase, form.avatar_color === c.id ? 'ring-2 ring-teal-600' : '']"></button>
           </div>
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <span class="text-xs text-slate-500">Marco</span>
+            <button type="button" *ngFor="let m of marcos" (click)="elegirMarco(m)" [attr.aria-pressed]="form.avatar_marco === m.id"
+                    [ngClass]="opcion(form.avatar_marco === m.id, bloqueado(m.nivelMin))" class="!px-2.5 !py-1 !text-xs">
+              <app-icon *ngIf="bloqueado(m.nivelMin)" nombre="lock" clase="w-3 h-3" /> {{ m.nombre }}
+            </button>
+          </div>
+          <a *ngIf="plan.rangoCosmeticos() < 3" routerLink="/planes" class="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-teal-700 hover:underline">
+            <app-icon nombre="verified" clase="w-3.5 h-3.5" /> Ver planes para desbloquear más
+          </a>
         </fieldset>
       </section>
 
@@ -206,16 +208,26 @@
         </div>
       </section>
 
-      <!-- ================================================ DATOS FISCALES -->
-      <section *ngIf="esEmpresa" [ngClass]="ui.card" class="space-y-3 p-4">
-        <h2 class="text-sm font-bold">Datos de la empresa</h2>
-        <div class="grid gap-3 sm:grid-cols-2">
+      <!-- ================================================ DOCUMENTO Y UBICACIÓN -->
+      <section [ngClass]="ui.card" class="space-y-4 p-4">
+        <h2 class="text-sm font-bold">{{ esEmpresa ? 'Datos de la empresa' : 'Documento' }}</h2>
+
+        <div class="flex items-center justify-between gap-3 rounded-lg border p-3" [ngClass]="docVerificado() ? 'border-teal-200 bg-teal-50/60' : 'border-amber-200 bg-amber-50/60'">
+          <p class="flex items-center gap-2 text-sm font-semibold" [ngClass]="docVerificado() ? 'text-teal-900' : 'text-amber-900'">
+            <app-icon [nombre]="docVerificado() ? 'verified' : 'alert'" clase="w-5 h-5 shrink-0" />
+            {{ docVerificado() ? docTipo() + ' verificado' : 'Falta verificar tu ' + docTipo() }}
+          </p>
+          <a routerLink="/verificar-documento" [queryParams]="{ volver: '/editar-perfil' }" [ngClass]="ui.btnSecundario" class="!px-3 !py-1.5 !text-xs">{{ docVerificado() ? 'Ver' : 'Verificar' }}</a>
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-2" *ngIf="esEmpresa">
           <label [ngClass]="ui.etiqueta">CNPJ
-            <input type="text" inputmode="numeric" [(ngModel)]="form.cnpj" name="cnpj" maxlength="18" placeholder="00.000.000/0000-00" [ngClass]="ui.inputGrande">
-            <span *ngIf="errores['cnpj']" class="mt-1 block text-xs text-rose-600">{{ errores['cnpj'] }}</span></label>
+            <input type="text" [(ngModel)]="form.cnpj" name="cnpj" maxlength="18" placeholder="00.000.000/0000-00" [ngClass]="ui.inputGrande">
+          </label>
           <label [ngClass]="ui.etiqueta">CEP
             <input type="text" inputmode="numeric" [(ngModel)]="form.cep" name="cep" maxlength="9" placeholder="00000-000" [ngClass]="ui.inputGrande">
-            <span *ngIf="errores['cep']" class="mt-1 block text-xs text-rose-600">{{ errores['cep'] }}</span></label>
+            <span *ngIf="errores['cep']" class="mt-1 block text-xs text-rose-600">{{ errores['cep'] }}</span>
+          </label>
         </div>
       </section>
 
@@ -232,10 +244,6 @@
             </select></label>
           <label [ngClass]="ui.etiqueta">Quién ve tu dirección
             <select [(ngModel)]="form.visibilidad_direccion" name="vdir" [ngClass]="ui.inputGrande">
-              <option value="publico">Todos</option><option value="conectados">Sólo conectados</option><option value="privado">Nadie</option>
-            </select></label>
-          <label *ngIf="esEmpresa" [ngClass]="ui.etiqueta">Quién ve tu CNPJ
-            <select [(ngModel)]="form.visibilidad_cnpj" name="vcnpj" [ngClass]="ui.inputGrande">
               <option value="publico">Todos</option><option value="conectados">Sólo conectados</option><option value="privado">Nadie</option>
             </select></label>
         </div>

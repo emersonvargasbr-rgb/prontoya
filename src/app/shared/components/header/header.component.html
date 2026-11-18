@@ -6,7 +6,7 @@
   <div class="mx-auto flex h-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
 
     <!-- Logo -->
-    <a routerLink="/" class="group flex items-center gap-2.5 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600" aria-label="CosturaPronta, ir al inicio">
+    <a routerLink="/" class="group flex items-center gap-2.5 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600" aria-label="ProntoYA, ir al inicio">
       <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-700 text-white transition group-hover:bg-teal-800">
         <app-icon nombre="scissors" clase="w-5 h-5" />
       </span>
@@ -27,10 +27,10 @@
       <!-- ===================================================== CON SESIÓN -->
       <ng-container *ngIf="sesion.logueado()">
 
-       <a routerLink="/crear-publicacion" [ngClass]="ui.btnPrimario" class="inline-flex items-center justify-center p-2.5 md:px-4 md:py-2">
-  <app-icon nombre="plus" clase="w-4 h-4" />
-  <span class="hidden md:inline ml-2">Publicar</span>
-</a>
+        <a routerLink="/crear-publicacion" [ngClass]="ui.btnPrimario" class="inline-flex items-center justify-center p-2.5 md:px-4 md:py-2" aria-label="Publicar anuncio">
+          <app-icon nombre="plus" clase="w-4 h-4" />
+          <span class="hidden md:inline ml-2">Publicar</span>
+        </a>
 
         <!-- Pendientes -->
         <a [routerLink]="sesion.rutaPanel()" class="relative rounded-lg p-2 text-slate-600 transition hover:bg-stone-100 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
@@ -73,6 +73,9 @@
               </a>
               <a routerLink="/editar-perfil" role="menuitem" class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-stone-100">
                 <app-icon nombre="cog" clase="w-4 h-4 text-slate-500" /> Editar perfil
+              </a>
+              <a routerLink="/planes" role="menuitem" class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-stone-100">
+                <app-icon nombre="verified" clase="w-4 h-4 text-slate-500" /> Mejorar cuenta
               </a>
             </div>
 

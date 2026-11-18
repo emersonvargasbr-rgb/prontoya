@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../core/services/supabase.service';
 import { IconComponent } from './components/icon.component';
 
-
 interface ItemLiquidacion {
   id: string;
   descripcion_corte: string;
@@ -150,7 +149,7 @@ interface ValeActivo {
   `
 })
 export class ControlLiquidacionCarritoComponent implements OnInit {
-  @Input() empleadorId = '';
+  @Input() oficinaId = ''; // <--- Coincide exactamente con [oficinaId] del panel
   @Input() equipo: any[] = [];
 
   funcionarioSeleccionadoId = '';
@@ -189,11 +188,11 @@ export class ControlLiquidacionCarritoComponent implements OnInit {
       console.warn("La tabla sub_cortes no está disponible o dio error.");
     }
 
-    // Cargar vales pendientes del operario
+    // Cargar vales pendientes del operario usando oficinaId
     const { data: dataVales } = await this.supabase.supabase
       .from('vales_adelantos')
       .select('*')
-      .eq('empleador_id', this.empleadorId)
+      .eq('empleador_id', this.oficinaId)
       .eq('funcionario_id', this.funcionarioSeleccionadoId)
       .eq('estado', 'Pendiente');
 
@@ -209,13 +208,13 @@ export class ControlLiquidacionCarritoComponent implements OnInit {
   }
 
   async guardarVale() {
-    if (!this.empleadorId || !this.funcionarioSeleccionadoId || this.nuevoVale.monto <= 0 || !this.nuevoVale.motivo.trim()) {
+    if (!this.oficinaId || !this.funcionarioSeleccionadoId || this.nuevoVale.monto <= 0 || !this.nuevoVale.motivo.trim()) {
       alert('Faltan datos obligatorios (Operario, Monto o Motivo).');
       return;
     }
 
     const payload = {
-      empleador_id: this.empleadorId,
+      empleador_id: this.oficinaId,
       funcionario_id: this.funcionarioSeleccionadoId,
       monto: Number(this.nuevoVale.monto),
       motivo: this.nuevoVale.motivo.trim(),
@@ -234,7 +233,6 @@ export class ControlLiquidacionCarritoComponent implements OnInit {
     await this.cargarDatosOperario();
   }
 
-  // NUEVO: Método para eliminar un vale erróneo de Supabase
   async eliminarVale(valeId: string) {
     if (!confirm('¿Estás seguro de eliminar este vale por error?')) return;
 
@@ -249,7 +247,7 @@ export class ControlLiquidacionCarritoComponent implements OnInit {
     }
 
     alert('Vale eliminado correctamente.');
-    await this.cargarDatosOperario(); // Refrescar lista
+    await this.cargarDatosOperario();
   }
 
   get todosCortesSeleccionados() {

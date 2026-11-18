@@ -60,7 +60,14 @@ totalCortesManuales = signal(0);
     .reduce((t, a) => t + Number(a.monto_total || 0), 0));
 
   postulacionesPendientes = computed(() => this.postulaciones().filter(p => p.estado === 'Pendiente').length);
-
+// Añade esta propiedad computada junto a tus otros computed:
+esPlanPro = computed(() => {
+  const p = this.perfil();
+  // Puedes verificar si tiene un plan diferente a 'basico' o null, y si la fecha de vigencia es válida
+  if (!p || !p.plan || p.plan === 'basico') return false;
+  if (p.plan_vigente_hasta && new Date(p.plan_vigente_hasta) < new Date()) return false;
+  return true;
+});
   gamificacion = computed(() => {
     const p = this.perfil();
     const cerrados = this.trabajosCerrados();
