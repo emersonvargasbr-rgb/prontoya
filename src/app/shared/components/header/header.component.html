@@ -6,12 +6,16 @@
   <div class="mx-auto flex h-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
 
     <!-- Logo -->
-    <a routerLink="/" class="group flex items-center gap-2.5 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600" aria-label="ProntoYA, ir al inicio">
-      <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-700 text-white transition group-hover:bg-teal-800">
-        <app-icon nombre="scissors" clase="w-5 h-5" />
-      </span>
+    <a routerLink="/" class="group flex items-center gap-2.5 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#183a28]" aria-label="ProntoYA, ir al inicio">
+      <img
+        src="/icon-192x192.png"
+        alt="Logo ProntoYA"
+        width="36"
+        height="36"
+        class="h-9 w-9 shrink-0 object-contain transition duration-200 group-hover:scale-105"
+      />
       <span class="leading-tight">
-        <span class="block text-base font-bold tracking-tight text-slate-900">Pronto<span class="text-teal-700">YA</span></span>
+        <span class="block text-base font-bold tracking-tight text-slate-900">Pronto<span class="text-[#183a28]">YA</span></span>
         <span class="block text-[11px] text-slate-500">São Paulo, SP</span>
       </span>
     </a>
@@ -20,20 +24,34 @@
 
       <!-- ===================================================== INVITADO -->
       <ng-container *ngIf="!sesion.logueado() && !sesion.cargando()">
-        <a routerLink="/login" [ngClass]="ui.btnSecundario" class="!border-transparent !bg-transparent">Iniciar sesión</a>
-        <a routerLink="/registro" [ngClass]="ui.btnPrimario"><span class="hidden sm:inline">Regístrate gratis</span><span class="sm:hidden">Registrarme</span></a>
+        <a routerLink="/login" [ngClass]="ui.btnSecundario" class="!border-transparent !bg-transparent !text-[#183a28] hover:!bg-[#183a28]/5">
+          Iniciar sesión
+        </a>
+        <a
+          routerLink="/registro"
+          [ngClass]="ui.btnPrimario"
+          class="!bg-[#183a28] !text-white hover:!bg-[#214f37] focus-visible:!outline-[#183a28]"
+        >
+          <span class="hidden sm:inline">Regístrate gratis</span>
+          <span class="sm:hidden">Registrarme</span>
+        </a>
       </ng-container>
 
       <!-- ===================================================== CON SESIÓN -->
       <ng-container *ngIf="sesion.logueado()">
 
-        <a routerLink="/crear-publicacion" [ngClass]="ui.btnPrimario" class="inline-flex items-center justify-center p-2.5 md:px-4 md:py-2" aria-label="Publicar anuncio">
+        <a
+          routerLink="/crear-publicacion"
+          [ngClass]="ui.btnPrimario"
+          class="inline-flex items-center justify-center p-2.5 md:px-4 md:py-2 !bg-[#183a28] !text-white hover:!bg-[#214f37] focus-visible:!outline-[#183a28]"
+          aria-label="Publicar anuncio"
+        >
           <app-icon nombre="plus" clase="w-4 h-4" />
           <span class="hidden md:inline ml-2">Publicar</span>
         </a>
 
         <!-- Pendientes -->
-        <a [routerLink]="sesion.rutaPanel()" class="relative rounded-lg p-2 text-slate-600 transition hover:bg-stone-100 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
+        <a [routerLink]="sesion.rutaPanel()" class="relative rounded-lg p-2 text-slate-600 transition hover:bg-stone-100 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#183a28]"
            [attr.aria-label]="sesion.pendientes() ? sesion.pendientes() + ' solicitudes pendientes' : 'Sin solicitudes pendientes'">
           <app-icon nombre="bell" clase="w-5 h-5" />
           <span *ngIf="sesion.pendientes() > 0" class="absolute -right-0.5 -top-0.5 min-w-[1.125rem] rounded-full bg-rose-600 px-1 text-center text-[10px] font-bold leading-[1.125rem] text-white">
@@ -44,7 +62,7 @@
         <!-- Menú de usuario -->
         <div class="relative">
           <button type="button" (click)="alternarMenu()" id="boton-usuario" aria-haspopup="menu" [attr.aria-expanded]="menuAbierto()" aria-controls="menu-usuario"
-                  class="flex items-center gap-2 rounded-lg p-1 pr-2 transition hover:bg-stone-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600">
+                  class="flex items-center gap-2 rounded-lg p-1 pr-2 transition hover:bg-stone-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#183a28]">
             <ng-container *ngIf="sesion.usuario() as u">
               <app-avatar [nombre]="u.nombre_completo" tamano="sm" [icono]="u.avatar_icono" [color]="u.avatar_color" />
               <span class="hidden max-w-[10rem] truncate text-sm font-semibold text-slate-800 lg:block">{{ u.nombre_completo }}</span>

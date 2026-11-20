@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gray-50 flex flex-col">
+<div class="min-h-screen bg-stone-50 flex flex-col">
   <!-- Navbar superior -->
   <app-header></app-header>
 
@@ -7,8 +7,48 @@
     <app-sidebar-dashboard></app-sidebar-dashboard>
 
     <!-- Contenido Principal -->
-  <main class="min-w-0 flex-1 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
-      <router-outlet></router-outlet>
+    <main class="min-w-0 flex-1 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
+      <div class="mx-auto max-w-6xl px-4 pt-4">
+
+        <!-- Aviso de 30 días para verificar documento -->
+        <div *ngIf="estadoVerificacion() as estado"
+             class="mb-4 rounded-2xl border p-4 text-xs space-y-2"
+             [ngClass]="estado.vencido
+               ? 'border-rose-200 bg-rose-50 text-rose-900'
+               : 'border-amber-200 bg-amber-50 text-amber-900'">
+          <p class="font-bold">
+            <ng-container *ngIf="!estado.vencido">
+              Documento pendiente de verificación — te quedan {{ estado.diasRestantes }} días
+            </ng-container>
+            <ng-container *ngIf="estado.vencido">
+              Plazo de 30 días para verificar tu documento vencido
+            </ng-container>
+          </p>
+
+          <p class="leading-relaxed opacity-90">
+            <ng-container *ngIf="!estado.vencido">
+              Completa y valida tu CPF, CNPJ o documento antes de cumplir el mes para evitar que tu cuenta se elimine automáticamente.
+            </ng-container>
+            <ng-container *ngIf="estado.vencido">
+              El plazo de un mes venció y tu cuenta está sujeta a eliminación automática. Escríbenos a soporte si necesitas ayuda.
+            </ng-container>
+          </p>
+
+          <div class="flex flex-wrap gap-2 pt-1">
+            <a *ngIf="!estado.vencido" routerLink="/editar-perfil"
+               class="inline-flex items-center rounded-lg bg-[#183a28] px-3 py-1.5 font-semibold text-white hover:opacity-90">
+              Verificar documento
+            </a>
+            <a href="https://wa.me/5511999999999?text=Hola%2C%20necesito%20ayuda%20con%20la%20verificaci%C3%B3n%20de%20mi%20cuenta"
+               target="_blank" rel="noopener"
+               class="inline-flex items-center rounded-lg border border-current/25 bg-white/80 px-3 py-1.5 font-semibold hover:bg-white">
+              Contactar a soporte
+            </a>
+          </div>
+        </div>
+
+        <router-outlet></router-outlet>
+      </div>
     </main>
   </div>
 </div>

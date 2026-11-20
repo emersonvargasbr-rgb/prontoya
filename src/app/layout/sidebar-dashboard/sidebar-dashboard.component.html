@@ -6,25 +6,25 @@
 
 <!-- ============================================================ ESCRITORIO -->
 <aside class="sticky top-[var(--header-h,4rem)] hidden h-[calc(100dvh-var(--header-h,4rem))] shrink-0 self-start flex-col
-              border-r border-slate-800 bg-slate-900 text-slate-300 transition-[width] duration-200 ease-out md:flex"
+              border-r border-stone-200 bg-white text-slate-600 transition-[width] duration-200 ease-out md:flex"
        [ngClass]="expandido() ? 'w-64' : 'w-[4.5rem]'" aria-label="Navegación principal">
 
   <!-- Tarjeta de usuario -->
-  <div class="border-b border-slate-800 p-3">
+  <div class="border-b border-stone-200 p-3">
     <a *ngIf="usuario() as u; else invitado" [routerLink]="[rutaPerfil, u.id]"
-       class="flex items-center gap-3 rounded-lg p-1.5 transition hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-500"
+       class="flex items-center gap-3 rounded-lg p-1.5 transition hover:bg-stone-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#183a28]"
        [attr.title]="expandido() ? null : u.nombre_completo">
       <app-avatar [nombre]="u.nombre_completo" tamano="md" [verificado]="!!u.verificado" [icono]="u.avatar_icono" [color]="u.avatar_color" />
       <div *ngIf="expandido()" class="min-w-0">
-        <p class="truncate text-sm font-semibold text-white">{{ u.nombre_completo }}</p>
-        <p *ngIf="g() as x" class="truncate text-[11px] text-slate-400">Nivel {{ x.nivel }} · {{ x.nombre }}</p>
+        <p class="truncate text-sm font-semibold text-slate-900">{{ u.nombre_completo }}</p>
+        <p *ngIf="g() as x" class="truncate text-[11px] text-stone-500">Nivel {{ x.nivel }} · {{ x.nombre }}</p>
       </div>
     </a>
 
     <ng-template #invitado>
       <div class="flex items-center gap-3 p-1.5">
-        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-800 text-slate-400"><app-icon nombre="user" clase="w-5 h-5" /></span>
-        <p *ngIf="expandido()" class="text-sm font-semibold text-white">Bienvenido</p>
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-stone-100 text-stone-500"><app-icon nombre="user" clase="w-5 h-5" /></span>
+        <p *ngIf="expandido()" class="text-sm font-semibold text-slate-900">Bienvenido</p>
       </div>
     </ng-template>
   </div>
@@ -32,7 +32,7 @@
   <!-- Publicar -->
   <div *ngIf="logueado()" class="px-3 pt-3">
     <a routerLink="/crear-publicacion" [attr.title]="expandido() ? null : 'Publicar anuncio'"
-       class="flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-500 active:scale-[0.99] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-400">
+       class="flex items-center justify-center gap-2 rounded-lg bg-[#183a28] px-3 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 active:scale-[0.99] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#183a28]">
       <app-icon nombre="plus" clase="w-4 h-4 shrink-0" />
       <span *ngIf="expandido()" class="truncate">Publicar anuncio</span>
     </a>
@@ -40,45 +40,45 @@
 
   <!-- Enlaces -->
   <nav class="flex-1 space-y-1 overflow-y-auto overflow-x-hidden px-3 py-3" aria-label="Secciones">
-    <a *ngFor="let i of items()" [routerLink]="i.ruta" routerLinkActive="bg-white/10 text-white" ariaCurrentWhenActive="page"
+    <a *ngFor="let i of items()" [routerLink]="i.ruta" routerLinkActive="bg-[#183a28]/10 text-[#183a28] font-semibold" ariaCurrentWhenActive="page"
        [attr.title]="expandido() ? null : i.txt" [attr.aria-label]="i.txt"
-       class="group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-white/5 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-500">
+       class="group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-stone-100 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#183a28]">
       <app-icon [nombre]="i.icono" clase="w-5 h-5 shrink-0" />
       <span *ngIf="expandido()" class="flex-1 truncate">{{ i.txt }}</span>
       <span *ngIf="expandido() && i.badge" class="rounded-full bg-rose-600 px-1.5 text-[11px] font-bold text-white">{{ i.badge }}</span>
-      <span *ngIf="!expandido() && i.badge" class="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-slate-900" aria-hidden="true"></span>
+      <span *ngIf="!expandido() && i.badge" class="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white" aria-hidden="true"></span>
     </a>
 
-    <a *ngIf="logueado()" routerLink="/editar-perfil" routerLinkActive="bg-white/10 text-white" ariaCurrentWhenActive="page"
+    <a *ngIf="logueado()" routerLink="/editar-perfil" routerLinkActive="bg-[#183a28]/10 text-[#183a28] font-semibold" ariaCurrentWhenActive="page"
        [attr.title]="expandido() ? null : 'Editar perfil'" aria-label="Editar perfil"
-       class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-white/5 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-500">
+       class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-stone-100 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#183a28]">
       <app-icon nombre="cog" clase="w-5 h-5 shrink-0" />
       <span *ngIf="expandido()" class="truncate">Editar perfil</span>
     </a>
   </nav>
 
   <!-- Pie: sesión y colapsar -->
-  <div class="space-y-1 border-t border-slate-800 p-3">
+  <div class="space-y-1 border-t border-stone-200 p-3">
     <ng-container *ngIf="logueado(); else accesoEscritorio">
       <button type="button" (click)="cerrarSesion()" [attr.title]="expandido() ? null : 'Cerrar sesión'"
-              class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-rose-300 transition hover:bg-rose-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-rose-400">
+              class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-rose-700 transition hover:bg-rose-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-rose-500">
         <app-icon nombre="logout" clase="w-5 h-5 shrink-0" />
         <span *ngIf="expandido()" class="truncate">Cerrar sesión</span>
       </button>
     </ng-container>
     <ng-template #accesoEscritorio>
       <a routerLink="/login" [attr.title]="expandido() ? null : 'Iniciar sesión'"
-         class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition hover:bg-white/5 hover:text-white">
+         class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-stone-100 hover:text-slate-900">
         <app-icon nombre="login" clase="w-5 h-5 shrink-0" /><span *ngIf="expandido()" class="truncate">Iniciar sesión</span>
       </a>
       <a routerLink="/registro" [attr.title]="expandido() ? null : 'Crear cuenta'"
-         class="flex items-center gap-3 rounded-lg bg-teal-600 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-500">
+         class="flex items-center gap-3 rounded-lg bg-[#183a28] px-3 py-2.5 text-sm font-semibold text-white transition hover:opacity-90">
         <app-icon nombre="user-plus" clase="w-5 h-5 shrink-0" /><span *ngIf="expandido()" class="truncate">Crear cuenta</span>
       </a>
     </ng-template>
 
     <button type="button" (click)="toggleSidebar()" [attr.aria-label]="expandido() ? 'Contraer menú' : 'Expandir menú'" [attr.aria-expanded]="expandido()"
-            class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-white/5 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-500">
+            class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-stone-500 transition hover:bg-stone-100 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#183a28]">
       <app-icon [nombre]="expandido() ? 'chevron-left' : 'chevron-right'" clase="w-5 h-5 shrink-0" />
       <span *ngIf="expandido()" class="truncate">Contraer</span>
     </button>
@@ -101,12 +101,12 @@
 </ng-container>
 
 <!-- Barra inferior: respeta la zona segura del iPhone -->
-<nav class="fixed inset-x-0 bottom-0 z-40 border-t border-slate-800 bg-slate-900 pb-[env(safe-area-inset-bottom)] text-slate-400 md:hidden" aria-label="Navegación principal">
+<nav class="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white pb-[env(safe-area-inset-bottom)] text-slate-500 md:hidden" aria-label="Navegación principal">
 
   <ul *ngIf="logueado(); else invitadoMovil" class="mx-auto grid h-16 max-w-md grid-cols-5 items-center">
     <li *ngFor="let i of itemsMovil()" class="h-full">
-      <a [routerLink]="i.ruta" routerLinkActive="text-white" ariaCurrentWhenActive="page"
-         class="relative flex h-full flex-col items-center justify-center gap-1 text-[11px] font-medium transition active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-500">
+      <a [routerLink]="i.ruta" routerLinkActive="text-[#183a28] font-semibold" ariaCurrentWhenActive="page"
+         class="relative flex h-full flex-col items-center justify-center gap-1 text-[11px] font-medium transition active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#183a28]">
         <app-icon [nombre]="i.icono" clase="w-6 h-6" />
         {{ i.corto }}
         <span *ngIf="i.badge" class="absolute right-[26%] top-2 min-w-4 rounded-full bg-rose-600 px-1 text-center text-[10px] font-bold leading-4 text-white">{{ i.badge }}</span>
@@ -115,22 +115,22 @@
 
     <li class="flex justify-center">
       <a routerLink="/crear-publicacion" aria-label="Publicar anuncio"
-         class="-mt-6 flex h-12 w-12 items-center justify-center rounded-full bg-teal-600 text-white shadow-lg ring-4 ring-slate-900 transition active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-300">
+         class="-mt-6 flex h-12 w-12 items-center justify-center rounded-full bg-[#183a28] text-white shadow-lg ring-4 ring-white transition active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#183a28]">
         <app-icon nombre="plus" clase="w-6 h-6" />
       </a>
     </li>
 
     <li class="h-full">
-      <a [routerLink]="[rutaPerfil, usuario()?.id]" routerLinkActive="text-white" ariaCurrentWhenActive="page"
-         class="flex h-full flex-col items-center justify-center gap-1 text-[11px] font-medium transition active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-500">
+      <a [routerLink]="[rutaPerfil, usuario()?.id]" routerLinkActive="text-[#183a28] font-semibold" ariaCurrentWhenActive="page"
+         class="flex h-full flex-col items-center justify-center gap-1 text-[11px] font-medium transition active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#183a28]">
         <app-icon nombre="user" clase="w-6 h-6" /> Perfil
       </a>
     </li>
 
     <li class="h-full">
       <button type="button" (click)="menuMovil.set(!menuMovil())" [attr.aria-expanded]="menuMovil()" aria-controls="menu-movil"
-              class="flex h-full w-full flex-col items-center justify-center gap-1 text-[11px] font-medium transition active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-500"
-              [class.text-white]="menuMovil()">
+              class="flex h-full w-full flex-col items-center justify-center gap-1 text-[11px] font-medium transition active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#183a28]"
+              [class.text-[#183a28]]="menuMovil()" [class.font-semibold]="menuMovil()">
         <app-icon nombre="dots" clase="w-6 h-6" /> Más
       </button>
     </li>
@@ -138,9 +138,9 @@
 
   <ng-template #invitadoMovil>
     <ul class="mx-auto grid h-16 max-w-md grid-cols-3 items-center">
-      <li class="h-full"><a routerLink="/feed" routerLinkActive="text-white" class="flex h-full flex-col items-center justify-center gap-1 text-[11px] font-medium"><app-icon nombre="home" clase="w-6 h-6" /> Inicio</a></li>
-      <li class="h-full"><a routerLink="/login" routerLinkActive="text-white" class="flex h-full flex-col items-center justify-center gap-1 text-[11px] font-medium"><app-icon nombre="login" clase="w-6 h-6" /> Ingresar</a></li>
-      <li class="h-full"><a routerLink="/registro" routerLinkActive="text-white" class="flex h-full flex-col items-center justify-center gap-1 text-[11px] font-semibold text-teal-400"><app-icon nombre="user-plus" clase="w-6 h-6" /> Registrarme</a></li>
+      <li class="h-full"><a routerLink="/feed" routerLinkActive="text-[#183a28] font-semibold" class="flex h-full flex-col items-center justify-center gap-1 text-[11px] font-medium"><app-icon nombre="home" clase="w-6 h-6" /> Inicio</a></li>
+      <li class="h-full"><a routerLink="/login" routerLinkActive="text-[#183a28] font-semibold" class="flex h-full flex-col items-center justify-center gap-1 text-[11px] font-medium"><app-icon nombre="login" clase="w-6 h-6" /> Ingresar</a></li>
+      <li class="h-full"><a routerLink="/registro" routerLinkActive="text-[#183a28] font-semibold" class="flex h-full flex-col items-center justify-center gap-1 text-[11px] font-semibold text-[#183a28]"><app-icon nombre="user-plus" clase="w-6 h-6" /> Registrarme</a></li>
     </ul>
   </ng-template>
 </nav>
