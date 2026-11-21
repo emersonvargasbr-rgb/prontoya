@@ -160,7 +160,7 @@
               </h2>
 
               <div class="mt-1 flex items-center gap-1 text-[11px] text-slate-500">
-                <app-icon nombre="star" [relleno]="true" clase="h-3 w-3 shrink-0 text-amber-500" />
+                <app-icon nombre="star" clase="h-3 w-3 shrink-0 text-amber-500" />
                 <span class="font-bold text-slate-700">{{ t.rating || '0.0' }}</span>
                 <span *ngIf="t.maquinas_requeridas?.length" class="truncate text-[10px] text-slate-400">
                   · {{ t.maquinas_requeridas[0] }}

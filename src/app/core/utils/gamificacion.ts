@@ -28,8 +28,8 @@ export function completitud(p: any): Completitud {
   ];
   if (rol === 'oficina') {
     checks.push(
-      { id: 'maq',  etq: 'Indica cuántas máquinas tienes',  ok: Number(p?.cantidad_maquinas) > 0 },
-      { id: 'oper', etq: 'Indica cuántos operarios tienes', ok: Number(p?.cantidad_operarios) > 0 },
+      { id: 'maq',   etq: 'Indica cuántas máquinas tienes',  ok: Number(p?.cantidad_maquinas) > 0 },
+      { id: 'oper',  etq: 'Indica cuántos operarios tienes', ok: Number(p?.cantidad_operarios) > 0 },
       { id: 'tipos', etq: 'Marca tus máquinas',              ok: (p?.maquinas_maneja ?? []).length > 0 },
     );
   } else if (rol === 'tienda') {
@@ -207,6 +207,15 @@ export function calcularGamificacion(p: any): Gamificacion {
 // ============================================================== COSMÉTICOS Y PLANES
 export const NOMBRE_TIER: Record<number, string> = { 1: 'Gratis', 2: 'Pro', 3: 'Gold' };
 
+export interface ItemCosmetico {
+  id: string;
+  nombre: string;
+  nivelMin: number;
+  seguidoresMin?: number;
+  gratisPorDefecto?: boolean;
+  pistaDidactica?: string;
+}
+
 export const COLORES_PORTADA = [
   { hex: '#134e4a', nombre: 'Verde hilo',   nivelMin: 1 },
   { hex: '#0f172a', nombre: 'Tinta',        nivelMin: 1 },
@@ -223,30 +232,54 @@ export const COLORES_PORTADA = [
 ];
 
 export const PATRONES_PORTADA = [
-  { id: 'liso',        nombre: 'Liso',        nivelMin: 1 },
-  { id: 'diagonales', nombre: 'Diagonales', nivelMin: 2 },
-  { id: 'puntos',      nombre: 'Puntos',      nivelMin: 2 },
-  { id: 'costura',     nombre: 'Costura',     nivelMin: 2 },
-  { id: 'oro',         nombre: 'Reflejo oro', nivelMin: 3 },
-  { id: 'seda',        nombre: 'Seda',         nivelMin: 3 },
+  { id: 'liso',       nombre: 'Liso',        nivelMin: 1 },
+  { id: 'diagonales', nombre: 'Diagonales',  nivelMin: 2 },
+  { id: 'puntos',     nombre: 'Puntos',      nivelMin: 2 },
+  { id: 'costura',    nombre: 'Costura',     nivelMin: 2 },
+  { id: 'oro',        nombre: 'Reflejo oro', nivelMin: 3 },
+  { id: 'seda',       nombre: 'Seda',        nivelMin: 3 },
 ];
 
-/** Las iniciales están siempre disponibles por defecto. */
-export const AVATAR_ICONOS = [
-  { id: 'user',      nombre: 'Persona',  nivelMin: 2 },
-  { id: 'scissors',  nombre: 'Tijera',   nivelMin: 2 },
-  { id: 'cog',       nombre: 'Máquina',  nivelMin: 2 },
-  { id: 'bag',       nombre: 'Tienda',   nivelMin: 2 },
-  { id: 'building',  nombre: 'Taller',   nivelMin: 2 },
-  { id: 'layers',    nombre: 'Lotes',    nivelMin: 2 },
-  { id: 'flag',      nombre: 'Bandera',  nivelMin: 2 },
-  { id: 'crown',     nombre: 'Corona',   nivelMin: 3 },
-  { id: 'star',      nombre: 'Estrella', nivelMin: 3 },
-  { id: 'coin',      nombre: 'Moneda',   nivelMin: 3 },
+/**
+ * - Los 3 primeros íconos son gratis por defecto.
+ * - El ícono #5 (índice 4) se desbloquea gratis con 20 seguidores (o con plan Pro).
+ */
+export const AVATAR_ICONOS: ItemCosmetico[] = [
+  { id: 'scissors', nombre: 'Tijera',   nivelMin: 1, gratisPorDefecto: true, pistaDidactica: 'Gratis desde el inicio' },
+  { id: 'cog',      nombre: 'Máquina',  nivelMin: 1, gratisPorDefecto: true, pistaDidactica: 'Gratis desde el inicio' },
+  { id: 'bag',      nombre: 'Tienda',   nivelMin: 1, gratisPorDefecto: true, pistaDidactica: 'Gratis desde el inicio' },
+  { id: 'building', nombre: 'Taller',   nivelMin: 2, pistaDidactica: 'Plan Pro' },
+  { id: 'layers',   nombre: 'Lotes',    nivelMin: 2, seguidoresMin: 20, pistaDidactica: '20 seguidores o Plan Pro' },
+  { id: 'flag',     nombre: 'Bandera',  nivelMin: 2, pistaDidactica: 'Plan Pro' },
+  { id: 'star',     nombre: 'Estrella', nivelMin: 3, pistaDidactica: 'Plan Gold' },
+  { id: 'coin',     nombre: 'Moneda',   nivelMin: 3, pistaDidactica: 'Plan Gold' },
 ];
 
-/** Avatares ilustrados (tus SVG de Illustrator o dinámicos). */
-export const AVATARES_ILUSTRADOS: { id: string; nombre: string; nivelMin: number }[] = [];
+/**
+ * Avatares ilustrados (tus SVG de 100x100, sin hipopótamo).
+ * - Los 3 primeros son gratis por defecto.
+ * - El 5.º avatar ilustrado (índice 4) se desbloquea gratis con 10 seguidores.
+ */
+export const AVATARES_ILUSTRADOS: ItemCosmetico[] = [
+  { id: 'avatar-huella',    nombre: 'Huella 1',   nivelMin: 1, gratisPorDefecto: true, pistaDidactica: 'Gratis desde el inicio' },
+  { id: 'avatar-silueta-2', nombre: 'Silueta 2',  nivelMin: 1, gratisPorDefecto: true, pistaDidactica: 'Gratis desde el inicio' },
+  { id: 'avatar-silueta-3', nombre: 'Silueta 3',  nivelMin: 1, gratisPorDefecto: true, pistaDidactica: 'Gratis desde el inicio' },
+  { id: 'avatar-silueta-4', nombre: 'Silueta 4',  nivelMin: 2, pistaDidactica: 'Plan Pro' },
+  { id: 'avatar-huella',    nombre: 'Huella VIP', nivelMin: 3, seguidoresMin: 10, pistaDidactica: '10 seguidores o Plan Gold' },
+];
+
+export function cosmeticoDesbloqueado(
+  item: ItemCosmetico,
+  rangoPlan: number,
+  seguidoresActuales: number
+): boolean {
+  if (item.gratisPorDefecto) return true;
+  if (rangoPlan >= item.nivelMin) return true;
+  if (item.seguidoresMin !== undefined && seguidoresActuales >= item.seguidoresMin) {
+    return true;
+  }
+  return false;
+}
 
 export const AVATAR_MARCOS = [
   { id: 'nivel', nombre: 'Marco de nivel',      nivelMin: 1 },

@@ -7,6 +7,7 @@ import { SocialService } from '../../../core/services/social.service';
 import { PlanService } from '../../../core/services/plan.service';
 import { AvatarComponent } from '../../../shared/components/avatar.component';
 import { IconComponent } from '../../../shared/components/icon.component';
+import { SolicitudesVinculoComponent } from '../../../shared/components/solicitudes-vinculo.component';
 
 import { ControlLiquidacionCarritoComponent } from '../../../shared/control-liquidacion-carrito.component';
 import { CortesManualesComponent } from '../../../shared/components/cortes-manuales.component';
@@ -23,13 +24,14 @@ export const OPERACIONES = [
   selector: 'app-panel-oficina',
   standalone: true,
   imports: [
-    CommonModule, 
-    FormsModule, 
-    RouterModule, 
-    IconComponent, 
-    AvatarComponent, 
-    ControlLiquidacionCarritoComponent, 
-    CortesManualesComponent
+    CommonModule,
+    FormsModule,
+    RouterModule,
+    IconComponent,
+    AvatarComponent,
+    SolicitudesVinculoComponent,
+    ControlLiquidacionCarritoComponent,
+    CortesManualesComponent,
   ],
   templateUrl: './panel-oficina.component.html',
 })
@@ -359,7 +361,7 @@ export class PanelOficinaComponent implements OnInit {
   contactarWhatsApp(telefono: string | null | undefined, nombre: string, concepto: string) {
     if (!telefono) return this.notificar('Este usuario no tiene teléfono registrado.', 'error');
     let n = telefono.replace(/\D/g, '');
-    if (n.length <= 11) n = '55' + n; // Brasil por defecto
+    if (n.length <= 11) n = '55' + n;
     const msg = `Hola ${nombre}, te escribo desde CosturaPronta por: "${concepto}".`;
     window.open(`https://wa.me/${n}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
   }

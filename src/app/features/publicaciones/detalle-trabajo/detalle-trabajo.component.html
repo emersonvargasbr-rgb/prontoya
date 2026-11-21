@@ -44,7 +44,7 @@
             
             <p class="flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
               <span class="inline-flex items-center gap-0.5 font-semibold text-amber-700">
-                <app-icon nombre="star" [relleno]="true" clase="w-3.5 h-3.5" /> {{ autor()?.promedio_estrellas || '0.0' }}
+                <app-icon nombre="star" clase="w-3.5 h-3.5" /> {{ autor()?.promedio_estrellas || '0.0' }}
                 <span class="font-normal text-slate-500">({{ autor()?.total_evaluaciones || 0 }})</span>
               </span>
               <span class="truncate">{{ autor()?.especialidad_principal || 'Confección textil' }}</span>

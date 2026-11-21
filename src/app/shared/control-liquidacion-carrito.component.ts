@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../core/services/supabase.service';
@@ -32,9 +32,9 @@ interface ValeActivo {
           <h3 class="font-bold text-slate-900 text-base">Caja, Vales y Liquidación por Operario</h3>
           <p class="text-xs text-stone-500">Emite adelantos, gestiona vales y procesa el pago neto.</p>
         </div>
-        
+
         <!-- Selector de Empleado -->
-        <select [(ngModel)]="funcionarioSeleccionadoId" (change)="cargarDatosOperario()" 
+        <select [(ngModel)]="funcionarioSeleccionadoId" (change)="cargarDatosOperario()"
                 class="border border-stone-300 rounded-xl px-3 py-2 text-xs font-semibold bg-white focus:outline-teal-600">
           <option value="" disabled>Seleccionar operario...</option>
           <option *ngFor="let op of equipo" [value]="op.funcionario?.id">{{ op.funcionario?.nombre_completo }}</option>
@@ -46,20 +46,20 @@ interface ValeActivo {
       </div>
 
       <div *ngIf="funcionarioSeleccionadoId" class="space-y-6">
-        
+
         <!-- Formulario para otorgar un Vale/Adelanto -->
         <div class="bg-amber-50/60 border border-amber-200/60 p-4 rounded-2xl space-y-3">
           <h4 class="text-xs font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
             <app-icon nombre="coin" clase="w-4 h-4" /> Registrar nuevo vale o adelanto
           </h4>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <input [(ngModel)]="nuevoVale.monto" type="number" step="0.01" placeholder="Monto (R$)" 
+            <input [(ngModel)]="nuevoVale.monto" type="number" step="0.01" placeholder="Monto (R$)"
                    class="border border-stone-300 rounded-xl px-3 py-2 text-xs bg-white focus:outline-teal-600">
-            <input [(ngModel)]="nuevoVale.motivo" type="text" placeholder="Motivo (Ej: Adelanto pasajes / mercadería)" 
+            <input [(ngModel)]="nuevoVale.motivo" type="text" placeholder="Motivo (Ej: Adelanto pasajes / mercadería)"
                    class="border border-stone-300 rounded-xl px-3 py-2 text-xs bg-white focus:outline-teal-600 sm:col-span-2">
           </div>
           <div class="flex justify-end">
-            <button type="button" (click)="guardarVale()" 
+            <button type="button" (click)="guardarVale()"
                     class="bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold px-4 py-2 rounded-xl transition shadow-sm">
               Emitir Vale al Operario
             </button>
@@ -67,7 +67,7 @@ interface ValeActivo {
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
+
           <!-- COLUMNA IZQUIERDA: Cortes / Lotes Terminados -->
           <div class="space-y-3">
             <div class="flex justify-between items-center">
@@ -102,7 +102,7 @@ interface ValeActivo {
             <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
               <div *ngFor="let vale of vales" class="flex items-center gap-3 p-3 rounded-2xl border border-rose-100 bg-rose-50/30 hover:bg-rose-50/60 transition">
                 <input type="checkbox" [(ngModel)]="vale.seleccionado" class="w-4 h-4 text-rose-600 rounded border-stone-300 focus:ring-rose-500">
-                
+
                 <div class="min-w-0 flex-1">
                   <p class="text-xs font-bold text-slate-900 truncate">{{ vale.motivo }}</p>
                   <p class="text-[11px] text-stone-500">Fecha: {{ vale.fecha }}</p>
@@ -148,8 +148,8 @@ interface ValeActivo {
     </div>
   `
 })
-export class ControlLiquidacionCarritoComponent implements OnInit {
-  @Input() oficinaId = ''; // <--- Coincide exactamente con [oficinaId] del panel
+export class ControlLiquidacionCarritoComponent implements OnInit, OnChanges {
+  @Input() oficinaId = '';
   @Input() equipo: any[] = [];
 
   funcionarioSeleccionadoId = '';
@@ -162,10 +162,22 @@ export class ControlLiquidacionCarritoComponent implements OnInit {
 
   ngOnInit() {}
 
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['equipo'] && this.funcionarioSeleccionadoId) {
+      const sigueEnEquipo = (this.equipo ?? []).some(
+        op => (op.funcionario?.id ?? op.funcionario_id) === this.funcionarioSeleccionadoId
+      );
+      if (!sigueEnEquipo) {
+        this.funcionarioSeleccionadoId = '';
+        this.cortes = [];
+        this.vales = [];
+      }
+    }
+  }
+
   async cargarDatosOperario() {
     if (!this.funcionarioSeleccionadoId) return;
 
-    // Intentar cargar sub-cortes (si la tabla existe)
     try {
       const { data: dataCortes } = await this.supabase.supabase
         .from('sub_cortes')
@@ -185,10 +197,9 @@ export class ControlLiquidacionCarritoComponent implements OnInit {
         }));
       }
     } catch (e) {
-      console.warn("La tabla sub_cortes no está disponible o dio error.");
+      console.warn('La tabla sub_cortes no está disponible o dio error.');
     }
 
-    // Cargar vales pendientes del operario usando oficinaId
     const { data: dataVales } = await this.supabase.supabase
       .from('vales_adelantos')
       .select('*')

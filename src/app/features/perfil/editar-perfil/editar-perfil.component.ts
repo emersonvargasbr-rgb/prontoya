@@ -6,8 +6,19 @@ import { SupabaseService } from '../../../core/services/supabase.service';
 
 import { MAQUINAS, ROL_ETIQUETA, ROL_PANEL, UI, ZONAS } from '../../../core/utils/helpers';
 import {
-  AVATARES_ILUSTRADOS, AVATAR_ICONOS, AVATAR_MARCOS, COLORES_PORTADA, ESPECIALIDADES, NOMBRE_TIER, PATRONES_PORTADA, Rol,
-  calcularGamificacion, completitud, estiloPortada,
+  AVATARES_ILUSTRADOS,
+  AVATAR_ICONOS,
+  AVATAR_MARCOS,
+  COLORES_PORTADA,
+  ESPECIALIDADES,
+  ItemCosmetico,
+  NOMBRE_TIER,
+  PATRONES_PORTADA,
+  Rol,
+  calcularGamificacion,
+  completitud,
+  cosmeticoDesbloqueado,
+  estiloPortada,
 } from '../../../core/utils/gamificacion';
 import { IconComponent } from '../../../shared/components/icon.component';
 import { AVATAR_PALETAS, AvatarComponent } from '../../../shared/components/avatar.component';
@@ -38,7 +49,8 @@ export class EditarPerfilComponent implements OnInit {
   readonly maquinas = MAQUINAS;
   readonly colores = COLORES_PORTADA;
   readonly patrones = PATRONES_PORTADA;
-  readonly iconos = [...AVATAR_ICONOS, ...AVATARES_ILUSTRADOS];
+  readonly iconos: ItemCosmetico[] = AVATAR_ICONOS;
+  readonly ilustraciones: ItemCosmetico[] = AVATARES_ILUSTRADOS;
   readonly marcos = AVATAR_MARCOS;
   readonly nombreTier = (n: number) => NOMBRE_TIER[n] ?? 'Pro';
   readonly paletas = AVATAR_PALETAS;
@@ -60,12 +72,13 @@ export class EditarPerfilComponent implements OnInit {
   docVerificado = computed(() => !!this.base()?.documento_verificado || !!this.base()?.verificado);
   docTipo = computed(() => (this.rol() === 'funcionario' ? 'CPF' : 'CNPJ'));
   rol = computed<Rol>(() => (this.base()?.rol ?? 'funcionario') as Rol);
-  
+  seguidoresActuales = computed(() => Number(this.base()?.seguidores_count) || 0);
+
   /** El nivel se calcula sobre lo guardado. */
   g = computed(() => (this.base() ? calcularGamificacion(this.base()) : null));
   nivel = computed(() => this.g()?.nivel ?? 1);
   ganadas = computed(() => (this.g()?.logros ?? []).filter(l => l.desbloqueada));
-  
+
   especialidades = computed(() => {
     const lista = ESPECIALIDADES[this.rol()] ?? [];
     const actual = this.base()?.especialidad_principal;
@@ -138,6 +151,15 @@ export class EditarPerfilComponent implements OnInit {
 
   bloqueado(nivelMin: number): boolean { return this.plan.rangoCosmeticos() < nivelMin; }
 
+  iconoDesbloqueado(item: ItemCosmetico): boolean {
+    return cosmeticoDesbloqueado(item, this.plan.rangoCosmeticos(), this.seguidoresActuales());
+  }
+
+  progresoSeguidores(meta: number): number {
+    if (!meta || meta <= 0) return 100;
+    return Math.min(100, Math.round((this.seguidoresActuales() / meta) * 100));
+  }
+
   private avisarBloqueo(nivelMin: number) {
     this.notificar(`Incluido en el plan ${NOMBRE_TIER[nivelMin] ?? 'Pro'}. Mejora tu plan para usarlo.`, 'error');
   }
@@ -152,9 +174,19 @@ export class EditarPerfilComponent implements OnInit {
     this.form.patron_portada = p.id;
   }
 
-  elegirIcono(i: { id: string; nivelMin: number } | null) {
-    if (i && this.bloqueado(i.nivelMin)) return this.avisarBloqueo(i.nivelMin);
-    this.form.avatar_icono = i ? i.id : null;
+  elegirIcono(item: ItemCosmetico | null) {
+    if (!item) {
+      this.form.avatar_icono = null;
+      return;
+    }
+    if (!this.iconoDesbloqueado(item)) {
+      const detalle = item.seguidoresMin
+        ? `Te faltan ${Math.max(0, item.seguidoresMin - this.seguidoresActuales())} seguidores para desbloquear "${item.nombre}" gratis (o mejora a ${NOMBRE_TIER[item.nivelMin] ?? 'Pro'}).`
+        : `"${item.nombre}" requiere el plan ${NOMBRE_TIER[item.nivelMin] ?? 'Pro'}.`;
+      this.notificar(detalle, 'error');
+      return;
+    }
+    this.form.avatar_icono = item.id;
   }
 
   elegirAvatarColor(id: string | null) { this.form.avatar_color = id; }
@@ -207,7 +239,16 @@ export class EditarPerfilComponent implements OnInit {
       payload.bio_taller = (payload.bio_taller ?? '').trim() || null;
       if ('cep' in payload) payload.cep = payload.cep ? payload.cep.replace(/\D/g, '') : null;
       if ('cnpj' in payload) payload.cnpj = payload.cnpj ? payload.cnpj.replace(/\D/g, '') : null;
-      
+
+      // Verifica que avatar_icono siga siendo válido/desbloqueado
+      if (payload.avatar_icono) {
+        const todos = [...this.iconos, ...this.ilustraciones];
+        const encontrado = todos.find(x => x.id === payload.avatar_icono);
+        if (encontrado && !this.iconoDesbloqueado(encontrado)) {
+          payload.avatar_icono = null;
+        }
+      }
+
       const ganadasSet = new Set(this.ganadas().map(l => l.id));
       payload.insignias_destacadas = payload.insignias_destacadas.filter((id: string) => ganadasSet.has(id));
 
