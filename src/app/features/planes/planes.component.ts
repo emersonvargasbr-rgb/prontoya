@@ -50,17 +50,21 @@ export class PlanesComponent implements OnInit {
     this.perfil.set(data);
   }
 
+  /**
+   * Debe dar el mismo número que cotizar_suscripcion() en la base de datos:
+   * anual = mensual x 12 menos el descuento. (Antes se aplicaba el 7% sobre `p.anual`, que no
+   * necesariamente vale mensual x 12, y el precio mostrado podía no coincidir con el cobrado.)
+   * El checkout vuelve a pedir el precio al servidor, así que lo único que importa aquí es mostrarlo igual.
+   */
+  private readonly DESCUENTO_ANUAL = 0.07;
   precioConDescuento(p: Plan, cicloActual: Ciclo): number {
-    const base = precio(p, cicloActual);
-    if (cicloActual === 'anual') {
-      return Math.round(base * 0.93);
-    }
-    return base;
+    return cicloActual === 'anual'
+      ? Math.round(p.mensual * 12 * (1 - this.DESCUENTO_ANUAL))
+      : p.mensual;
   }
 
   seleccionarPlan(p: Plan) {
-    this.router.navigate(['/checkout-suscripcion'], { 
-      queryParams: { plan: p.id, ciclo: this.ciclo(), monto: this.precioConDescuento(p, this.ciclo()) } 
-    });
+    // El monto ya no viaja por la URL: el checkout lo pide al servidor.
+    this.router.navigate(['/checkout-suscripcion'], { queryParams: { plan: p.id, ciclo: this.ciclo() } });
   }
 }

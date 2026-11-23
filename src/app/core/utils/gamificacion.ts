@@ -1,11 +1,26 @@
 /**
- * Motor de gamificación y planes de CosturaPronta.
- * Fusiona la lógica de roles, insignias, planes de suscripción (Tiendas y Operarios),
- * avatares ilustrados y validaciones corporativas.
+ * Motor de gamificación de CosturaPronta.
+ *
+ * Es una función PURA del registro de `perfiles` (las métricas las mantienen
+ * triggers en la base de datos, ver 003_gamificacion_perfiles.sql). Por eso
+ * funciona igual para el propio usuario y para cualquiera que vea su perfil,
+ * y no hace falta ninguna consulta extra.
+ *
+ * Para agregar una insignia nueva: añade una entrada a LOGROS. Nada más.
+ * Para agregar un nivel: añade un valor a NIVEL_UMBRAL, NIVEL_ESTILO y NIVEL_NOMBRE.
  */
 
 export type Rol = 'tienda' | 'oficina' | 'funcionario';
 export type Categoria = 'confianza' | 'produccion' | 'comunidad' | 'perfil';
+
+export interface ItemCosmetico {
+  id: string;
+  nombre: string;
+  nivelMin: number;
+  seguidoresMin?: number;
+  pistaDidactica?: string;
+  descripcion?: string;
+}
 
 export const CATEGORIAS: { id: Categoria; txt: string; icono: string }[] = [
   { id: 'confianza',  txt: 'Confianza',  icono: 'verified' },
@@ -28,16 +43,16 @@ export function completitud(p: any): Completitud {
   ];
   if (rol === 'oficina') {
     checks.push(
-      { id: 'maq',   etq: 'Indica cuántas máquinas tienes',  ok: Number(p?.cantidad_maquinas) > 0 },
-      { id: 'oper',  etq: 'Indica cuántos operarios tienes', ok: Number(p?.cantidad_operarios) > 0 },
-      { id: 'tipos', etq: 'Marca tus máquinas',              ok: (p?.maquinas_maneja ?? []).length > 0 },
+      { id: 'maq',  etq: 'Indica cuántas máquinas tienes',  ok: Number(p?.cantidad_maquinas) > 0 },
+      { id: 'oper', etq: 'Indica cuántos operarios tienes', ok: Number(p?.cantidad_operarios) > 0 },
+      { id: 'tipos', etq: 'Marca tus máquinas',             ok: (p?.maquinas_maneja ?? []).length > 0 },
     );
   } else if (rol === 'tienda') {
     checks.push({ id: 'tipo', etq: 'Indica si eres firma o feirinha', ok: !!p?.tipo_tienda });
   } else if (rol === 'funcionario') {
     checks.push(
       { id: 'tipos', etq: 'Marca las máquinas que manejas', ok: (p?.maquinas_maneja ?? []).length > 0 },
-      { id: 'mod',   etq: 'Indica cómo trabajas',            ok: !!p?.modalidad_trabajo },
+      { id: 'mod',   etq: 'Indica cómo trabajas',           ok: !!p?.modalidad_trabajo },
     );
   }
   const ok = checks.filter(c => c.ok).length;
@@ -65,8 +80,8 @@ const dias = (p: any) => (p?.created_at ? Math.floor((Date.now() - new Date(p.cr
 
 const LOGROS: LogroDef[] = [
   // ---- Confianza
-  { id: 'verificado', nombre: 'Identidad verificada', icono: 'verified', categoria: 'confianza', roles: TODOS, xp: 300, meta: 1,
-    descripcion: 'CosturaPronta confirmó tus datos.', valor: p => (p?.verificado ? 1 : 0) },
+  { id: 'verificado', nombre: 'Documento verificado', icono: 'verified', categoria: 'confianza', roles: TODOS, xp: 300, meta: 1,
+    descripcion: 'Validaste tu CPF o CNPJ. Es gratis y sólo se permite una cuenta por documento.', valor: p => (p?.documento_verificado || p?.verificado ? 1 : 0) },
   { id: 'resenas_5', nombre: 'Con reputación', icono: 'star', categoria: 'confianza', roles: TODOS, xp: 100, meta: 5,
     descripcion: 'Recibe 5 reseñas.', valor: p => num(p?.total_evaluaciones) },
   { id: 'resenas_25', nombre: 'Referente de la zona', icono: 'star', categoria: 'confianza', roles: TODOS, xp: 300, meta: 25,
@@ -204,31 +219,30 @@ export function calcularGamificacion(p: any): Gamificacion {
   };
 }
 
-// ============================================================== COSMÉTICOS Y PLANES
+// ============================================================== COSMÉTICOS
+/**
+ * La apariencia se desbloquea con el PLAN (no con el nivel):
+ *   nivelMin 1 = incluido en el plan gratis y en Verificado Básico (colores sólidos e iniciales)
+ *   nivelMin 2 = Taller Pro y Operario Pro (ilustraciones y patrones)
+ *   nivelMin 3 = Élite / Gold (colección exclusiva)
+ * El servidor valida lo mismo (tabla `cosmeticos` y trigger fn_validar_cosmeticos), así que
+ * este catálogo es sólo la cara visible: debe coincidir con los datos de esa tabla.
+ */
 export const NOMBRE_TIER: Record<number, string> = { 1: 'Gratis', 2: 'Pro', 3: 'Gold' };
 
-export interface ItemCosmetico {
-  id: string;
-  nombre: string;
-  nivelMin: number;
-  seguidoresMin?: number;
-  gratisPorDefecto?: boolean;
-  pistaDidactica?: string;
-}
-
 export const COLORES_PORTADA = [
-  { hex: '#134e4a', nombre: 'Verde hilo',   nivelMin: 1 },
-  { hex: '#0f172a', nombre: 'Tinta',        nivelMin: 1 },
-  { hex: '#1e3a8a', nombre: 'Azul real',    nivelMin: 1 },
-  { hex: '#047857', nombre: 'Esmeralda',    nivelMin: 1 },
-  { hex: '#c2410c', nombre: 'Terracota',    nivelMin: 1 },
-  { hex: '#be123c', nombre: 'Bordó',        nivelMin: 1 },
-  { hex: '#6d28d9', nombre: 'Púrpura',      nivelMin: 1 },
-  { hex: '#3730a3', nombre: 'Índigo',       nivelMin: 1 },
-  { hex: '#a16207', nombre: 'Oro viejo',    nivelMin: 1 },
-  { hex: '#27272a', nombre: 'Grafito',      nivelMin: 1 },
-  { hex: '#92400e', nombre: 'Cobre',        nivelMin: 3 },
-  { hex: '#854d0e', nombre: 'Oro oscuro',   nivelMin: 3 },
+  { hex: '#134e4a', nombre: 'Verde hilo',  nivelMin: 1 },
+  { hex: '#0f172a', nombre: 'Tinta',       nivelMin: 1 },
+  { hex: '#1e3a8a', nombre: 'Azul real',   nivelMin: 1 },
+  { hex: '#047857', nombre: 'Esmeralda',   nivelMin: 1 },
+  { hex: '#c2410c', nombre: 'Terracota',   nivelMin: 1 },
+  { hex: '#be123c', nombre: 'Bordó',       nivelMin: 1 },
+  { hex: '#6d28d9', nombre: 'Púrpura',     nivelMin: 1 },
+  { hex: '#3730a3', nombre: 'Índigo',      nivelMin: 1 },
+  { hex: '#a16207', nombre: 'Oro viejo',   nivelMin: 1 },
+  { hex: '#27272a', nombre: 'Grafito',     nivelMin: 1 },
+  { hex: '#92400e', nombre: 'Cobre',       nivelMin: 3 },
+  { hex: '#854d0e', nombre: 'Oro oscuro',  nivelMin: 3 },
 ];
 
 export const PATRONES_PORTADA = [
@@ -241,50 +255,62 @@ export const PATRONES_PORTADA = [
 ];
 
 /**
- * - Los 3 primeros íconos son gratis por defecto.
- * - El ícono #5 (índice 4) se desbloquea gratis con 20 seguidores (o con plan Pro).
+ * Sin íconos básicos genéricos: tus ilustraciones viven dentro de `IconComponent`
+ * y se seleccionan/guardan por su código (`id`) que espera `<app-icon [nombre]="...">`.
  */
-export const AVATAR_ICONOS: ItemCosmetico[] = [
-  { id: 'scissors', nombre: 'Tijera',   nivelMin: 1, gratisPorDefecto: true, pistaDidactica: 'Gratis desde el inicio' },
-  { id: 'cog',      nombre: 'Máquina',  nivelMin: 1, gratisPorDefecto: true, pistaDidactica: 'Gratis desde el inicio' },
-  { id: 'bag',      nombre: 'Tienda',   nivelMin: 1, gratisPorDefecto: true, pistaDidactica: 'Gratis desde el inicio' },
-  { id: 'building', nombre: 'Taller',   nivelMin: 2, pistaDidactica: 'Plan Pro' },
-  { id: 'layers',   nombre: 'Lotes',    nivelMin: 2, seguidoresMin: 20, pistaDidactica: '20 seguidores o Plan Pro' },
-  { id: 'flag',     nombre: 'Bandera',  nivelMin: 2, pistaDidactica: 'Plan Pro' },
-  { id: 'star',     nombre: 'Estrella', nivelMin: 3, pistaDidactica: 'Plan Gold' },
-  { id: 'coin',     nombre: 'Moneda',   nivelMin: 3, pistaDidactica: 'Plan Gold' },
-];
+export const AVATAR_ICONOS: ItemCosmetico[] = [];
 
 /**
- * Avatares ilustrados (tus SVG de 100x100, sin hipopótamo).
- * - Los 3 primeros son gratis por defecto.
- * - El 5.º avatar ilustrado (índice 4) se desbloquea gratis con 10 seguidores.
+ * Catálogo de ilustraciones de avatar registradas en `IconComponent`.
+ * Coloca aquí el `id` (código exacto que usa `<app-icon [nombre]="...">`), el `nombre` visible
+ * y el `nivelMin` correspondiente a su plan.
  */
-export const AVATARES_ILUSTRADOS: ItemCosmetico[] = [
-  { id: 'avatar-huella',    nombre: 'Huella 1',   nivelMin: 1, gratisPorDefecto: true, pistaDidactica: 'Gratis desde el inicio' },
-  { id: 'avatar-silueta-2', nombre: 'Silueta 2',  nivelMin: 1, gratisPorDefecto: true, pistaDidactica: 'Gratis desde el inicio' },
-  { id: 'avatar-silueta-3', nombre: 'Silueta 3',  nivelMin: 1, gratisPorDefecto: true, pistaDidactica: 'Gratis desde el inicio' },
-  { id: 'avatar-silueta-4', nombre: 'Silueta 4',  nivelMin: 2, pistaDidactica: 'Plan Pro' },
-  { id: 'avatar-huella',    nombre: 'Huella VIP', nivelMin: 3, seguidoresMin: 10, pistaDidactica: '10 seguidores o Plan Gold' },
+export const AVATAR_ILUSTRACIONES: ItemCosmetico[] = [
+  {
+    id: 'avatar-pato',
+    nombre: 'Silueta 2',
+    nivelMin: 1,
+  },
+  {
+    id: 'avatar-huella',
+    nombre: 'Silueta 3',
+    nivelMin: 2,
+    seguidoresMin: 10,
+  },
+  {
+    id: 'avatar-sapo',
+    nombre: 'Silueta 4',
+    nivelMin: 2,
+    pistaDidactica: 'Incluida en plan Pro',
+  },
+  {
+    id: 'avatar-cututu',
+    nombre: 'Huella',
+    nivelMin: 3,
+    pistaDidactica: 'Colección Gold',
+  },
+];
+
+/** Alias por compatibilidad si algún componente importa `AVATARES_ILUSTRADOS`. */
+export const AVATARES_ILUSTRADOS = AVATAR_ILUSTRACIONES;
+
+export const AVATAR_MARCOS: ItemCosmetico[] = [
+  { id: 'nivel', nombre: 'Marco de nivel',       nivelMin: 1 },
+  { id: 'gold',  nombre: 'Marco dorado animado', nivelMin: 3 },
 ];
 
 export function cosmeticoDesbloqueado(
-  item: ItemCosmetico,
+  item: ItemCosmetico | null | undefined,
   rangoPlan: number,
-  seguidoresActuales: number
+  seguidores = 0
 ): boolean {
-  if (item.gratisPorDefecto) return true;
-  if (rangoPlan >= item.nivelMin) return true;
-  if (item.seguidoresMin !== undefined && seguidoresActuales >= item.seguidoresMin) {
+  if (!item) return true;
+  if (num(rangoPlan) >= num(item.nivelMin)) return true;
+  if (item.seguidoresMin && item.seguidoresMin > 0 && num(seguidores) >= item.seguidoresMin) {
     return true;
   }
   return false;
 }
-
-export const AVATAR_MARCOS = [
-  { id: 'nivel', nombre: 'Marco de nivel',      nivelMin: 1 },
-  { id: 'gold',  nombre: 'Marco dorado animado', nivelMin: 3 },
-];
 
 /** Estilo CSS de la portada (color + patrón), listo para [ngStyle]. */
 export function estiloPortada(color?: string | null, patron?: string | null): Record<string, string> {
@@ -324,15 +350,3 @@ export const ETIQUETAS_EVALUACION: Record<Rol, string[]> = {
   oficina:     ['Cumple plazos', 'Buena calidad', 'Buena comunicación', 'Honesto', 'Organizado', 'Buen precio'],
   tienda:      ['Paga a tiempo', 'Buena comunicación', 'Lotes claros', 'Respeta acuerdos', 'Buen trato', 'Material en orden'],
 };
-
-/** Validación oficial de CNPJ Brasil */
-export function cnpjValido(valor: string): boolean {
-  const c = (valor ?? '').replace(/\D/g, '');
-  if (c.length !== 14 || /^(\d)\1+$/.test(c)) return false;
-  const digito = (base: string, pesos: number[]) => {
-    const r = base.split('').reduce((a, d, i) => a + Number(d) * pesos[i], 0) % 11;
-    return r < 2 ? 0 : 11 - r;
-  };
-  return digito(c.slice(0, 12), [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]) === Number(c[12]) &&
-         digito(c.slice(0, 13), [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]) === Number(c[13]);
-}

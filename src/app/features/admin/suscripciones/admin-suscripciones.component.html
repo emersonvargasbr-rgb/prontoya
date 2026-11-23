@@ -1,0 +1,176 @@
+<div class="min-h-[calc(100dvh-var(--header-h,4rem))] bg-stone-50 px-4 py-6 text-slate-900">
+  <app-toast [aviso]="aviso()" />
+
+  <div class="mx-auto max-w-4xl space-y-5">
+
+    <header class="flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <h1 class="text-xl font-bold">Gestión de suscripciones</h1>
+        <p class="text-sm text-slate-500">Revisa los comprobantes, verifica el pago y activa los planes.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="relative">
+          <app-icon nombre="search" clase="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input type="search" [ngModel]="busqueda()" (ngModelChange)="busqueda.set($event)" placeholder="Nombre, código o plan"
+                 class="w-52 rounded-lg border border-stone-300 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20">
+        </div>
+        <button type="button" (click)="cargar()" [ngClass]="ui.btnSecundario" aria-label="Actualizar la lista">Actualizar</button>
+      </div>
+    </header>
+
+    <!-- Resumen -->
+    <dl class="grid grid-cols-3 gap-3">
+      <div [ngClass]="ui.card" class="p-3 text-center">
+        <dt class="text-[11px] text-slate-500">Por revisar</dt>
+        <dd class="text-xl font-bold" [class.text-rose-600]="pendientes().length > 0">{{ pendientes().length }}</dd>
+      </div>
+      <div [ngClass]="ui.card" class="p-3 text-center">
+        <dt class="text-[11px] text-slate-500">Activas</dt>
+        <dd class="text-xl font-bold text-teal-800">{{ activas().length }}</dd>
+      </div>
+      <div [ngClass]="ui.card" class="p-3 text-center">
+        <dt class="text-[11px] text-slate-500">Vencen en 7 días</dt>
+        <dd class="text-xl font-bold" [class.text-amber-700]="porVencer() > 0">{{ porVencer() }}</dd>
+      </div>
+    </dl>
+
+    <app-tabs [items]="tabs()" [activo]="pestana()" (cambio)="pestana.set($any($event))" />
+
+    <div *ngIf="cargando()" class="space-y-3" aria-busy="true">
+      <div class="h-40 animate-pulse rounded-xl bg-stone-200/70"></div>
+      <div class="h-40 animate-pulse rounded-xl bg-stone-200/70"></div>
+    </div>
+
+    <ng-container *ngIf="!cargando()">
+
+      <!-- ========================================================== POR REVISAR -->
+      <section *ngIf="pestana() === 'pendientes'" class="space-y-3">
+        <div *ngIf="pendientes().length === 0" [ngClass]="ui.vacio">
+          <app-icon nombre="check" clase="mx-auto h-8 w-8 text-stone-400" />
+          <p class="mt-3 text-sm font-semibold">No hay pagos por revisar</p>
+          <p class="mt-1 text-sm text-slate-500">Cuando alguien envíe un comprobante aparecerá aquí.</p>
+        </div>
+
+        <article *ngFor="let s of pendientes()" [ngClass]="ui.card" class="space-y-4 p-4">
+          <div class="flex flex-wrap items-start gap-3">
+            <app-avatar [nombre]="s.perfil?.nombre_completo" [verificado]="!!s.perfil?.verificado" />
+            <div class="min-w-0 flex-1">
+              <a [routerLink]="['/perfil-usuario', s.perfil?.id]" class="text-sm font-bold hover:underline">{{ s.perfil?.nombre_completo }}</a>
+              <p class="text-xs text-slate-500">
+                {{ s.perfil?.rol }}
+                <span *ngIf="s.perfil?.zona_ubicacion"> · {{ s.perfil.zona_ubicacion }}</span>
+                · solicitado {{ s.created_at | date:'dd/MM HH:mm' }}
+              </p>
+            </div>
+            <div class="text-right">
+              <p class="text-sm font-bold">{{ s.plan?.nombre }} <span class="font-normal text-slate-500">· {{ s.ciclo }}</span></p>
+              <p class="text-sm font-bold text-teal-800">
+                {{ (s.ciclo === 'anual' ? s.plan?.anual : s.plan?.mensual) ?? 0 }}
+              </p>
+            </div>
+          </div>
+
+          <dl class="grid gap-2 rounded-lg bg-stone-50 p-3 text-sm sm:grid-cols-2">
+            <div class="min-w-0">
+              <dt class="text-[11px] text-slate-500">Código / Referencia de pago</dt>
+              <dd class="flex items-center gap-2">
+                <span class="truncate font-mono text-xs font-semibold">{{ s.referencia_pago || 'Sin referencia' }}</span>
+                <button *ngIf="s.referencia_pago" type="button" (click)="copiar(s.referencia_pago, s.id)" [ngClass]="ui.btnSecundario" class="!px-2 !py-0.5 !text-[11px]">
+                  {{ copiado() === s.id ? 'Copiado' : 'Copiar' }}
+                </button>
+              </dd>
+            </div>
+            <div class="min-w-0">
+              <dt class="text-[11px] text-slate-500">Método de pago</dt>
+              <dd class="truncate text-xs font-semibold">{{ s.metodo_pago || 'No especificado' }}</dd>
+            </div>
+            <div *ngIf="s.perfil?.telefono" class="min-w-0">
+              <dt class="text-[11px] text-slate-500">Teléfono</dt>
+              <dd class="text-xs font-semibold">{{ s.perfil.telefono }}</dd>
+            </div>
+            <div class="min-w-0">
+              <dt class="text-[11px] text-slate-500">Vigencia programada</dt>
+              <dd class="text-xs font-semibold">{{ s.inicia_el | date:'dd/MM/yyyy' }} → {{ s.expira_el | date:'dd/MM/yyyy' }}</dd>
+            </div>
+          </dl>
+
+          <!-- Formulario de rechazo -->
+          <div *ngIf="rechazando() === s.id" class="space-y-2 rounded-lg border border-rose-200 bg-rose-50/60 p-3">
+            <label [ngClass]="ui.etiqueta">Motivo del rechazo
+              <input type="text" [(ngModel)]="motivo" name="motivo" placeholder="Ej: comprobante ilegible o pago no recibido" [ngClass]="ui.inputGrande">
+            </label>
+            <div class="flex gap-2">
+              <button type="button" (click)="rechazando.set(null)" [ngClass]="ui.btnSecundario" class="flex-1">Cancelar</button>
+              <button type="button" (click)="confirmarRechazo(s)" [disabled]="procesando() === s.id" [ngClass]="ui.btnPeligro" class="flex-1">Confirmar rechazo</button>
+            </div>
+          </div>
+
+          <!-- Acciones -->
+          <div class="flex flex-wrap gap-2">
+            <button type="button" (click)="verComprobante(s)" [disabled]="!s.comprobante_url" [ngClass]="ui.btnSecundario">
+              <app-icon nombre="archive" clase="w-4 h-4" /> {{ s.comprobante_url ? 'Ver comprobante' : 'Sin comprobante' }}
+            </button>
+            <button type="button" (click)="verificar(s)" [disabled]="verificando() === s.id" [ngClass]="ui.btnSecundario">
+              <app-icon nombre="search" clase="w-4 h-4" /> {{ verificando() === s.id ? 'Consultando...' : 'Verificar pago' }}
+            </button>
+            <button *ngIf="rechazando() !== s.id" type="button" (click)="abrirRechazo(s)" [ngClass]="ui.btnPeligro" class="sm:ml-auto">
+              <app-icon nombre="x" clase="w-4 h-4" /> Rechazar
+            </button>
+            <button type="button" (click)="aprobar(s)" [disabled]="procesando() === s.id" [ngClass]="ui.btnPrimario">
+              <app-icon nombre="check" clase="w-4 h-4" /> {{ procesando() === s.id ? 'Aprobando...' : 'Aprobar' }}
+            </button>
+          </div>
+        </article>
+      </section>
+
+      <!-- ============================================================== ACTIVAS -->
+      <section *ngIf="pestana() === 'activas'" class="space-y-2">
+        <div class="flex justify-end">
+          <button type="button" (click)="expirarVencidas()" [ngClass]="ui.btnSecundario" class="!text-xs">
+            <app-icon nombre="clock" clase="w-3.5 h-3.5" /> Marcar vencidas como expiradas
+          </button>
+        </div>
+
+        <div *ngIf="activas().length === 0" [ngClass]="ui.vacio">
+          <app-icon nombre="verified" clase="mx-auto h-8 w-8 text-stone-400" />
+          <p class="mt-3 text-sm font-semibold">No hay suscripciones activas</p>
+        </div>
+
+        <article *ngFor="let s of activas()" [ngClass]="ui.card" class="flex flex-wrap items-center gap-3 p-4">
+          <app-avatar [nombre]="s.perfil?.nombre_completo" [verificado]="true" />
+          <div class="min-w-0 flex-1">
+            <a [routerLink]="['/perfil-usuario', s.perfil?.id]" class="text-sm font-bold hover:underline">{{ s.perfil?.nombre_completo }}</a>
+            <p class="text-xs text-slate-500">{{ s.plan?.nombre }} · {{ s.ciclo }} · desde {{ s.inicia_el | date:'dd/MM/yyyy' }}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm font-bold" [ngClass]="diasRestantes(s) <= 7 ? 'text-amber-700' : 'text-slate-900'">vence {{ s.expira_el | date:'dd/MM/yyyy' }}</p>
+            <p class="text-xs text-slate-500">{{ diasRestantes(s) > 0 ? 'faltan ' + diasRestantes(s) + ' días' : 'vencida' }}</p>
+          </div>
+          <button type="button" (click)="cancelar(s)" [disabled]="procesando() === s.id" [ngClass]="ui.btnPeligro" class="!px-3 !text-xs">Cancelar</button>
+        </article>
+      </section>
+
+      <!-- ============================================================ HISTORIAL -->
+      <section *ngIf="pestana() === 'historial'" class="space-y-2">
+        <div *ngIf="historial().length === 0" [ngClass]="ui.vacio">
+          <app-icon nombre="archive" clase="mx-auto h-8 w-8 text-stone-400" />
+          <p class="mt-3 text-sm font-semibold">Sin historial todavía</p>
+        </div>
+
+        <article *ngFor="let s of historial()" [ngClass]="ui.card" class="flex flex-wrap items-center gap-3 p-4">
+          <div class="min-w-0 flex-1">
+            <p class="flex flex-wrap items-center gap-2 text-sm font-bold">
+              {{ s.perfil?.nombre_completo }}
+              <span class="rounded-md px-2 py-0.5 text-[11px] font-semibold" [ngClass]="claseEstado(s.estado)">{{ s.estado }}</span>
+            </p>
+            <p class="text-xs text-slate-500">
+              {{ s.plan?.nombre }} · {{ s.ciclo }} · {{ s.created_at | date:'dd/MM/yyyy' }}
+              <span *ngIf="s.referencia_pago"> · <span class="font-mono">{{ s.referencia_pago }}</span></span>
+            </p>
+          </div>
+        </article>
+      </section>
+
+    </ng-container>
+  </div>
+</div>

@@ -14,6 +14,8 @@ const TIPOS_POR_ROL: Record<string, string[]> = {
   oficina:     ['busco_oficina', 'busco_trabajo'],
 };
 const TODOS = ['busco_oficina', 'busco_corte', 'busco_funcionario', 'busco_trabajo'];
+const TAMANO_PAGINA = 20;
+const DIAS_VIGENCIA = 3;
 
 @Component({
   selector: 'app-feed-trabajos',
@@ -27,17 +29,19 @@ export class FeedTrabajosComponent implements OnInit, OnDestroy {
   readonly maquinas = MAQUINAS;
   readonly tipos = TIPO_PUBLICACION;
   readonly moneda = moneda;
+  readonly tamanoPagina = TAMANO_PAGINA;
 
   mostrarFiltros = signal(false);
   cargando = signal(true);
   error = signal(false);
   lista = signal<any[]>([]);
   visibles = signal<any[]>([]);
+  paginaActual = signal(1);
   mostrarModalInvitado = signal(false);
 
   /** Referencia al elemento del carrusel VIP en el HTML */
   @ViewChild('carruselVip') carruselVip?: ElementRef<HTMLElement>;
-  
+
   slideActual = signal(0);
   private intervaloCarrusel?: ReturnType<typeof setInterval>;
 
@@ -65,16 +69,45 @@ export class FeedTrabajosComponent implements OnInit, OnDestroy {
     return ids.map(id => ({ id, ...TIPO_PUBLICACION[id] }));
   });
 
+  /** Total de páginas según los anuncios filtrados (20 por página). */
+  totalPaginas = computed(() => Math.max(1, Math.ceil(this.visibles().length / TAMANO_PAGINA)));
+
+  /** Subconjunto de anuncios de la página actual (máximo 20). */
+  anunciosPagina = computed(() => {
+    const pag = Math.min(Math.max(1, this.paginaActual()), this.totalPaginas());
+    const inicio = (pag - 1) * TAMANO_PAGINA;
+    return this.visibles().slice(inicio, inicio + TAMANO_PAGINA);
+  });
+
+  /** Items de paginación con separador '...' cuando hay muchas páginas. */
+  itemsPaginacion = computed<(number | 'dots')[]>(() => {
+    const total = this.totalPaginas();
+    const actual = Math.min(Math.max(1, this.paginaActual()), total);
+    if (total <= 7) {
+      return Array.from({ length: total }, (_, idx) => idx + 1);
+    }
+
+    const items: (number | 'dots')[] = [1];
+    const start = Math.max(2, actual - 1);
+    const end = Math.min(total - 1, actual + 1);
+
+    if (start > 2) items.push('dots');
+    for (let i = start; i <= end; i++) items.push(i);
+    if (end < total - 1) items.push('dots');
+    items.push(total);
+
+    return items;
+  });
+
   /** Computed para filtrar los anuncios destacados / VIP o mostrar cartel promocional si no hay ninguno */
   destacados = computed(() => {
     const todos = this.visibles();
     const vips = todos.filter(item => item.es_vip || item.destacado);
-    
+
     if (vips.length > 0) {
       return vips.slice(0, 5);
     }
 
-    // Cartel promocional predeterminado si la base de datos no tiene anuncios VIP activos todavía
     return [{
       id: 'promo-vip',
       es_promo: true,
@@ -89,9 +122,7 @@ export class FeedTrabajosComponent implements OnInit, OnDestroy {
     afterNextRender(() => { this.inicializarDatos(); });
   }
 
-  ngOnInit(): void {
-    this.iniciarAutoPlayCarrusel();
-  }
+  ngOnInit(): void {}
 
   ngOnDestroy(): void {
     if (this.intervaloCarrusel) {
@@ -102,41 +133,68 @@ export class FeedTrabajosComponent implements OnInit, OnDestroy {
   private get db() { return this.supabaseService.supabase; }
 
   private async inicializarDatos() {
+    this.iniciarAutoPlayCarrusel();
     await this.verificarUsuario();
     await this.cargarFeed();
   }
 
-  private async verificarUsuario() {
-    const { data: { user } } = await this.db.auth.getUser();
-    if (!user) { this.logueado.set(false); return; }
-    this.usuarioId = user.id;
+  private limpiarSesionLocal() {
+    this.usuarioId = '';
+    this.seguidos.clear();
+    this.rol.set('');
+    this.logueado.set(false);
+  }
 
-    const [perfil, seg] = await Promise.all([
-      this.db.from('perfiles').select('rol').eq('id', user.id).maybeSingle(),
-      this.db.from('seguidores').select('seguido_id').eq('seguidor_id', user.id),
-    ]);
-    this.seguidos = new Set((seg.data ?? []).map((s: any) => s.seguido_id));
-    this.rol.set(perfil.data?.rol ?? '');
-    this.logueado.set(true); // al final: ya están listos el rol y los seguidos
+  private async verificarUsuario() {
+    try {
+      const { data: { session }, error: sessionError } = await this.db.auth.getSession();
+      if (sessionError || !session?.user) {
+        this.limpiarSesionLocal();
+        return;
+      }
+
+      const { data: { user }, error: userError } = await this.db.auth.getUser();
+      if (userError || !user) {
+        await this.db.auth.signOut({ scope: 'local' }).catch(() => {});
+        this.limpiarSesionLocal();
+        return;
+      }
+
+      this.usuarioId = user.id;
+
+      const [perfil, seg] = await Promise.all([
+        this.db.from('perfiles').select('rol').eq('id', user.id).maybeSingle(),
+        this.db.from('seguidores').select('seguido_id').eq('seguidor_id', user.id),
+      ]);
+
+      this.seguidos = new Set((seg.data ?? []).map((s: any) => s.seguido_id));
+      this.rol.set(perfil.data?.rol ?? '');
+      this.logueado.set(true);
+    } catch {
+      this.limpiarSesionLocal();
+    }
   }
 
   async cargarFeed() {
     this.cargando.set(true);
     this.error.set(false);
     try {
+      const limiteVigencia = new Date(Date.now() - DIAS_VIGENCIA * 24 * 60 * 60 * 1000).toISOString();
+
       let query = this.db.from('publicaciones')
         .select(`id, creador_id, tipo_publicacion, titulo, descripcion, cantidad_piezas, pago_por_pieza,
           modalidad_pago, maquinas_requeridas, especialidad_taller, tipo_tejido, modalidad_alojamiento,
           puesto_trabajo, zona_ubicacion, created_at, es_vip, destacado,
-          creador:creador_id (id, nombre_completo, verificado, zona_ubicacion, promedio_estrellas)`)
+          creador:creador_id (id, nombre_completo, verificado, zona_ubicacion, promedio_estrellas, avatar_icono, avatar_color, avatar_marco)`)
         .eq('estado', 'Activo')
+        .gte('created_at', limiteVigencia)
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(200);
 
       if (this.logueado()) {
         const permitidos = TIPOS_POR_ROL[this.rol()];
         if (permitidos) query = query.in('tipo_publicacion', permitidos);
-        query = query.neq('creador_id', this.usuarioId); // no mostrar mis propios anuncios
+        if (this.usuarioId) query = query.neq('creador_id', this.usuarioId);
       }
 
       const { data, error } = await query;
@@ -150,9 +208,12 @@ export class FeedTrabajosComponent implements OnInit, OnDestroy {
           empresa: c?.nombre_completo || 'Anunciante',
           verificado: !!c?.verificado,
           rating: c?.promedio_estrellas ?? 0,
+          icono: c?.avatar_icono ?? null,
+          color: c?.avatar_color ?? null,
+          marco: c?.avatar_marco ?? null,
         };
       }));
-      this.aplicarFiltros();
+      this.aplicarFiltros(true);
     } catch (e) {
       console.error(e);
       this.error.set(true);
@@ -161,22 +222,38 @@ export class FeedTrabajosComponent implements OnInit, OnDestroy {
     }
   }
 
-  aplicarFiltros() {
+  aplicarFiltros(resetPagina = true) {
     const q = this.busquedaTexto.toLowerCase().trim();
-    this.visibles.set(this.lista().filter(t => {
+    const filtrados = this.lista().filter(t => {
       const texto = !q || [t.titulo, t.empresa, t.descripcion, t.puesto_trabajo].some(v => (v ?? '').toLowerCase().includes(q));
       const zona = !this.filtroZona || t.zona === this.filtroZona;
       const tipo = !this.filtroTipo || t.tipo_publicacion === this.filtroTipo;
       const maq = !this.filtroMaquina || (t.maquinas_requeridas ?? []).includes(this.filtroMaquina);
       const seg = !this.soloSeguidos || this.seguidos.has(t.creador_id);
       return texto && zona && tipo && maq && seg;
-    }));
+    });
+
+    this.visibles.set(filtrados);
+    if (resetPagina) {
+      this.paginaActual.set(1);
+    } else if (this.paginaActual() > this.totalPaginas()) {
+      this.paginaActual.set(this.totalPaginas());
+    }
+  }
+
+  irAPagina(pagina: number) {
+    const destino = Math.min(Math.max(1, pagina), this.totalPaginas());
+    if (destino === this.paginaActual()) return;
+    this.paginaActual.set(destino);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
   limpiarFiltros() {
     this.busquedaTexto = this.filtroZona = this.filtroTipo = this.filtroMaquina = '';
     this.soloSeguidos = false;
-    this.aplicarFiltros();
+    this.aplicarFiltros(true);
   }
 
   get hayFiltros(): boolean {
@@ -198,19 +275,20 @@ export class FeedTrabajosComponent implements OnInit, OnDestroy {
 
   /** Métodos para el control del carrusel VIP automático */
   iniciarAutoPlayCarrusel(): void {
+    if (this.intervaloCarrusel) clearInterval(this.intervaloCarrusel);
     this.intervaloCarrusel = setInterval(() => {
       const total = this.destacados().length;
       if (total <= 1) return;
       const siguiente = (this.slideActual() + 1) % total;
       this.irASlide(siguiente);
-    }, 3000); // Rota cada 3 segundos
+    }, 3000);
   }
 
   irASlide(indice: number): void {
     this.slideActual.set(indice);
     const el = this.carruselVip?.nativeElement;
     if (el) {
-      const anchoSlide = el.clientWidth + 12; // Ancho del contenedor + gap-3 (12px)
+      const anchoSlide = el.clientWidth + 12;
       el.scrollTo({ left: anchoSlide * indice, behavior: 'smooth' });
     }
   }
@@ -269,7 +347,7 @@ export class FeedTrabajosComponent implements OnInit, OnDestroy {
 
     return 'linear-gradient(to bottom right, #1e293b, #0f172a, #042f2e)';
   }
-  
+
   irAlLogin() { this.router.navigate(['/login']); }
   irAlRegistro() { this.router.navigate(['/registro']); }
 }

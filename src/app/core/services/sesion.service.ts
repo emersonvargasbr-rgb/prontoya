@@ -10,7 +10,7 @@ import { calcularGamificacion } from '../utils/gamificacion';
 const CAMPOS = `id, nombre_completo, rol, verificado, avatar_icono, avatar_color, bio_taller, lema, zona_ubicacion,
   especialidad_principal, maquinas_maneja, modalidad_trabajo, cantidad_maquinas, cantidad_operarios, tipo_tienda,
   operaciones_cerradas, operaciones_sin_defectos, piezas_totales, promedio_estrellas, total_evaluaciones,
-  seguidores_count, conexiones_count, equipo_count, created_at`;
+  seguidores_count, conexiones_count, equipo_count, created_at, plan, plan_vigente_hasta`;
 
 /**
  * Estado de sesión único para toda la app.
@@ -26,6 +26,7 @@ export class SesionService {
   readonly cargando = signal(true);
   readonly usuario = signal<any>(null);
   readonly pendientes = signal(0);
+  readonly esAdmin = signal(false);      // sólo para mostrar el acceso al panel; el servidor vuelve a comprobarlo
   private readonly rolCache = signal('');   // pinta el menú al instante, antes de que responda Supabase
 
   readonly logueado = computed(() => !!this.usuario());
@@ -73,6 +74,8 @@ export class SesionService {
         localStorage.setItem('rol_usuario', data.rol);
       }
       await this.cargarPendientes();
+      const { data: adm } = await this.db.rpc('es_admin');   // si la función aún no existe, simplemente no es admin
+      this.esAdmin.set(adm === true);
     } catch (e) {
       console.error('Error cargando la sesión:', e);
     } finally {
@@ -101,6 +104,7 @@ export class SesionService {
     this.usuario.set(null);
     this.rolCache.set('');
     this.pendientes.set(0);
+    this.esAdmin.set(false);
     if (this.navegador) localStorage.removeItem('rol_usuario');
   }
 }

@@ -48,6 +48,8 @@ export class PanelOficinaComponent implements OnInit {
 
   // --------------------------------------------------------------------- datos
   perfil = signal<any>(null);
+  suscripcionActiva = signal<any>(null);
+  planesCatalogo = signal<Record<string, string>>({});
   stats = signal({ seguidores: 0, siguiendo: 0 });
   lotes = signal<any[]>([]);              // todas las postulaciones donde participo
   asignaciones = signal<any[]>([]);       // sub-cortes y cortes a operarios
@@ -65,11 +67,34 @@ export class PanelOficinaComponent implements OnInit {
     this.historial().reduce((t, h) => t + Number(h.monto_total || 0), 0)
   );
 
+  infoPlan = computed(() => {
+    const p = this.perfil();
+    const sub = this.suscripcionActiva();
+    const catalogo = this.planesCatalogo();
+
+    const planId = sub?.plan_id || p?.plan || 'basico';
+    const nombrePlan = catalogo[planId] || planId;
+    const inicio = sub?.inicia_el || null;
+    const vence = sub?.expira_el || p?.plan_vigente_hasta || null;
+    const estado = sub?.estado || (vence && new Date(vence) < new Date() ? 'Expirada' : 'Activa');
+
+    return {
+      planId,
+      nombrePlan,
+      inicio,
+      vence,
+      estado,
+    };
+  });
+
   /** Lo que la oficina está produciendo ahora (excluye vacantes de empleo). */
   produccion = computed(() =>
-    this.lotes().filter(l =>
-      ['Aceptado', 'En Proceso', 'Terminado'].includes(l.estado) &&
-      !['busco_funcionario', 'busco_trabajo'].includes(l.tipo)));
+    this.lotes().filter(
+      l =>
+        ['Aceptado', 'En Proceso', 'Terminado'].includes(l.estado) &&
+        !['busco_funcionario', 'busco_trabajo'].includes(l.tipo)
+    )
+  );
 
   produccionConProgreso = computed(() =>
     this.produccion().map(l => {
@@ -82,18 +107,22 @@ export class PanelOficinaComponent implements OnInit {
         progreso: subs.length ? Math.round((hechos / subs.length) * 100) : 0,
         todoCerrado: subs.length > 0 && subs.every(a => a.estado === 'Cerrado'),
       };
-    }));
+    })
+  );
 
   /** Propuestas de tiendas a un anuncio mío "busco_corte". */
   ofertasRecibidas = computed(() =>
-    this.lotes().filter(l => l.estado === 'Pendiente' && !l.soyEmisor && l.tipo === 'busco_corte'));
+    this.lotes().filter(l => l.estado === 'Pendiente' && !l.soyEmisor && l.tipo === 'busco_corte')
+  );
 
   /** Mis postulaciones a lotes de tiendas, esperando respuesta. */
   postulacionesEnviadas = computed(() =>
-    this.lotes().filter(l => l.estado === 'Pendiente' && l.soyEmisor && l.tipo === 'busco_oficina'));
+    this.lotes().filter(l => l.estado === 'Pendiente' && l.soyEmisor && l.tipo === 'busco_oficina')
+  );
 
   candidatos = computed(() =>
-    this.lotes().filter(l => l.estado === 'Pendiente' && !l.soyEmisor && l.tipo === 'busco_funcionario'));
+    this.lotes().filter(l => l.estado === 'Pendiente' && !l.soyEmisor && l.tipo === 'busco_funcionario')
+  );
 
   pendientes = computed(() => this.ofertasRecibidas().length + this.candidatos().length);
 
@@ -120,10 +149,12 @@ export class PanelOficinaComponent implements OnInit {
     this.cargando.set(true);
     const id = this.usuarioId;
     try {
-      const [perf, pubs, lotes, hist, emp, asig, stats] = await Promise.all([
+      const [perf, pubs, lotes, hist, emp, asig, stats, sus, pls] = await Promise.all([
         this.db.from('perfiles').select('*').eq('id', id).single(),
         this.db.from('publicaciones').select('*').eq('creador_id', id).order('created_at', { ascending: false }),
-        this.db.from('postulaciones_lotes').select(`
+        this.db
+          .from('postulaciones_lotes')
+          .select(`
             id, estado, created_at, descripcion_corte, cantidad_piezas, pago_por_pieza,
             taller_id, receptor_id, publicacion_id,
             publicacion:publicacion_id (id, titulo, tipo_publicacion, creador_id,
@@ -132,43 +163,70 @@ export class PanelOficinaComponent implements OnInit {
           `)
           .or(`taller_id.eq.${id},receptor_id.eq.${id}`)
           .order('created_at', { ascending: false }),
-        this.db.from('historial_operaciones')
+        this.db
+          .from('historial_operaciones')
           .select('*, tienda:tienda_id (nombre_completo, zona_ubicacion)')
-          .eq('oficina_id', id).order('fecha_cierre', { ascending: false }),
-        this.db.from('empleados')
+          .eq('oficina_id', id)
+          .order('fecha_cierre', { ascending: false }),
+        this.db
+          .from('empleados')
           .select(`id, estado, fecha_ingreso,
             funcionario:funcionario_id (id, nombre_completo, telefono, especialidad_principal, promedio_estrellas, verificado, maquinas_maneja)`)
-          .eq('empleador_id', id).order('fecha_ingreso', { ascending: false }),
-        this.db.from('asignaciones_funcionarios')
+          .eq('empleador_id', id)
+          .order('fecha_ingreso', { ascending: false }),
+        this.db
+          .from('asignaciones_funcionarios')
           .select('*, funcionario:funcionario_id (id, nombre_completo, telefono)')
-          .eq('empleador_id', id).order('fecha_inicio', { ascending: false }).limit(500),
+          .eq('empleador_id', id)
+          .order('fecha_inicio', { ascending: false })
+          .limit(500),
         this.social.contar(id),
+        this.db
+          .from('suscripciones')
+          .select('plan_id, ciclo, estado, inicia_el, expira_el')
+          .eq('perfil_id', id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        this.db.from('planes').select('id, nombre'),
       ]);
 
-      [perf, pubs, lotes, hist, emp, asig].forEach(r => r.error && console.error(r.error));
+      [perf, pubs, lotes, hist, emp, asig, sus, pls].forEach(
+        r => r.error && console.error('Error cargando dato del panel de taller:', r.error)
+      );
 
       this.perfil.set(perf.data);
+      this.suscripcionActiva.set(sus.data ?? null);
+
+      const mapaPlanes: Record<string, string> = {};
+      for (const item of pls.data ?? []) {
+        mapaPlanes[item.id] = item.nombre;
+      }
+      this.planesCatalogo.set(mapaPlanes);
+
       this.misPublicaciones.set(pubs.data ?? []);
       this.historial.set(hist.data ?? []);
       this.equipo.set((emp.data ?? []).map((e: any) => ({ ...e, funcionario: this.uno(e.funcionario) })));
       this.asignaciones.set((asig.data ?? []).map((a: any) => ({ ...a, funcionario: this.uno(a.funcionario) })));
       this.stats.set(stats);
 
-      this.lotes.set((lotes.data ?? []).map((l: any) => {
-        const pub = this.uno(l.publicacion);
-        const emisor = this.uno(l.emisor);
-        const soyEmisor = l.taller_id === id;
-        return {
-          ...l,
-          publicacion: pub,
-          tipo: pub?.tipo_publicacion,
-          soyEmisor,
-          contraparte: soyEmisor ? this.uno(pub?.creador) : emisor,
-        };
-      }));
+      this.lotes.set(
+        (lotes.data ?? []).map((l: any) => {
+          const pub = this.uno(l.publicacion);
+          const emisor = this.uno(l.emisor);
+          const soyEmisor = l.taller_id === id;
+          return {
+            ...l,
+            publicacion: pub,
+            tipo: pub?.tipo_publicacion,
+            soyEmisor,
+            contraparte: soyEmisor ? this.uno(pub?.creador) : emisor,
+          };
+        })
+      );
     } catch (e) {
-      console.error(e);
-      this.notificar('No se pudieron cargar los datos. Intenta de nuevo.', 'error');
+      console.error('Error cargando panel de taller:', e);
+      this.notificar('No pudimos cargar tu panel en este momento. Intenta actualizar en unos segundos.', 'error');
     } finally {
       this.cargando.set(false);
     }
@@ -176,39 +234,72 @@ export class PanelOficinaComponent implements OnInit {
 
   // ================================================================ SOLICITUDES
   async responderLote(l: any, aceptar: boolean) {
-    if (!confirm(aceptar ? 'Aceptar este lote y comenzar la producción?' : 'Rechazar esta propuesta?')) return;
-    await this.actualizar('postulaciones_lotes', l.id, { estado: aceptar ? 'Aceptado' : 'Rechazado' },
-      aceptar ? 'Lote aceptado. Ya puedes asignarlo a tu equipo.' : 'Propuesta rechazada.');
+    if (!confirm(aceptar ? '¿Aceptar este lote y comenzar la producción?' : '¿Rechazar esta propuesta?')) return;
+    await this.actualizar(
+      'postulaciones_lotes',
+      l.id,
+      { estado: aceptar ? 'Aceptado' : 'Rechazado' },
+      aceptar ? 'Lote aceptado. Ya puedes asignarlo a tu equipo.' : 'Propuesta rechazada.',
+      'No pudimos actualizar la respuesta del lote. Intenta nuevamente.'
+    );
   }
 
   async aprobarCandidato(c: any) {
-    const nombre = c.contraparte?.nombre_completo;
-    if (!confirm(`Incorporar a ${nombre} a tu equipo?`)) return;
+    const nombre = c.contraparte?.nombre_completo || 'este operario';
+    if (!confirm(`¿Sumar a ${nombre} a tu equipo?`)) return;
     try {
-      const { error: e1 } = await this.db.from('postulaciones_lotes').update({ estado: 'Aceptado' }).eq('id', c.id);
+      const { error: e1 } = await this.db
+        .from('postulaciones_lotes')
+        .update({ estado: 'Aceptado' })
+        .eq('id', c.id);
       if (e1) throw e1;
-      const { error: e2 } = await this.db.from('empleados').upsert({
-        empleador_id: this.usuarioId,
-        funcionario_id: c.contraparte.id,
-        postulacion_id: c.id,
-        estado: 'Activo',
-        fecha_salida: null,
-      }, { onConflict: 'empleador_id,funcionario_id' });
+
+      const { error: e2 } = await this.db
+        .from('empleados')
+        .upsert(
+          {
+            empleador_id: this.usuarioId,
+            funcionario_id: c.contraparte.id,
+            postulacion_id: c.id,
+            estado: 'Activo',
+            fecha_salida: null,
+          },
+          { onConflict: 'empleador_id,funcionario_id' }
+        );
       if (e2) throw e2;
+
       this.notificar(`${nombre} ya forma parte de tu equipo.`);
       await this.cargar();
-    } catch (e: any) { this.notificar(e?.message ?? 'No se pudo aprobar al candidato.', 'error'); }
+    } catch (e: any) {
+      console.error('Error al aprobar candidato:', e);
+      this.notificar(
+        this.mensajeAmigable(e, 'No pudimos sumar al operario a tu equipo. Intenta de nuevo.'),
+        'error'
+      );
+    }
   }
 
   async rechazarCandidato(c: any) {
-    if (!confirm('Rechazar esta postulación?')) return;
-    await this.actualizar('postulaciones_lotes', c.id, { estado: 'Rechazado' }, 'Postulación rechazada.');
+    if (!confirm('¿Rechazar esta postulación?')) return;
+    await this.actualizar(
+      'postulaciones_lotes',
+      c.id,
+      { estado: 'Rechazado' },
+      'Postulación rechazada.',
+      'No pudimos rechazar la postulación. Intenta nuevamente.'
+    );
   }
 
   async quitarDelEquipo(e: any) {
-    if (!confirm(`Quitar a ${e.funcionario?.nombre_completo} de tu equipo?`)) return;
-    await this.actualizar('empleados', e.id,
-      { estado: 'Inactivo', fecha_salida: new Date().toISOString() }, 'Operario retirado del equipo.');
+    const nombre = e.funcionario?.nombre_completo || 'este operario';
+    if (!confirm(`¿Quitar a ${nombre} de tu equipo activo?`)) return;
+    await this.actualizar(
+      'empleados',
+      e.id,
+      { estado: 'Inactivo', fecha_salida: new Date().toISOString() },
+      `${nombre} fue retirado de tu equipo.`,
+      'No pudimos retirar al operario del equipo.'
+    );
   }
 
   // ============================================================ PRODUCCIÓN / CADENA
@@ -238,13 +329,17 @@ export class PanelOficinaComponent implements OnInit {
     const piezas = Number(f.cantidad_piezas);
     const tarifa = Number(f.pago_por_pieza);
 
-    if (!f.funcionario_id) return this.notificar('Elige un operario del equipo.', 'error');
-    if (!(piezas > 0) || !(tarifa > 0)) return this.notificar('Indica piezas y tarifa mayores a cero.', 'error');
+    if (!f.funcionario_id) return this.notificar('Selecciona un operario de tu equipo.', 'error');
+    if (!(piezas > 0) || !(tarifa > 0)) {
+      return this.notificar('Ingresa una cantidad de piezas y una tarifa mayor a cero.', 'error');
+    }
 
     const yaAsignadas = this.piezasAsignadas(lote, f.operacion_maquina);
     if (yaAsignadas + piezas > (lote.cantidad_piezas || 0)) {
       return this.notificar(
-        `${f.operacion_maquina}: ya hay ${yaAsignadas} de ${lote.cantidad_piezas} piezas asignadas.`, 'error');
+        `En ${f.operacion_maquina} ya asignaste ${yaAsignadas} de ${lote.cantidad_piezas} piezas del lote.`,
+        'error'
+      );
     }
 
     try {
@@ -261,22 +356,38 @@ export class PanelOficinaComponent implements OnInit {
         fecha_inicio: new Date().toISOString(),
       });
       if (error) throw error;
+
       this.loteConFormulario.set(null);
-      this.notificar('Operación asignada.');
+      this.notificar('Operación asignada al operario.');
       await this.cargar();
-    } catch (e: any) { this.notificar(e?.message ?? 'No se pudo asignar.', 'error'); }
+    } catch (e: any) {
+      console.error('Error al asignar operación:', e);
+      this.notificar(
+        this.mensajeAmigable(e, 'No pudimos asignar la operación. Intenta de nuevo.'),
+        'error'
+      );
+    }
   }
 
   async alternarTerminado(s: any) {
     if (s.estado === 'Cerrado') return;
     const terminar = s.estado !== 'Terminado';
-    await this.actualizar('asignaciones_funcionarios', s.id, terminar
-      ? { estado: 'Terminado', fecha_terminado: new Date().toISOString() }
-      : { estado: 'En Confección', fecha_terminado: null });
+    await this.actualizar(
+      'asignaciones_funcionarios',
+      s.id,
+      terminar
+        ? { estado: 'Terminado', fecha_terminado: new Date().toISOString() }
+        : { estado: 'En Confección', fecha_terminado: null },
+      terminar ? 'Operación marcada como terminada.' : 'Operación reabierta.',
+      'No pudimos cambiar el estado de la operación.'
+    );
   }
 
   borrador(s: any) {
-    return (this.borradores[s.id] ??= { piezas: s.piezas_defectuosas || 0, motivo: s.motivo_descuento || '' });
+    return (this.borradores[s.id] ??= {
+      piezas: s.piezas_defectuosas || 0,
+      motivo: s.motivo_descuento || '',
+    });
   }
 
   descuento(s: any): number {
@@ -290,47 +401,119 @@ export class PanelOficinaComponent implements OnInit {
   async liquidar(s: any) {
     const b = this.borrador(s);
     const defect = Number(b.piezas) || 0;
-    if (defect < 0 || defect > s.cantidad_piezas) return this.notificar('Piezas defectuosas fuera de rango.', 'error');
-    if (defect > 0 && !b.motivo.trim()) return this.notificar('Indica el motivo del descuento.', 'error');
-    if (!confirm(`Liquidar a ${s.funcionario?.nombre_completo}: R$ ${this.neto(s).toFixed(2)} netos?`)) return;
+    const nombre = s.funcionario?.nombre_completo || 'el operario';
 
-    await this.actualizar('asignaciones_funcionarios', s.id, {
-      estado: 'Cerrado',
-      piezas_defectuosas: defect,
-      motivo_descuento: b.motivo.trim() || null,
-      monto_descuento: this.descuento(s),
-      monto_neto: this.neto(s),
-      fecha_cierre: new Date().toISOString(),
-    }, 'Operación liquidada.');
+    if (defect < 0 || defect > s.cantidad_piezas) {
+      return this.notificar('Las piezas con falla no pueden superar el total de la operación.', 'error');
+    }
+    if (defect > 0 && !b.motivo.trim()) {
+      return this.notificar('Indica el motivo del descuento por piezas con falla.', 'error');
+    }
+    if (!confirm(`¿Liquidar a ${nombre}: R$ ${this.neto(s).toFixed(2)} netos?`)) return;
+
+    await this.actualizar(
+      'asignaciones_funcionarios',
+      s.id,
+      {
+        estado: 'Cerrado',
+        piezas_defectuosas: defect,
+        motivo_descuento: b.motivo.trim() || null,
+        monto_descuento: this.descuento(s),
+        monto_neto: this.neto(s),
+        fecha_cierre: new Date().toISOString(),
+      },
+      'Operación liquidada.',
+      'No pudimos liquidar la operación. Intenta nuevamente.'
+    );
   }
 
   async terminarLote(l: any) {
-    if (!l.todoCerrado && !confirm('Hay operaciones sin liquidar. Marcar el lote como terminado igualmente?')) return;
-    await this.actualizar('postulaciones_lotes', l.id, { estado: 'Terminado' },
-      'Lote marcado como terminado. La tienda debe confirmar la recepción.');
+    if (!l.todoCerrado && !confirm('Aún hay operaciones sin liquidar. ¿Marcar el lote como terminado de todas formas?')) {
+      return;
+    }
+    await this.actualizar(
+      'postulaciones_lotes',
+      l.id,
+      { estado: 'Terminado' },
+      'Lote marcado como terminado. Ahora la tienda debe confirmar la recepción.',
+      'No pudimos marcar el lote como terminado.'
+    );
   }
 
   // ================================================================== ANUNCIOS
   async alternarAnuncio(p: any) {
     const estado = p.estado === 'Activo' ? 'Pausado' : 'Activo';
-    await this.actualizar('publicaciones', p.id, { estado });
+    await this.actualizar(
+      'publicaciones',
+      p.id,
+      { estado },
+      estado === 'Activo' ? 'Anuncio activado.' : 'Anuncio pausado.',
+      'No pudimos cambiar el estado del anuncio.'
+    );
   }
 
   async eliminarAnuncio(id: string) {
-    if (!confirm('Eliminar este anuncio?')) return;
+    if (!confirm('¿Eliminar este anuncio? Si ya tiene postulaciones o trabajos vinculados, no se podrá borrar.')) {
+      return;
+    }
     const { error } = await this.db.from('publicaciones').delete().eq('id', id);
-    if (error) return this.notificar(error.message, 'error');
+    if (error) {
+      console.error('Error al eliminar anuncio:', error);
+      return this.notificar(
+        this.mensajeAmigable(
+          error,
+          'Este anuncio ya tiene postulaciones o trabajos vinculados, por lo que no se puede eliminar. Puedes pausarlo.'
+        ),
+        'error'
+      );
+    }
     this.misPublicaciones.update(l => l.filter(p => p.id !== id));
+    this.notificar('Anuncio eliminado.');
   }
 
   // ==================================================================== HELPERS
-  private async actualizar(tabla: string, id: string, cambios: object, ok?: string) {
+  private mensajeAmigable(err: any, defecto: string): string {
+    const raw = String(err?.message ?? err?.details ?? err ?? '').toLowerCase();
+    const code = String(err?.code ?? '');
+
+    if (code === '23503' || raw.includes('foreign key') || raw.includes('violates foreign key')) {
+      if (raw.includes('postulaciones') || raw.includes('lote') || raw.includes('publicacion')) {
+        return 'Este anuncio ya tiene postulaciones o trabajos vinculados, por lo que no se puede eliminar. Si no quieres recibir más interesados, páusalo.';
+      }
+      return 'No se puede completar esta acción porque este registro ya está asociado a otro movimiento.';
+    }
+
+    if (code === '23505' || raw.includes('duplicate key') || raw.includes('unique')) {
+      return 'Este registro ya existe.';
+    }
+
+    if (code === '42501' || raw.includes('permission denied') || raw.includes('row-level security')) {
+      return 'No tienes permiso para realizar esta acción en este momento.';
+    }
+
+    if (raw.includes('failed to fetch') || raw.includes('network')) {
+      return 'Parece que hay un problema de conexión. Revisa tu internet e inténtalo de nuevo.';
+    }
+
+    return defecto;
+  }
+
+  private async actualizar(
+    tabla: string,
+    id: string,
+    cambios: object,
+    ok?: string,
+    msgError = 'No pudimos guardar el cambio. Intenta nuevamente.'
+  ) {
     try {
       const { error } = await this.db.from(tabla).update(cambios).eq('id', id);
       if (error) throw error;
       if (ok) this.notificar(ok);
       await this.cargar();
-    } catch (e: any) { this.notificar(e?.message ?? 'No se pudo guardar.', 'error'); }
+    } catch (e: any) {
+      console.error(`Error actualizando ${tabla}:`, e);
+      this.notificar(this.mensajeAmigable(e, msgError), 'error');
+    }
   }
 
   private uno<T>(v: T | T[] | null | undefined): T | null {
@@ -339,7 +522,7 @@ export class PanelOficinaComponent implements OnInit {
 
   notificar(texto: string, tipo: 'ok' | 'error' = 'ok') {
     this.aviso.set({ texto, tipo });
-    setTimeout(() => this.aviso.set(null), 3500);
+    setTimeout(() => this.aviso.set(null), 4000);
   }
 
   claseEstado(estado: string): string {
@@ -359,7 +542,7 @@ export class PanelOficinaComponent implements OnInit {
   }
 
   contactarWhatsApp(telefono: string | null | undefined, nombre: string, concepto: string) {
-    if (!telefono) return this.notificar('Este usuario no tiene teléfono registrado.', 'error');
+    if (!telefono) return this.notificar('Este usuario no tiene un número de WhatsApp disponible.', 'error');
     let n = telefono.replace(/\D/g, '');
     if (n.length <= 11) n = '55' + n;
     const msg = `Hola ${nombre}, te escribo desde CosturaPronta por: "${concepto}".`;

@@ -95,6 +95,9 @@
               <a routerLink="/planes" role="menuitem" class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-stone-100">
                 <app-icon nombre="verified" clase="w-4 h-4 text-slate-500" /> Mejorar cuenta
               </a>
+              <a *ngIf="sesion.esAdmin()" routerLink="/admin/suscripciones" role="menuitem" class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-stone-100">
+                <app-icon nombre="inbox" clase="w-4 h-4 text-slate-500" /> Gestión de suscripciones
+              </a>
             </div>
 
             <div class="border-t border-stone-100 p-1.5">

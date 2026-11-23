@@ -12,8 +12,8 @@ import { IconComponent } from '../../../shared/components/icon.component';
 type Accion = 'login' | 'mio' | 'proponer' | 'postular_lote' | 'postular_empleo' | 'contactar_operario' | 'ninguna';
 
 const CAMPOS_CREADOR = `id, nombre_completo, rol, verificado, zona_ubicacion, promedio_estrellas,
-  total_evaluaciones, especialidad_principal, visibilidad_whatsapp`;
-
+  total_evaluaciones, especialidad_principal, visibilidad_whatsapp,
+  avatar_svg_id, avatar_icono, avatar_color, avatar_marco`;
 @Component({
   selector: 'app-detalle-trabajo',
   standalone: true,

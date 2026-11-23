@@ -4,6 +4,7 @@ import { RegistroComponent } from './features/auth/registro/registro.component';
 import { PanelTiendaComponent } from './features/dashboard/panel-tienda/panel-tienda.component';
 import { roleGuard } from './core/guards/role-guard';
 import { authGuard } from './core/guards/auth-guard';
+import { adminGuard } from './core/guards/admin-guard'; // <--- Importar guard
 import { PanelOficinaComponent } from './features/dashboard/panel-oficina/panel-oficina.component';
 import { PanelFuncionarioComponent } from './features/dashboard/panel-funcionario/panel-funcionario.component';
 import { VistaPerfilComponent } from './features/perfil/vista-perfil/vista-perfil.component';
@@ -14,81 +15,80 @@ import { CrearPublicacionComponent } from './features/publicaciones/crear-public
 import { EditarPerfilComponent } from './features/perfil/editar-perfil/editar-perfil.component';
 import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
 import { PlanesComponent } from './features/planes/planes.component';
-import { CheckoutSuscripcionComponent } from './features/planes/checkout-suscripcion.component'; // <--- Importado aquí
+import { CheckoutSuscripcionComponent } from './features/planes/checkout-suscripcion.component';
+import { AdminSuscripcionesComponent } from './features/admin/suscripciones/admin-suscripciones.component';
 
 export const routes: Routes = [
-  // 1. Rutas de Autenticación (Públicas, sin layout)
   { path: 'login', component: LoginComponent },
   { path: 'registro', component: RegistroComponent },
-  
-  // 2. Estructura Principal del Sitio (Layout Base)
+
   {
     path: '',
     component: MainLayoutComponent,
     children: [
-      // Redirección inicial
       { path: '', redirectTo: 'feed', pathMatch: 'full' },
 
-      // Rutas PÚBLICAS
       { path: 'feed', component: FeedTrabajosComponent },
       { path: 'trabajo/:id', component: DetalleTrabajoComponent },
-      
-      // Rutas de PERFIL
+
       { path: 'perfil/:id', component: VistaPerfilComponent },
       { path: 'perfil-usuario/:id', component: VistaPerfilComponent },
 
-      // RUTA DE PLANES / MEJORAR CUENTA
-      { 
-        path: 'planes', 
-        component: PlanesComponent, 
-        canActivate: [authGuard] 
+      {
+        path: 'planes',
+        component: PlanesComponent,
+        canActivate: [authGuard],
       },
-      { 
-        path: 'checkout-suscripcion', 
-        component: CheckoutSuscripcionComponent, // <--- Ruta añadida para el pago por comprobante
-        canActivate: [authGuard] 
+      {
+        path: 'checkout-suscripcion',
+        component: CheckoutSuscripcionComponent,
+        canActivate: [authGuard],
       },
-      { path: 'suscripcion', redirectTo: 'planes', pathMatch: 'full' }, // Alias útil
+      { path: 'suscripcion', redirectTo: 'planes', pathMatch: 'full' },
 
-      // Rutas PRIVADAS
-      { 
-        path: 'crear-publicacion', 
-        component: CrearPublicacionComponent, 
-        canActivate: [authGuard] 
+      // RUTA DE ADMINISTRACIÓN DE SUSCRIPCIONES
+      {
+        path: 'admin/suscripciones',
+        component: AdminSuscripcionesComponent,
+        canActivate: [adminGuard],
       },
-      { 
-        path: 'editar-perfil', 
-        component: EditarPerfilComponent, 
-        canActivate: [authGuard] 
+
+      {
+        path: 'crear-publicacion',
+        component: CrearPublicacionComponent,
+        canActivate: [authGuard],
       },
-      { 
-        path: 'evaluar/:id', 
-        component: DejarEvaluacionComponent, 
-        canActivate: [authGuard] 
+      {
+        path: 'editar-perfil',
+        component: EditarPerfilComponent,
+        canActivate: [authGuard],
       },
-      
-      // Paneles de Control
-      { 
-        path: 'panel-tienda', 
-        component: PanelTiendaComponent, 
+      {
+        path: 'evaluar/:id',
+        component: DejarEvaluacionComponent,
+        canActivate: [authGuard],
+      },
+
+      {
+        path: 'panel-tienda',
+        component: PanelTiendaComponent,
         canActivate: [authGuard, roleGuard],
-        data: { expectedRole: 'tienda' } 
+        data: { expectedRole: 'tienda' },
       },
-      { 
-        path: 'panel-oficina', 
-        component: PanelOficinaComponent, 
+      {
+        path: 'panel-oficina',
+        component: PanelOficinaComponent,
         canActivate: [authGuard, roleGuard],
-        data: { expectedRole: 'oficina' } 
+        data: { expectedRole: 'oficina' },
       },
-      { 
-        path: 'panel-funcionario', 
-        component: PanelFuncionarioComponent, 
+      {
+        path: 'panel-funcionario',
+        component: PanelFuncionarioComponent,
         canActivate: [authGuard, roleGuard],
-        data: { expectedRole: 'funcionario' } 
-      }
-    ]
+        data: { expectedRole: 'funcionario' },
+      },
+    ],
   },
 
-  // 3. Comodín
-  { path: '**', redirectTo: 'feed' }
+  { path: '**', redirectTo: 'feed' },
 ];

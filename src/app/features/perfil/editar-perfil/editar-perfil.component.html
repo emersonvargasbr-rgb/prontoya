@@ -85,7 +85,7 @@
       <section [ngClass]="ui.card" class="space-y-5 p-4">
         <div>
           <h2 class="text-sm font-bold">Apariencia</h2>
-          <p class="mt-0.5 text-xs text-slate-500">Tu plan: <strong>{{ nombreTier(plan.rangoCosmeticos()) }}</strong>. Los patrones e iconos se desbloquean con Taller Pro y Operario Pro; la colección exclusiva, con Élite / Gold.</p>
+          <p class="mt-0.5 text-xs text-slate-500">Tu plan: <strong>{{ nombreTier(rangoCosmeticosEfectivo()) }}</strong>. Los patrones e ilustraciones se desbloquean con Taller Pro y Operario Pro; la colección exclusiva, con Élite / Gold o metas de seguidores.</p>
         </div>
 
         <!-- Color de portada -->
@@ -118,109 +118,101 @@
           </div>
         </fieldset>
 
-      <!-- Avatar (Íconos e ilustraciones con desbloqueo didáctico) -->
-<fieldset class="space-y-4">
-  <div class="flex flex-wrap items-center justify-between gap-2">
-    <legend class="text-xs font-medium text-slate-700">Avatar</legend>
-    <span class="rounded-full bg-stone-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-600">
-      Tus seguidores: <strong>{{ seguidoresActuales() }}</strong>
-    </span>
-  </div>
-
-  <!-- Íconos -->
-  <div class="space-y-2">
-    <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Íconos</p>
-    <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
-      <button type="button" (click)="elegirIcono(null)"
-              [ngClass]="opcion(!form.avatar_icono)"
-              [attr.aria-pressed]="!form.avatar_icono"
-              class="flex flex-col items-start gap-1 rounded-xl border p-2.5 text-left">
-        <span class="flex items-center gap-1.5 text-xs font-semibold">Iniciales</span>
-        <span class="text-[10px] text-teal-700">Siempre disponible</span>
-      </button>
-
-      <button type="button" *ngFor="let i of iconos" (click)="elegirIcono(i)"
-              [ngClass]="opcion(form.avatar_icono === i.id, !iconoDesbloqueado(i))"
-              [attr.aria-pressed]="form.avatar_icono === i.id"
-              class="flex flex-col items-start gap-1.5 rounded-xl border p-2.5 text-left transition">
-        <div class="flex w-full items-center justify-between">
-          <app-icon [nombre]="!iconoDesbloqueado(i) ? 'lock' : i.id" clase="w-5 h-5" />
-          <span *ngIf="iconoDesbloqueado(i)" class="text-[10px] font-semibold text-teal-700">Listo</span>
-          <span *ngIf="!iconoDesbloqueado(i)" class="text-[10px] font-medium text-amber-700">Bloqueado</span>
-        </div>
-        <span class="text-xs font-semibold text-slate-800">{{ i.nombre }}</span>
-
-        <!-- Barra didáctica si requiere seguidores -->
-        <div *ngIf="!iconoDesbloqueado(i) && i.seguidoresMin" class="w-full space-y-1">
-          <div class="flex justify-between text-[10px] text-slate-500">
-            <span>Meta: {{ i.seguidoresMin }} seg.</span>
-            <span>{{ seguidoresActuales() }}/{{ i.seguidoresMin }}</span>
+        <!-- LOGO DE PERFIL -->
+        <fieldset class="space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <legend class="text-xs font-semibold uppercase tracking-wide text-slate-600">LOGO DE PERFIL</legend>
+            <span class="rounded-full bg-stone-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-600">
+              Tus seguidores: <strong>{{ seguidoresActuales() }}</strong>
+            </span>
           </div>
-          <div class="h-1.5 w-full overflow-hidden rounded-full bg-stone-200">
-            <div class="h-full rounded-full bg-amber-500 transition-all"
-                 [style.width.%]="progresoSeguidores(i.seguidoresMin)"></div>
+
+          <div *ngIf="ilustraciones.length > 0" class="grid grid-cols-3 gap-2 sm:grid-cols-5">
+            <!-- Opción base: Iniciales (cuadrada) -->
+            <button type="button" (click)="elegirIcono(null)"
+                    [attr.aria-pressed]="!form.avatar_icono"
+                    class="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border p-2 text-center transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
+                    [ngClass]="!form.avatar_icono
+                      ? 'border-teal-700 bg-teal-700 text-white shadow-sm'
+                      : 'border-stone-200 bg-white text-slate-700 hover:border-stone-300 hover:bg-stone-50'">
+              <span class="text-sm font-extrabold tracking-tight">AB</span>
+              <span class="text-[10px] font-semibold leading-tight">Iniciales</span>
+            </button>
+
+            <!-- Ilustraciones cuadradas: los libres se ven activos/disponibles y los bloqueados muestran candado y requisito -->
+            <button type="button" *ngFor="let il of ilustraciones" (click)="elegirIcono(il)"
+                    [attr.aria-pressed]="form.avatar_icono === il.id"
+                    [attr.aria-disabled]="!iconoDesbloqueado(il)"
+                    class="relative flex aspect-square flex-col items-center justify-between rounded-xl border p-2 text-center transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
+                    [ngClass]="form.avatar_icono === il.id
+                      ? 'border-teal-700 bg-teal-50/80 text-teal-950 ring-2 ring-teal-600'
+                      : (!iconoDesbloqueado(il)
+                        ? 'cursor-not-allowed border-dashed border-stone-300 bg-stone-100/90 text-slate-500'
+                        : 'border-stone-200 bg-white text-slate-800 hover:border-teal-500/50 hover:bg-stone-50')">
+
+              <!-- Etiqueta superior compacta (Bloqueado con candado o Activo/Libre) -->
+              <div class="flex h-4 w-full items-center justify-between gap-1">
+                <app-icon *ngIf="!iconoDesbloqueado(il)" nombre="lock" clase="h-3 w-3 shrink-0 text-amber-700" />
+                <span *ngIf="iconoDesbloqueado(il)" class="text-[9px] font-semibold leading-none text-teal-700">
+                  {{ form.avatar_icono === il.id ? 'Activo' : 'Libre' }}
+                </span>
+                <span *ngIf="!iconoDesbloqueado(il) && il.seguidoresMin"
+                      class="ml-auto rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold leading-none text-amber-800">
+                  {{ seguidoresActuales() }}/{{ il.seguidoresMin }}
+                </span>
+                <span *ngIf="!iconoDesbloqueado(il) && !il.seguidoresMin"
+                      class="ml-auto rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold leading-none text-amber-800">
+                  {{ nombreTier(il.nivelMin) }}
+                </span>
+              </div>
+
+              <!-- Ilustración -->
+              <div class="flex flex-1 items-center justify-center">
+                <app-icon [nombre]="il.id"
+                          clase="h-9 w-9 transition"
+                          [ngClass]="!iconoDesbloqueado(il) ? 'opacity-45 grayscale' : ''" />
+              </div>
+
+              <!-- Nombre y estado abajo -->
+              <div class="w-full space-y-0.5">
+                <p class="truncate text-[11px] font-semibold leading-tight">{{ il.nombre }}</p>
+                <div *ngIf="!iconoDesbloqueado(il) && il.seguidoresMin" class="h-1 w-full overflow-hidden rounded-full bg-stone-200">
+                  <div class="h-full rounded-full bg-amber-500 transition-all"
+                       [style.width.%]="progresoSeguidores(il.seguidoresMin)"></div>
+                </div>
+                <p *ngIf="!iconoDesbloqueado(il)"
+                   class="truncate text-[9px] leading-tight text-amber-800/80">
+                  {{ il.pistaDidactica || ('Plan ' + nombreTier(il.nivelMin)) }}
+                </p>
+              </div>
+            </button>
           </div>
-        </div>
 
-        <span *ngIf="!iconoDesbloqueado(i) && !i.seguidoresMin && i.pistaDidactica"
-              class="text-[10px] text-slate-500">{{ i.pistaDidactica }}</span>
-      </button>
-    </div>
-  </div>
+          <p *ngIf="ilustraciones.length === 0" class="rounded-lg bg-stone-100 p-3 text-xs text-slate-500">
+            Aún no hay ilustraciones configuradas en el catálogo.
+          </p>
 
-  <!-- Ilustraciones -->
-  <div class="space-y-2">
-    <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Ilustraciones</p>
-    <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
-      <button type="button" *ngFor="let il of ilustraciones" (click)="elegirIcono(il)"
-              [ngClass]="opcion(form.avatar_icono === il.id, !iconoDesbloqueado(il))"
-              [attr.aria-pressed]="form.avatar_icono === il.id"
-              class="flex flex-col items-start gap-1.5 rounded-xl border p-2.5 text-left transition">
-        <div class="flex w-full items-center justify-between">
-          <app-icon [nombre]="!iconoDesbloqueado(il) ? 'lock' : il.id" clase="w-7 h-7" />
-          <span *ngIf="iconoDesbloqueado(il)" class="text-[10px] font-semibold text-teal-700">Listo</span>
-          <span *ngIf="!iconoDesbloqueado(il)" class="text-[10px] font-medium text-amber-700">Bloqueado</span>
-        </div>
-        <span class="text-xs font-semibold text-slate-800">{{ il.nombre }}</span>
-
-        <div *ngIf="!iconoDesbloqueado(il) && il.seguidoresMin" class="w-full space-y-1">
-          <div class="flex justify-between text-[10px] text-slate-500">
-            <span>Meta: {{ il.seguidoresMin }} seg.</span>
-            <span>{{ seguidoresActuales() }}/{{ il.seguidoresMin }}</span>
+          <!-- Color y Marco -->
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <span class="text-xs text-slate-500">Color</span>
+            <button type="button" (click)="elegirAvatarColor(null)" [ngClass]="opcion(!form.avatar_color)" class="!px-2.5 !py-1 !text-xs">Automático</button>
+            <button type="button" *ngFor="let c of paletas" (click)="elegirAvatarColor(c.id)" [attr.aria-label]="c.nombre" [attr.aria-pressed]="form.avatar_color === c.id"
+                    class="h-7 w-7 rounded-full ring-offset-2 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
+                    [ngClass]="[c.clase, form.avatar_color === c.id ? 'ring-2 ring-teal-600' : '']"></button>
           </div>
-          <div class="h-1.5 w-full overflow-hidden rounded-full bg-stone-200">
-            <div class="h-full rounded-full bg-amber-500 transition-all"
-                 [style.width.%]="progresoSeguidores(il.seguidoresMin)"></div>
+
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <span class="text-xs text-slate-500">Marco</span>
+            <button type="button" *ngFor="let m of marcos" (click)="elegirMarco(m)" [attr.aria-pressed]="form.avatar_marco === m.id"
+                    [ngClass]="opcion(form.avatar_marco === m.id, bloqueado(m.nivelMin))" class="!px-2.5 !py-1 !text-xs">
+              <app-icon *ngIf="bloqueado(m.nivelMin)" nombre="lock" clase="w-3 h-3" /> {{ m.nombre }}
+            </button>
           </div>
-        </div>
 
-        <span *ngIf="!iconoDesbloqueado(il) && !il.seguidoresMin && il.pistaDidactica"
-              class="text-[10px] text-slate-500">{{ il.pistaDidactica }}</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- Color y Marco -->
-  <div class="mt-3 flex flex-wrap items-center gap-2">
-    <span class="text-xs text-slate-500">Color</span>
-    <button type="button" (click)="elegirAvatarColor(null)" [ngClass]="opcion(!form.avatar_color)" class="!px-2.5 !py-1 !text-xs">Automático</button>
-    <button type="button" *ngFor="let c of paletas" (click)="elegirAvatarColor(c.id)" [attr.aria-label]="c.nombre" [attr.aria-pressed]="form.avatar_color === c.id"
-            class="h-7 w-7 rounded-full ring-offset-2 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
-            [ngClass]="[c.clase, form.avatar_color === c.id ? 'ring-2 ring-teal-600' : '']"></button>
-  </div>
-
-  <div class="mt-3 flex flex-wrap items-center gap-2">
-    <span class="text-xs text-slate-500">Marco</span>
-    <button type="button" *ngFor="let m of marcos" (click)="elegirMarco(m)" [attr.aria-pressed]="form.avatar_marco === m.id"
-            [ngClass]="opcion(form.avatar_marco === m.id, bloqueado(m.nivelMin))" class="!px-2.5 !py-1 !text-xs">
-      <app-icon *ngIf="bloqueado(m.nivelMin)" nombre="lock" clase="w-3 h-3" /> {{ m.nombre }}
-    </button>
-  </div>
-
-  <a *ngIf="plan.rangoCosmeticos() < 3" routerLink="/planes" class="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-teal-700 hover:underline">
-    <app-icon nombre="verified" clase="w-3.5 h-3.5" /> Ver planes para desbloquear más
-  </a>
-</fieldset>
+          <a *ngIf="rangoCosmeticosEfectivo() < 3" routerLink="/planes" class="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-teal-700 hover:underline">
+            <app-icon nombre="verified" clase="w-3.5 h-3.5" /> Ver planes para desbloquear más
+          </a>
+        </fieldset>
       </section>
 
       <!-- ============================================== INSIGNIAS DESTACADAS -->

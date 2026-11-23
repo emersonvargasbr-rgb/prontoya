@@ -5,9 +5,8 @@ import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { SesionService } from '../../core/services/sesion.service';
 import { UI } from '../../core/utils/helpers';
-import { AvatarComponent } from '../../shared/components/avatar.component';
 import { IconComponent } from '../../shared/components/icon.component';
-
+import { AvatarComponent } from '../../shared/components/avatar.component';
 
 /** Si tu ruta del perfil público se llama distinto, cámbiala aquí. */
 const RUTA_PERFIL = '/perfil-usuario';
@@ -44,6 +43,7 @@ export class SidebarDashboardComponent implements OnInit {
   usuario = this.sesion.usuario;
   logueado = this.sesion.logueado;
   g = this.sesion.g;
+  esAdmin = this.sesion.esAdmin;
 
   expandido = signal(true);   // escritorio: ancho completo o sólo iconos
   menuMovil = signal(false);  // móvil: hoja "Más"

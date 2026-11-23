@@ -27,6 +27,40 @@
           <span *ngFor="let m of perfil().maquinas_maneja" [ngClass]="ui.chip" class="!text-[10px] !py-0.5"><app-icon nombre="cog" clase="w-2.5 h-2.5 text-stone-500" /> {{ m }}</span>
         </div>
 
+        <!-- Casilla de plan / suscripción -->
+        <div class="mt-3.5 rounded-xl border p-3 transition"
+             [ngClass]="esPlanPro()
+               ? 'border-amber-300/80 bg-gradient-to-r from-amber-50 to-orange-50/70'
+               : 'border-stone-200 bg-stone-50/90'">
+          <div class="flex items-center justify-between gap-2">
+            <div class="min-w-0">
+              <p class="text-[10px] font-bold uppercase tracking-wider text-stone-500">Plan de cuenta</p>
+              <div class="mt-0.5 flex items-center gap-1.5">
+                <span class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-extrabold"
+                      [ngClass]="esPlanPro()
+                        ? 'bg-amber-400 text-slate-950'
+                        : 'bg-stone-200/80 text-slate-700'">
+                  <app-icon [nombre]="esPlanPro() ? 'star' : 'user'" [relleno]="esPlanPro()" clase="w-3.5 h-3.5" />
+                  {{ nombrePlanActual() }}
+                </span>
+                <span *ngIf="esPlanPro()" class="text-[11px] font-semibold text-emerald-700">Activo</span>
+              </div>
+            </div>
+
+            <a routerLink="/planes"
+               class="shrink-0 rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-700 shadow-2xs transition hover:border-teal-500 hover:text-teal-800">
+              {{ esPlanPro() ? 'Gestionar' : 'Mejorar plan' }}
+            </a>
+          </div>
+
+          <p *ngIf="suscripcionActiva()?.expira_el" class="mt-1.5 text-[11px] text-stone-500">
+            Vence el {{ suscripcionActiva()?.expira_el | date:'dd/MM/yyyy' }}
+          </p>
+          <p *ngIf="!esPlanPro()" class="mt-1.5 text-[11px] text-stone-500">
+            Estás en el plan gratuito. Activa un plan para funciones Pro y mayor visibilidad.
+          </p>
+        </div>
+
         <dl class="mt-4 grid grid-cols-3 divide-x divide-stone-200 rounded-xl border border-stone-200/80 text-center bg-stone-50/50">
           <div class="px-1 py-2"><dt class="text-[10px] font-medium text-stone-500">Seguidores</dt><dd class="text-xs font-bold text-slate-900">{{ stats().seguidores }}</dd></div>
           <div class="px-1 py-2"><dt class="text-[10px] font-medium text-stone-500">Siguiendo</dt><dd class="text-xs font-bold text-slate-900">{{ stats().siguiendo }}</dd></div>
@@ -261,6 +295,33 @@
                 <app-icon nombre="x" clase="w-4 h-4" /> Retirar postulación
               </button>
             </div>
+          </article>
+        </section>
+
+        <!-- ================================================== ANUNCIOS -->
+        <section *ngIf="seccion() === 'anuncios'" class="space-y-2.5">
+          <div *ngIf="misPublicaciones().length === 0" [ngClass]="ui.vacio" class="rounded-3xl border border-dashed border-stone-300 bg-white p-10 text-center shadow-sm">
+            <app-icon nombre="megaphone" clase="mx-auto h-10 w-10 text-stone-400" />
+            <p class="mt-3 text-base font-bold text-slate-800">No has publicado anuncios</p>
+            <p class="mt-1 text-xs text-stone-500">Publica tu disponibilidad para que talleres o tiendas te contacten.</p>
+            <a routerLink="/crear-publicacion" [ngClass]="ui.btnPrimario" class="mt-4 inline-flex items-center gap-2 !text-xs">
+              <app-icon nombre="plus" clase="w-4 h-4" /> Publicar disponibilidad
+            </a>
+          </div>
+
+          <article *ngFor="let p of misPublicaciones()" [ngClass]="ui.card" class="flex items-center gap-3 p-4 rounded-2xl border border-stone-200/80 bg-white shadow-sm">
+            <div class="min-w-0 flex-1">
+              <a [routerLink]="['/trabajo', p.id]" class="block truncate text-sm font-bold text-slate-900 hover:underline">{{ p.titulo }}</a>
+              <p class="text-xs text-stone-500 mt-0.5">
+                {{ p.zona_ubicacion }} · {{ p.created_at | date:'dd/MM/yyyy' }}
+                <span *ngIf="p.pago_por_pieza > 0"> · {{ moneda(p.pago_por_pieza) }}</span>
+              </p>
+            </div>
+            <button type="button" (click)="alternarAnuncio(p)" class="rounded-md px-2.5 py-1 text-xs font-semibold"
+                    [ngClass]="p.estado === 'Activo' ? 'bg-teal-50 text-teal-800' : 'bg-amber-50 text-amber-800'">{{ p.estado }}</button>
+            <button type="button" (click)="eliminarAnuncio(p.id)" aria-label="Eliminar anuncio" class="rounded-lg p-2 text-rose-600 hover:bg-rose-50">
+              <app-icon nombre="trash" clase="w-4 h-4" />
+            </button>
           </article>
         </section>
 

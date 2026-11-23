@@ -61,9 +61,11 @@ export class EditarPerfilComponent implements OnInit {
   cargando = signal(true);
   guardando = signal(false);
   aviso = signal<Aviso | null>(null);
+  private timerAviso: ReturnType<typeof setTimeout> | null = null;
 
   /** Lo que está guardado en la base de datos. */
   base = signal<any>(null);
+  suscripcionActiva = signal<any>(null);
   /** Lo que se está editando. */
   form: any = {};
   private original = '';
@@ -73,6 +75,30 @@ export class EditarPerfilComponent implements OnInit {
   docTipo = computed(() => (this.rol() === 'funcionario' ? 'CPF' : 'CNPJ'));
   rol = computed<Rol>(() => (this.base()?.rol ?? 'funcionario') as Rol);
   seguidoresActuales = computed(() => Number(this.base()?.seguidores_count) || 0);
+
+  /** Rango efectivo del plan (1 = gratis/básico, 2 = pro, 3 = gold) sincronizando PlanService, perfil y suscripciones. */
+  rangoCosmeticosEfectivo = computed<number>(() => {
+    const desdeServicio = Number(this.plan.rangoCosmeticos()) || 1;
+    const p = this.base();
+    const sub = this.suscripcionActiva();
+
+    const ahora = Date.now();
+    const vigentePerfil = p?.plan_vigente_hasta && new Date(p.plan_vigente_hasta).getTime() > ahora;
+    const vigenteSub =
+      sub?.estado === 'Activa' &&
+      (!sub?.expira_el || new Date(sub.expira_el).getTime() > ahora);
+
+    const planId = vigenteSub ? sub.plan_id : vigentePerfil ? p.plan : null;
+
+    let desdeDatos = 1;
+    if (planId === 'gold') {
+      desdeDatos = 3;
+    } else if (planId === 'pro' || planId === 'operario_pro') {
+      desdeDatos = 2;
+    }
+
+    return Math.max(desdeServicio, desdeDatos);
+  });
 
   /** El nivel se calcula sobre lo guardado. */
   g = computed(() => (this.base() ? calcularGamificacion(this.base()) : null));
@@ -93,7 +119,7 @@ export class EditarPerfilComponent implements OnInit {
     const { data: { user } } = await this.db.auth.getUser();
     if (!user) { this.router.navigate(['/login']); return; }
     this.usuarioId = user.id;
-    await Promise.all([this.cargar(), this.plan.cargar()]);
+    await Promise.all([this.cargar(), this.cargarSuscripcion(), this.plan.cargar()]);
   }
 
   private async cargar() {
@@ -107,6 +133,17 @@ export class EditarPerfilComponent implements OnInit {
     this.form = this.extraer(data);
     this.original = JSON.stringify(this.form);
     this.cargando.set(false);
+  }
+
+  private async cargarSuscripcion() {
+    const { data } = await this.db
+      .from('suscripciones')
+      .select('plan_id, estado, inicia_el, expira_el')
+      .eq('perfil_id', this.usuarioId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    this.suscripcionActiva.set(data ?? null);
   }
 
   private extraer(src: any): any {
@@ -149,10 +186,10 @@ export class EditarPerfilComponent implements OnInit {
   get esEmpresa(): boolean { return this.rol() === 'tienda' || this.rol() === 'oficina'; }
   get muestraMaquinas(): boolean { return this.rol() === 'oficina' || this.rol() === 'funcionario'; }
 
-  bloqueado(nivelMin: number): boolean { return this.plan.rangoCosmeticos() < nivelMin; }
+  bloqueado(nivelMin: number): boolean { return this.rangoCosmeticosEfectivo() < nivelMin; }
 
   iconoDesbloqueado(item: ItemCosmetico): boolean {
-    return cosmeticoDesbloqueado(item, this.plan.rangoCosmeticos(), this.seguidoresActuales());
+    return cosmeticoDesbloqueado(item, this.rangoCosmeticosEfectivo(), this.seguidoresActuales());
   }
 
   progresoSeguidores(meta: number): number {
@@ -160,17 +197,45 @@ export class EditarPerfilComponent implements OnInit {
     return Math.min(100, Math.round((this.seguidoresActuales() / meta) * 100));
   }
 
-  private avisarBloqueo(nivelMin: number) {
-    this.notificar(`Incluido en el plan ${NOMBRE_TIER[nivelMin] ?? 'Pro'}. Mejora tu plan para usarlo.`, 'error');
+  /** Explica qué necesita exactamente el usuario para desbloquear el avatar. */
+  motivoBloqueo(item: ItemCosmetico): string {
+    if (this.iconoDesbloqueado(item)) return '';
+
+    const planActual = this.rangoCosmeticosEfectivo();
+    const seguidores = this.seguidoresActuales();
+    const faltaPlan = planActual < item.nivelMin;
+    const metaSeg = item.seguidoresMin ?? 0;
+    const faltaSeg = metaSeg > 0 && seguidores < metaSeg;
+    const nombrePlanReq = NOMBRE_TIER[item.nivelMin] ?? 'Pro';
+    const nombrePlanActual = NOMBRE_TIER[planActual] ?? 'Gratis';
+
+    if (faltaPlan && faltaSeg) {
+      const restan = Math.max(0, metaSeg - seguidores);
+      return `Requiere plan ${nombrePlanReq} (actual: ${nombrePlanActual}) o ${metaSeg} seguidores (${seguidores}/${metaSeg}, te faltan ${restan}).`;
+    }
+    if (faltaPlan) {
+      return `Requiere plan ${nombrePlanReq} (actual: ${nombrePlanActual}).`;
+    }
+    if (faltaSeg) {
+      const restan = Math.max(0, metaSeg - seguidores);
+      return `Te faltan ${restan} seguidores (${seguidores}/${metaSeg}) para desbloquearlo.`;
+    }
+    return item.pistaDidactica || `Disponible en plan ${nombrePlanReq}.`;
   }
 
-  elegirColor(c: { hex: string; nivelMin: number }) {
-    if (this.bloqueado(c.nivelMin)) return this.avisarBloqueo(c.nivelMin);
+  private avisarBloqueo(nivelMin: number, etiqueta = 'este estilo') {
+    const req = NOMBRE_TIER[nivelMin] ?? 'Pro';
+    const actual = NOMBRE_TIER[this.rangoCosmeticosEfectivo()] ?? 'Gratis';
+    this.notificar(`"${etiqueta}" requiere plan ${req} (tu plan actual es ${actual}).`, 'error');
+  }
+
+  elegirColor(c: { hex: string; nombre?: string; nivelMin: number }) {
+    if (this.bloqueado(c.nivelMin)) return this.avisarBloqueo(c.nivelMin, c.nombre ?? c.hex);
     this.form.color_portada = c.hex;
   }
 
-  elegirPatron(p: { id: string; nivelMin: number }) {
-    if (this.bloqueado(p.nivelMin)) return this.avisarBloqueo(p.nivelMin);
+  elegirPatron(p: { id: string; nombre?: string; nivelMin: number }) {
+    if (this.bloqueado(p.nivelMin)) return this.avisarBloqueo(p.nivelMin, p.nombre ?? p.id);
     this.form.patron_portada = p.id;
   }
 
@@ -180,10 +245,7 @@ export class EditarPerfilComponent implements OnInit {
       return;
     }
     if (!this.iconoDesbloqueado(item)) {
-      const detalle = item.seguidoresMin
-        ? `Te faltan ${Math.max(0, item.seguidoresMin - this.seguidoresActuales())} seguidores para desbloquear "${item.nombre}" gratis (o mejora a ${NOMBRE_TIER[item.nivelMin] ?? 'Pro'}).`
-        : `"${item.nombre}" requiere el plan ${NOMBRE_TIER[item.nivelMin] ?? 'Pro'}.`;
-      this.notificar(detalle, 'error');
+      this.notificar(`No puedes usar "${item.nombre}": ${this.motivoBloqueo(item)}`, 'error');
       return;
     }
     this.form.avatar_icono = item.id;
@@ -191,8 +253,8 @@ export class EditarPerfilComponent implements OnInit {
 
   elegirAvatarColor(id: string | null) { this.form.avatar_color = id; }
 
-  elegirMarco(m: { id: string; nivelMin: number }) {
-    if (this.bloqueado(m.nivelMin)) return this.avisarBloqueo(m.nivelMin);
+  elegirMarco(m: { id: string; nombre?: string; nivelMin: number }) {
+    if (this.bloqueado(m.nivelMin)) return this.avisarBloqueo(m.nivelMin, m.nombre ?? m.id);
     this.form.avatar_marco = m.id;
   }
 
@@ -240,12 +302,13 @@ export class EditarPerfilComponent implements OnInit {
       if ('cep' in payload) payload.cep = payload.cep ? payload.cep.replace(/\D/g, '') : null;
       if ('cnpj' in payload) payload.cnpj = payload.cnpj ? payload.cnpj.replace(/\D/g, '') : null;
 
-      // Verifica que avatar_icono siga siendo válido/desbloqueado
       if (payload.avatar_icono) {
         const todos = [...this.iconos, ...this.ilustraciones];
         const encontrado = todos.find(x => x.id === payload.avatar_icono);
         if (encontrado && !this.iconoDesbloqueado(encontrado)) {
-          payload.avatar_icono = null;
+          this.notificar(`No puedes guardar "${encontrado.nombre}": ${this.motivoBloqueo(encontrado)}`, 'error');
+          this.guardando.set(false);
+          return;
         }
       }
 
@@ -274,7 +337,8 @@ export class EditarPerfilComponent implements OnInit {
   }
 
   notificar(texto: string, tipo: 'ok' | 'error' = 'ok') {
+    if (this.timerAviso) clearTimeout(this.timerAviso);
     this.aviso.set({ texto, tipo });
-    setTimeout(() => this.aviso.set(null), 3500);
+    this.timerAviso = setTimeout(() => this.aviso.set(null), 3500);
   }
 }

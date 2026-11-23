@@ -15,7 +15,7 @@
       <div class="flex items-center gap-2">
         <div class="relative flex-1">
           <app-icon nombre="search" clase="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input type="search" [(ngModel)]="busquedaTexto" (input)="aplicarFiltros()"
+          <input type="search" [(ngModel)]="busquedaTexto" (input)="aplicarFiltros(true)"
                  placeholder="Buscar lotes, talleres, máquinas..."
                  class="w-full rounded-xl border border-stone-200 bg-white py-2.5 pl-9 pr-3 text-xs font-medium shadow-sm outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20">
         </div>
@@ -31,15 +31,15 @@
       <!-- Panel desplegable de filtros -->
       <div *ngIf="mostrarFiltros()" class="space-y-2.5 rounded-xl border border-stone-200 bg-white p-3 shadow-sm transition-all">
         <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
-          <select [(ngModel)]="filtroZona" (change)="aplicarFiltros()" aria-label="Zona" class="rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-2 text-xs font-medium outline-none focus:border-teal-600">
+          <select [(ngModel)]="filtroZona" (change)="aplicarFiltros(true)" aria-label="Zona" class="rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-2 text-xs font-medium outline-none focus:border-teal-600">
             <option value="">Todas las zonas</option>
             <option *ngFor="let z of zonas" [value]="z">{{ z }}</option>
           </select>
-          <select [(ngModel)]="filtroTipo" (change)="aplicarFiltros()" aria-label="Tipo de anuncio" class="rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-2 text-xs font-medium outline-none focus:border-teal-600">
+          <select [(ngModel)]="filtroTipo" (change)="aplicarFiltros(true)" aria-label="Tipo de anuncio" class="rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-2 text-xs font-medium outline-none focus:border-teal-600">
             <option value="">Todos los tipos</option>
             <option *ngFor="let t of tiposDisponibles()" [value]="t.id">{{ t.txt }}</option>
           </select>
-          <select [(ngModel)]="filtroMaquina" (change)="aplicarFiltros()" aria-label="Maquinaria" class="rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-2 text-xs font-medium outline-none focus:border-teal-600">
+          <select [(ngModel)]="filtroMaquina" (change)="aplicarFiltros(true)" aria-label="Maquinaria" class="rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-2 text-xs font-medium outline-none focus:border-teal-600">
             <option value="">Toda la maquinaria</option>
             <option *ngFor="let m of maquinas" [value]="m.id">{{ m.nombre }}</option>
           </select>
@@ -47,7 +47,7 @@
 
         <div class="flex items-center justify-between pt-0.5">
           <label *ngIf="usuarioLogueado" class="flex cursor-pointer items-center gap-2 text-xs font-medium text-slate-600">
-            <input type="checkbox" [(ngModel)]="soloSeguidos" (change)="aplicarFiltros()" class="h-3.5 w-3.5 rounded accent-teal-700">
+            <input type="checkbox" [(ngModel)]="soloSeguidos" (change)="aplicarFiltros(true)" class="h-3.5 w-3.5 rounded accent-teal-700">
             Solo de quienes sigo
           </label>
           <button *ngIf="hayFiltros" type="button" (click)="limpiarFiltros()" class="ml-auto text-[11px] font-bold text-teal-700 hover:underline">Limpiar filtros</button>
@@ -59,12 +59,12 @@
     <section *ngIf="!cargando() && destacados().length > 0" aria-label="Anuncios destacados" class="space-y-2">
       <div #carruselVip (scroll)="onScrollCarrusel()"
            class="flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth rounded-2xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        
+
         <article *ngFor="let vip of destacados()" (click)="abrirPublicacion(vip.id)"
                  class="relative w-full shrink-0 snap-center cursor-pointer overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-700 via-teal-700 to-teal-800 p-4 text-white shadow-md transition active:scale-[0.99]">
-          
+
           <div class="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/10 blur-xl"></div>
-          
+
           <div class="flex items-center justify-between gap-3">
             <div class="min-w-0 flex-1 space-y-1">
               <div class="flex items-center gap-1.5">
@@ -83,7 +83,14 @@
             </div>
 
             <div class="flex shrink-0 flex-col items-end gap-1.5">
-              <app-avatar *ngIf="!vip.es_promo" [nombre]="vip.empresa" tamano="md" [verificado]="true" />
+              <app-avatar *ngIf="!vip.es_promo"
+                          [nombre]="vip.empresa"
+                          [icono]="vip.icono"
+                          [color]="vip.color"
+                          [anillo]="vip.anillo"
+                          [marco]="vip.marco"
+                          tamano="md"
+                          [verificado]="true" />
               <span class="rounded-lg bg-white px-2.5 py-1 text-[11px] font-bold text-teal-900 shadow-sm">
                 {{ vip.es_promo ? 'Destacar' : 'Ver oferta' }}
               </span>
@@ -118,14 +125,14 @@
     <!-- Vacío -->
     <div *ngIf="!cargando() && !error() && visibles().length === 0" [ngClass]="ui.vacio">
       <app-icon nombre="search" clase="mx-auto h-8 w-8 text-stone-400" />
-      <p class="mt-3 text-sm font-semibold">No hay anuncios con esos filtros</p>
-      <p class="mt-1 text-xs text-slate-500">Prueba con otra zona o quita algún filtro.</p>
+      <p class="mt-3 text-sm font-semibold">No hay anuncios recientes con esos filtros</p>
+      <p class="mt-1 text-xs text-slate-500">Los anuncios duran 3 días activos. Prueba con otra zona o quita algún filtro.</p>
       <button *ngIf="hayFiltros" type="button" (click)="limpiarFiltros()" [ngClass]="ui.btnSecundario" class="mt-4">Limpiar filtros</button>
     </div>
 
-    <!-- 3. CUADRÍCULA DE 2 COLUMNAS POR FILA -->
-    <ul *ngIf="!cargando() && visibles().length > 0" class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-      <li *ngFor="let t of visibles()">
+    <!-- 3. CUADRÍCULA DE HASTA 20 ANUNCIOS POR PÁGINA -->
+    <ul *ngIf="!cargando() && anunciosPagina().length > 0" class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <li *ngFor="let t of anunciosPagina()">
         <article (click)="abrirPublicacion(t.id)" (keydown.enter)="abrirPublicacion(t.id)" tabindex="0" role="link"
                  class="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
                  [ngClass]="t.verificado ? 'border-amber-400/60 ring-1 ring-amber-400/30' : 'border-stone-200/80 hover:border-teal-300'">
@@ -134,17 +141,23 @@
           <div class="relative h-20 w-full p-2 transition-colors"
                [style.background]="obtenerFondoCabecera(t)"
                style="background-repeat: no-repeat; background-size: cover;">
-            
+
             <div class="flex items-center gap-1.5 pr-6">
-              <app-avatar [nombre]="t.empresa" tamano="sm" [verificado]="t.verificado" />
+              <app-avatar [nombre]="t.empresa"
+                          [icono]="t.icono"
+                          [color]="t.color"
+                          [anillo]="t.anillo"
+                          [marco]="t.marco"
+                          tamano="sm"
+                          [verificado]="t.verificado" />
               <span class="truncate text-[11px] font-semibold text-white/95">{{ t.empresa }}</span>
             </div>
 
-          <!-- Icono superior derecho seguro -->
             <span class="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/95 text-slate-800 shadow-sm"
                   [title]="tipos[t.tipo_publicacion]?.txt || 'Anuncio'">
               <app-icon [nombre]="t.tipo_publicacion === 'busco_corte' ? 'scissors' : (t.tipo_publicacion === 'busco_oficina' ? 'building' : 'user')" clase="h-3.5 w-3.5 text-teal-700" />
             </span>
+
             <div class="absolute bottom-0 left-0 inline-flex max-w-[85%] items-center gap-1 rounded-tr-xl bg-white px-2 py-0.5 text-[10px] font-bold"
                  [ngClass]="t.verificado ? 'text-amber-900' : 'text-slate-700'">
               <app-icon nombre="pin" clase="h-3 w-3 shrink-0" [ngClass]="t.verificado ? 'text-amber-600' : 'text-teal-600'" />
@@ -168,7 +181,6 @@
               </div>
             </div>
 
-            <!-- Pie de Tarjeta con icono de ojo o candado original -->
             <div class="mt-2.5 flex items-center justify-between gap-1.5 border-t border-stone-100 pt-2">
               <span class="truncate text-xs font-extrabold text-slate-900">
                 {{ dato(t) }}
@@ -184,6 +196,51 @@
         </article>
       </li>
     </ul>
+
+    <!-- 4. NAVEGADOR INFERIOR DE PÁGINAS (20 POR PÁGINA) -->
+    <nav *ngIf="!cargando() && !error() && visibles().length > tamanoPagina"
+         aria-label="Paginación de anuncios"
+         class="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-stone-200/80 bg-white px-3 py-2.5 shadow-sm">
+
+      <span class="text-[11px] font-medium text-slate-500">
+        Página <strong>{{ paginaActual() }}</strong> de <strong>{{ totalPaginas() }}</strong> · {{ visibles().length }} anuncios (últimos 3 días)
+      </span>
+
+      <div class="flex items-center gap-1">
+        <button type="button"
+                (click)="irAPagina(paginaActual() - 1)"
+                [disabled]="paginaActual() <= 1"
+                class="rounded-lg border border-stone-200 px-2.5 py-1 text-xs font-semibold text-slate-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40">
+          Ant.
+        </button>
+
+        <ng-container *ngFor="let item of itemsPaginacion()">
+          <span *ngIf="item === 'dots'"
+                aria-hidden="true"
+                class="inline-flex h-7 w-7 items-center justify-center text-xs font-extrabold tracking-widest text-slate-400">
+            •••
+          </span>
+
+          <button *ngIf="item !== 'dots'"
+                  type="button"
+                  (click)="irAPagina(item)"
+                  [attr.aria-current]="paginaActual() === item ? 'page' : null"
+                  class="h-7 min-w-7 rounded-lg px-2 text-xs font-bold transition"
+                  [ngClass]="paginaActual() === item
+                    ? 'bg-teal-700 text-white shadow-sm'
+                    : 'border border-stone-200 bg-white text-slate-700 hover:bg-stone-50'">
+            {{ item }}
+          </button>
+        </ng-container>
+
+        <button type="button"
+                (click)="irAPagina(paginaActual() + 1)"
+                [disabled]="paginaActual() >= totalPaginas()"
+                class="rounded-lg border border-stone-200 px-2.5 py-1 text-xs font-semibold text-slate-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40">
+          Sig.
+        </button>
+      </div>
+    </nav>
 
   </div>
 
