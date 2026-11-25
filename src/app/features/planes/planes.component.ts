@@ -2,9 +2,24 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { SupabaseService } from '../../core/services/supabase.service';
-import { SesionService } from '../../core/services/sesion.service';
-import { UI } from '../../core/utils/helpers';
-import { Ciclo, INCLUYE_GRATIS, PLAN_ESTILO, Plan, formatoPrecio, grupoDeRol, nombreDePlan, planVigente, planesPara, precio } from '../../core/utils/planes';
+import { CotizacionSuscripcion, PlanService } from '../../core/services/plan.service';
+import { UI, mensajeAmigable, moneda } from '../../core/utils/helpers';
+import {
+  Ciclo,
+  DESCUENTO_CICLO,
+  ETIQUETA_CICLO,
+  INCLUYE_GRATIS,
+  MESES_CICLO,
+  PLAN_ESTILO,
+  Plan,
+  ahorroCiclo,
+  formatoPrecio,
+  grupoDeRol,
+  nombreDePlan,
+  planesPara,
+  precio,
+  resolverEstadoPlan,
+} from '../../core/utils/planes';
 import { IconComponent } from '../../shared/components/icon.component';
 
 @Component({
@@ -15,56 +30,110 @@ import { IconComponent } from '../../shared/components/icon.component';
 })
 export class PlanesComponent implements OnInit {
   readonly ui = UI;
+  readonly moneda = moneda;
   readonly estilo = PLAN_ESTILO;
   readonly formatoPrecio = formatoPrecio;
   readonly nombreDePlan = nombreDePlan;
   readonly incluyeGratis = INCLUYE_GRATIS;
+  readonly etiquetaCiclo = ETIQUETA_CICLO;
+  readonly descuentos = DESCUENTO_CICLO;
+  readonly mesesCiclo = MESES_CICLO;
 
   cargando = signal(true);
+  cotizando = signal(false);
   perfil = signal<any>(null);
-  ciclo = signal<Ciclo>('mensual');
+  suscripciones = signal<any[]>([]);
+  ciclo = signal<Ciclo>('trimestral');
+  cotizacionPrevia = signal<CotizacionSuscripcion | null>(null);
+  planSeleccionado = signal<Plan | null>(null);
 
   error = signal('');
-  exito = signal<string>('');
+  exito = signal('');
 
   grupo = computed(() => grupoDeRol(this.perfil()?.rol ?? ''));
   planes = computed(() => planesPara(this.perfil()?.rol ?? ''));
-  planActual = computed(() => planVigente(this.perfil()?.plan, this.perfil()?.plan_vigente_hasta));
-  
-  // Desactivado temporalmente: Siempre permite continuar
-  puedeComprar = computed(() => true); 
 
-  constructor(private supabaseService: SupabaseService, private sesion: SesionService, private router: Router) {}
+  estadoPlan = computed(() => resolverEstadoPlan(this.perfil(), this.suscripciones()));
+  planActual = computed(() => this.estadoPlan().planId);
+  vigenteHasta = computed(() => this.estadoPlan().vigenteHasta);
+
+  docVerificado = computed(() => !!this.perfil()?.documento_verificado || !!this.perfil()?.verificado);
+
+  constructor(
+    private supabaseService: SupabaseService,
+    readonly planService: PlanService,
+    private router: Router,
+  ) {}
 
   private get db() { return this.supabaseService.supabase; }
 
   async ngOnInit() {
     const { data: { user } } = await this.db.auth.getUser();
     if (!user) { this.router.navigate(['/login']); return; }
-    await this.cargar(user.id);
+    await Promise.all([
+      this.cargar(user.id),
+      this.planService.cargar(),
+      this.planService.cargarUso(user.id),
+    ]);
     this.cargando.set(false);
   }
 
   private async cargar(id: string) {
-    const { data } = await this.db.from('perfiles').select('id, rol, documento_verificado, plan, plan_vigente_hasta').eq('id', id).maybeSingle();
-    this.perfil.set(data);
+    const [perfilRes, subsRes] = await Promise.all([
+      this.db
+        .from('perfiles')
+        .select('id, rol, verificado, documento_verificado, plan, plan_vigente_hasta')
+        .eq('id', id)
+        .maybeSingle(),
+      this.db
+        .from('suscripciones')
+        .select('id, plan_id, ciclo, estado, inicia_el, expira_el, created_at')
+        .eq('perfil_id', id)
+        .order('created_at', { ascending: false })
+        .limit(10),
+    ]);
+
+    this.perfil.set(perfilRes.data ?? null);
+    this.suscripciones.set(subsRes.data ?? []);
   }
 
-  /**
-   * Debe dar el mismo número que cotizar_suscripcion() en la base de datos:
-   * anual = mensual x 12 menos el descuento. (Antes se aplicaba el 7% sobre `p.anual`, que no
-   * necesariamente vale mensual x 12, y el precio mostrado podía no coincidir con el cobrado.)
-   * El checkout vuelve a pedir el precio al servidor, así que lo único que importa aquí es mostrarlo igual.
-   */
-  private readonly DESCUENTO_ANUAL = 0.07;
-  precioConDescuento(p: Plan, cicloActual: Ciclo): number {
-    return cicloActual === 'anual'
-      ? Math.round(p.mensual * 12 * (1 - this.DESCUENTO_ANUAL))
-      : p.mensual;
+  precioCiclo(p: Plan, cicloActual: Ciclo): number {
+    return precio(p, cicloActual);
   }
 
-  seleccionarPlan(p: Plan) {
-    // El monto ya no viaja por la URL: el checkout lo pide al servidor.
-    this.router.navigate(['/checkout-suscripcion'], { queryParams: { plan: p.id, ciclo: this.ciclo() } });
+  ahorro(p: Plan, cicloActual: Ciclo): number {
+    return ahorroCiclo(p, cicloActual);
+  }
+
+  cambiarCiclo(nuevo: Ciclo) {
+    this.ciclo.set(nuevo);
+    if (this.planSeleccionado()) {
+      this.abrirCotizacion(this.planSeleccionado()!);
+    }
+  }
+
+  async abrirCotizacion(p: Plan) {
+    this.planSeleccionado.set(p);
+    this.cotizando.set(true);
+    this.error.set('');
+    try {
+      const cot = await this.planService.cotizarSuscripcion(p.id, this.ciclo());
+      this.cotizacionPrevia.set(cot);
+    } catch (e: any) {
+      this.error.set(mensajeAmigable(e, 'No se pudo obtener la cotización del plan.'));
+    } finally {
+      this.cotizando.set(false);
+    }
+  }
+
+  cerrarCotizacion() {
+    this.planSeleccionado.set(null);
+    this.cotizacionPrevia.set(null);
+  }
+
+  continuarAlCheckout(p: Plan) {
+    this.router.navigate(['/checkout-suscripcion'], {
+      queryParams: { plan: p.id, ciclo: this.ciclo() },
+    });
   }
 }

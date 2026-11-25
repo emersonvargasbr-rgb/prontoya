@@ -15,6 +15,8 @@
     <header class="flex flex-col gap-4 rounded-3xl border border-stone-200/80 bg-white p-5 sm:p-6 shadow-sm">
   <div class="flex flex-wrap items-center justify-between gap-4">
     <div class="flex items-center gap-3.5">
+      <app-avatar [nombre]="perfil()?.nombre_completo" tamano="md" [verificado]="!!perfil()?.verificado"
+                  [icono]="perfil()?.avatar_icono" [svgId]="perfil()?.avatar_svg_id" [color]="perfil()?.avatar_color" [marco]="perfil()?.avatar_marco" />
       <div>
         <div class="flex items-center gap-2">
           <h1 class="text-lg sm:text-xl font-bold tracking-tight text-slate-900">{{ perfil()?.nombre_completo || 'Mi oficina' }}</h1>
@@ -72,10 +74,15 @@
         {{ planInfo.estado }}
       </span>
     </div>
-    <p class="text-xs text-stone-600">
+    <p class="text-xs text-stone-600" *ngIf="planInfo.esPago; else planGratisInfo">
       Empezó: <strong>{{ planInfo.inicio ? (planInfo.inicio | date:'dd/MM/yyyy') : 'No registrada' }}</strong>
       · Vence: <strong>{{ planInfo.vence ? (planInfo.vence | date:'dd/MM/yyyy') : 'Sin vencimiento' }}</strong>
     </p>
+    <ng-template #planGratisInfo>
+      <p class="text-xs text-stone-500">
+        Plan gratuito activo · Equipo: {{ plan.uso().operariosActivos }}/{{ plan.tope(plan.maxOperarios()) }} operarios · Anuncios activos: {{ plan.uso().anunciosActivos }}/{{ plan.tope(plan.anunciosActivosMax()) }}
+      </p>
+    </ng-template>
   </div>
 
   <a routerLink="/planes"
@@ -139,7 +146,8 @@
             <!-- Cabecera del lote (acordeón) -->
             <button type="button" (click)="toggleLote(l.id)" [attr.aria-expanded]="loteAbierto() === l.id"
                     class="flex w-full items-start gap-3.5 p-4 sm:p-5 text-left hover:bg-stone-50/80 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600">
-              <app-avatar [nombre]="l.contraparte?.nombre_completo" tamano="md" [verificado]="!!l.contraparte?.verificado" />
+              <app-avatar [nombre]="l.contraparte?.nombre_completo" tamano="md" [verificado]="!!l.contraparte?.verificado"
+                          [icono]="l.contraparte?.avatar_icono" [svgId]="l.contraparte?.avatar_svg_id" [color]="l.contraparte?.avatar_color" [marco]="l.contraparte?.avatar_marco" />
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
                   <h2 class="truncate text-sm sm:text-base font-bold text-slate-900">{{ l.descripcion_corte || l.publicacion?.titulo }}</h2>
@@ -196,7 +204,8 @@
                         <span class="rounded-md px-2 py-0.5 text-[11px] font-semibold no-underline" [ngClass]="claseEstado(s.estado)">{{ s.estado }}</span>
                       </p>
                       <p class="mt-0.5 flex items-center gap-1.5 text-xs text-stone-500">
-                        <app-avatar [nombre]="s.funcionario?.nombre_completo" tamano="sm" />
+                        <app-avatar [nombre]="s.funcionario?.nombre_completo" tamano="sm"
+                                    [icono]="s.funcionario?.avatar_icono" [svgId]="s.funcionario?.avatar_svg_id" [color]="s.funcionario?.avatar_color" [marco]="s.funcionario?.avatar_marco" />
                         <span class="truncate">{{ s.funcionario?.nombre_completo }}</span>
                         · {{ s.cantidad_piezas | number }} pzas
                       </p>
@@ -319,7 +328,8 @@
             <ul class="space-y-3">
               <li *ngFor="let o of ofertasRecibidas()" class="rounded-2xl border border-stone-200/80 bg-white p-4 sm:p-5 shadow-sm">
                 <div class="flex items-start gap-3.5">
-                  <app-avatar [nombre]="o.contraparte?.nombre_completo" [verificado]="!!o.contraparte?.verificado" />
+                  <app-avatar [nombre]="o.contraparte?.nombre_completo" [verificado]="!!o.contraparte?.verificado"
+                              [icono]="o.contraparte?.avatar_icono" [svgId]="o.contraparte?.avatar_svg_id" [color]="o.contraparte?.avatar_color" [marco]="o.contraparte?.avatar_marco" />
                   <div class="min-w-0 flex-1">
                     <p class="text-sm font-bold text-slate-900">{{ o.contraparte?.nombre_completo }}</p>
                     <p class="text-xs text-stone-500">{{ o.descripcion_corte }} · {{ o.cantidad_piezas | number }} pzas · R$ {{ o.pago_por_pieza | number:'1.2-2' }} / pza</p>
@@ -341,7 +351,8 @@
             <ul class="space-y-3">
               <li *ngFor="let c of candidatos()" class="rounded-2xl border border-stone-200/80 bg-white p-4 sm:p-5 shadow-sm">
                 <div class="flex items-start gap-3.5">
-                  <app-avatar [nombre]="c.contraparte?.nombre_completo" [verificado]="!!c.contraparte?.verificado" />
+                  <app-avatar [nombre]="c.contraparte?.nombre_completo" [verificado]="!!c.contraparte?.verificado"
+                              [icono]="c.contraparte?.avatar_icono" [svgId]="c.contraparte?.avatar_svg_id" [color]="c.contraparte?.avatar_color" [marco]="c.contraparte?.avatar_marco" />
                   <div class="min-w-0 flex-1">
                     <p class="text-sm font-bold text-slate-900">{{ c.contraparte?.nombre_completo }}</p>
                     <p class="text-xs text-stone-500">Vacante: {{ c.publicacion?.titulo }} · {{ c.contraparte?.zona_ubicacion || 'São Paulo' }}</p>
@@ -364,7 +375,8 @@
             <h2 class="mb-3 text-sm font-bold text-slate-900">Postulaciones que enviaste</h2>
             <ul class="space-y-3">
               <li *ngFor="let p of postulacionesEnviadas()" class="flex items-center gap-3.5 rounded-2xl border border-stone-200/80 bg-white p-4 shadow-sm">
-                <app-avatar [nombre]="p.contraparte?.nombre_completo" />
+                <app-avatar [nombre]="p.contraparte?.nombre_completo" [verificado]="!!p.contraparte?.verificado"
+                            [icono]="p.contraparte?.avatar_icono" [svgId]="p.contraparte?.avatar_svg_id" [color]="p.contraparte?.avatar_color" [marco]="p.contraparte?.avatar_marco" />
                 <div class="min-w-0 flex-1">
                   <p class="truncate text-sm font-bold text-slate-900">{{ p.descripcion_corte }}</p>
                   <p class="text-xs text-stone-500">{{ p.contraparte?.nombre_completo }}</p>
@@ -391,7 +403,8 @@
           <div class="grid gap-3 sm:grid-cols-2">
             <article *ngFor="let e of equipoActivo()" class="rounded-2xl border border-stone-200/80 bg-white p-4 sm:p-5 shadow-sm space-y-3">
               <div class="flex items-center gap-3.5">
-                <app-avatar [nombre]="e.funcionario?.nombre_completo" tamano="md" [verificado]="!!e.funcionario?.verificado" />
+                <app-avatar [nombre]="e.funcionario?.nombre_completo" tamano="md" [verificado]="!!e.funcionario?.verificado"
+                            [icono]="e.funcionario?.avatar_icono" [svgId]="e.funcionario?.avatar_svg_id" [color]="e.funcionario?.avatar_color" [marco]="e.funcionario?.avatar_marco" />
                 <div class="min-w-0 flex-1">
                   <p class="truncate text-sm font-bold text-slate-900">{{ e.funcionario?.nombre_completo }}</p>
                   <p class="truncate text-xs text-stone-500">{{ e.funcionario?.especialidad_principal }}</p>
@@ -481,7 +494,7 @@
             <hr class="border-stone-100">
 
             <!-- Componente de Cortes Manuales -->
-            <app-cortes-manuales [oficinaId]="usuarioId"></app-cortes-manuales>
+            <app-cortes-manuales [oficinaId]="usuarioId" (totalCambio)="totalCortesManuales.set($event)"></app-cortes-manuales>
           </div>
         </section>
 

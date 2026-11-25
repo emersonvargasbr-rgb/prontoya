@@ -5,6 +5,8 @@ import { Router, RouterModule } from '@angular/router';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { SocialService } from '../../../core/services/social.service';
 import { PlanService } from '../../../core/services/plan.service';
+import { OPERACIONES, UI, abrirWhatsApp, claseEstado, mensajeAmigable, uno } from '../../../core/utils/helpers';
+import { esPlanPagoId, nombreDePlan, planVigente } from '../../../core/utils/planes';
 import { AvatarComponent } from '../../../shared/components/avatar.component';
 import { IconComponent } from '../../../shared/components/icon.component';
 import { SolicitudesVinculoComponent } from '../../../shared/components/solicitudes-vinculo.component';
@@ -14,11 +16,7 @@ import { CortesManualesComponent } from '../../../shared/components/cortes-manua
 
 type Seccion = 'produccion' | 'solicitudes' | 'equipo' | 'anuncios' | 'historial' | 'finanzas';
 
-const PERFIL_MIN = 'id, nombre_completo, rol, telefono, zona_ubicacion, verificado, promedio_estrellas';
-
-export const OPERACIONES = [
-  'Overlock', 'Reta', 'Galoneira', 'Botoneira', 'Caseadeira', 'Travete', 'Plancha y acabados',
-];
+const PERFIL_MIN = 'id, nombre_completo, rol, telefono, zona_ubicacion, verificado, promedio_estrellas, avatar_svg_id, avatar_icono, avatar_color, avatar_marco';
 
 @Component({
   selector: 'app-panel-oficina',
@@ -36,6 +34,8 @@ export const OPERACIONES = [
   templateUrl: './panel-oficina.component.html',
 })
 export class PanelOficinaComponent implements OnInit {
+  readonly ui = UI;
+  readonly claseEstado = claseEstado;
   usuarioId = '';
   readonly operaciones = OPERACIONES;
 
@@ -72,11 +72,19 @@ export class PanelOficinaComponent implements OnInit {
     const sub = this.suscripcionActiva();
     const catalogo = this.planesCatalogo();
 
-    const planId = sub?.plan_id || p?.plan || 'basico';
-    const nombrePlan = catalogo[planId] || planId;
-    const inicio = sub?.inicia_el || null;
-    const vence = sub?.expira_el || p?.plan_vigente_hasta || null;
-    const estado = sub?.estado || (vence && new Date(vence) < new Date() ? 'Expirada' : 'Activa');
+    const subVigente =
+      sub &&
+      sub.estado === 'Activa' &&
+      esPlanPagoId(sub.plan_id) &&
+      (!sub.expira_el || new Date(sub.expira_el).getTime() > Date.now());
+
+    const planPerfil = planVigente(p?.plan, p?.plan_vigente_hasta);
+    const planId = subVigente ? sub.plan_id : (planPerfil ?? 'free');
+    const esPago = esPlanPagoId(planId);
+    const nombrePlan = esPago ? (catalogo[planId] || nombreDePlan(planId)) : 'Gratis';
+    const inicio = subVigente ? sub.inicia_el : null;
+    const vence = subVigente ? sub.expira_el : (planPerfil ? p?.plan_vigente_hasta : null);
+    const estado = esPago ? (sub?.estado || 'Activa') : 'Gratis';
 
     return {
       planId,
@@ -84,6 +92,7 @@ export class PanelOficinaComponent implements OnInit {
       inicio,
       vence,
       estado,
+      esPago,
     };
   });
 
@@ -171,12 +180,12 @@ export class PanelOficinaComponent implements OnInit {
         this.db
           .from('empleados')
           .select(`id, estado, fecha_ingreso,
-            funcionario:funcionario_id (id, nombre_completo, telefono, especialidad_principal, promedio_estrellas, verificado, maquinas_maneja)`)
+            funcionario:funcionario_id (id, nombre_completo, telefono, especialidad_principal, promedio_estrellas, verificado, maquinas_maneja, avatar_svg_id, avatar_icono, avatar_color, avatar_marco)`)
           .eq('empleador_id', id)
           .order('fecha_ingreso', { ascending: false }),
         this.db
           .from('asignaciones_funcionarios')
-          .select('*, funcionario:funcionario_id (id, nombre_completo, telefono)')
+          .select('*, funcionario:funcionario_id (id, nombre_completo, telefono, avatar_svg_id, avatar_icono, avatar_color, avatar_marco)')
           .eq('empleador_id', id)
           .order('fecha_inicio', { ascending: false })
           .limit(500),
@@ -206,21 +215,22 @@ export class PanelOficinaComponent implements OnInit {
 
       this.misPublicaciones.set(pubs.data ?? []);
       this.historial.set(hist.data ?? []);
-      this.equipo.set((emp.data ?? []).map((e: any) => ({ ...e, funcionario: this.uno(e.funcionario) })));
-      this.asignaciones.set((asig.data ?? []).map((a: any) => ({ ...a, funcionario: this.uno(a.funcionario) })));
+      this.equipo.set((emp.data ?? []).map((e: any) => ({ ...e, funcionario: uno(e.funcionario) })));
+      this.asignaciones.set((asig.data ?? []).map((a: any) => ({ ...a, funcionario: uno(a.funcionario) })));
       this.stats.set(stats);
+      await this.plan.cargarUso(id);
 
       this.lotes.set(
         (lotes.data ?? []).map((l: any) => {
-          const pub = this.uno(l.publicacion);
-          const emisor = this.uno(l.emisor);
+          const pub = uno(l.publicacion);
+          const emisor = uno(l.emisor);
           const soyEmisor = l.taller_id === id;
           return {
             ...l,
             publicacion: pub,
             tipo: pub?.tipo_publicacion,
             soyEmisor,
-            contraparte: soyEmisor ? this.uno(pub?.creador) : emisor,
+            contraparte: soyEmisor ? uno(pub?.creador) : emisor,
           };
         })
       );
@@ -245,6 +255,11 @@ export class PanelOficinaComponent implements OnInit {
   }
 
   async aprobarCandidato(c: any) {
+    const check = this.plan.puedeAgregarOperario();
+    if (!check.ok) {
+      return this.notificar(check.motivo || 'Alcanzaste el límite de operarios de tu plan.', 'error');
+    }
+
     const nombre = c.contraparte?.nombre_completo || 'este operario';
     if (!confirm(`¿Sumar a ${nombre} a tu equipo?`)) return;
     try {
@@ -273,7 +288,7 @@ export class PanelOficinaComponent implements OnInit {
     } catch (e: any) {
       console.error('Error al aprobar candidato:', e);
       this.notificar(
-        this.mensajeAmigable(e, 'No pudimos sumar al operario a tu equipo. Intenta de nuevo.'),
+        mensajeAmigable(e, 'No pudimos sumar al operario a tu equipo. Intenta de nuevo.'),
         'error'
       );
     }
@@ -363,7 +378,7 @@ export class PanelOficinaComponent implements OnInit {
     } catch (e: any) {
       console.error('Error al asignar operación:', e);
       this.notificar(
-        this.mensajeAmigable(e, 'No pudimos asignar la operación. Intenta de nuevo.'),
+        mensajeAmigable(e, 'No pudimos asignar la operación. Intenta de nuevo.'),
         'error'
       );
     }
@@ -460,7 +475,7 @@ export class PanelOficinaComponent implements OnInit {
     if (error) {
       console.error('Error al eliminar anuncio:', error);
       return this.notificar(
-        this.mensajeAmigable(
+        mensajeAmigable(
           error,
           'Este anuncio ya tiene postulaciones o trabajos vinculados, por lo que no se puede eliminar. Puedes pausarlo.'
         ),
@@ -472,32 +487,6 @@ export class PanelOficinaComponent implements OnInit {
   }
 
   // ==================================================================== HELPERS
-  private mensajeAmigable(err: any, defecto: string): string {
-    const raw = String(err?.message ?? err?.details ?? err ?? '').toLowerCase();
-    const code = String(err?.code ?? '');
-
-    if (code === '23503' || raw.includes('foreign key') || raw.includes('violates foreign key')) {
-      if (raw.includes('postulaciones') || raw.includes('lote') || raw.includes('publicacion')) {
-        return 'Este anuncio ya tiene postulaciones o trabajos vinculados, por lo que no se puede eliminar. Si no quieres recibir más interesados, páusalo.';
-      }
-      return 'No se puede completar esta acción porque este registro ya está asociado a otro movimiento.';
-    }
-
-    if (code === '23505' || raw.includes('duplicate key') || raw.includes('unique')) {
-      return 'Este registro ya existe.';
-    }
-
-    if (code === '42501' || raw.includes('permission denied') || raw.includes('row-level security')) {
-      return 'No tienes permiso para realizar esta acción en este momento.';
-    }
-
-    if (raw.includes('failed to fetch') || raw.includes('network')) {
-      return 'Parece que hay un problema de conexión. Revisa tu internet e inténtalo de nuevo.';
-    }
-
-    return defecto;
-  }
-
   private async actualizar(
     tabla: string,
     id: string,
@@ -512,12 +501,8 @@ export class PanelOficinaComponent implements OnInit {
       await this.cargar();
     } catch (e: any) {
       console.error(`Error actualizando ${tabla}:`, e);
-      this.notificar(this.mensajeAmigable(e, msgError), 'error');
+      this.notificar(mensajeAmigable(e, msgError), 'error');
     }
-  }
-
-  private uno<T>(v: T | T[] | null | undefined): T | null {
-    return Array.isArray(v) ? (v[0] ?? null) : (v ?? null);
   }
 
   notificar(texto: string, tipo: 'ok' | 'error' = 'ok') {
@@ -525,28 +510,14 @@ export class PanelOficinaComponent implements OnInit {
     setTimeout(() => this.aviso.set(null), 4000);
   }
 
-  claseEstado(estado: string): string {
-    switch (estado) {
-      case 'Asignado':      return 'bg-slate-100 text-slate-700';
-      case 'En Confección':
-      case 'Aceptado':
-      case 'En Proceso':    return 'bg-sky-50 text-sky-700';
-      case 'Terminado':     return 'bg-amber-50 text-amber-800';
-      case 'Cerrado':       return 'bg-teal-50 text-teal-800';
-      default:              return 'bg-slate-100 text-slate-700';
-    }
-  }
-
   etiquetaLote(l: any): string {
     return l.estado === 'Terminado' ? 'Esperando confirmación de la tienda' : 'En producción';
   }
 
   contactarWhatsApp(telefono: string | null | undefined, nombre: string, concepto: string) {
-    if (!telefono) return this.notificar('Este usuario no tiene un número de WhatsApp disponible.', 'error');
-    let n = telefono.replace(/\D/g, '');
-    if (n.length <= 11) n = '55' + n;
-    const msg = `Hola ${nombre}, te escribo desde CosturaPronta por: "${concepto}".`;
-    window.open(`https://wa.me/${n}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+    if (!abrirWhatsApp(telefono, nombre, concepto)) {
+      this.notificar('Este usuario no tiene un número de WhatsApp disponible.', 'error');
+    }
   }
 
   irA(seccion: Seccion) { this.seccion.set(seccion); }

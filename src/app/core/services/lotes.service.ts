@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { uno } from '../utils/helpers';
 
-const PERSONA = 'id, nombre_completo, verificado, telefono';
+const PERSONA = 'id, nombre_completo, verificado, telefono, avatar_svg_id, avatar_icono, avatar_color, avatar_marco';
 
 export interface LoteActivo {
   id: string;

@@ -8,7 +8,8 @@
   <div class="overflow-hidden p-5" [ngClass]="ui.card">
     <div class="flex items-center justify-between">
       <div class="rounded-full ring-2 ring-stone-200">
-        <app-avatar [nombre]="perfil()?.nombre_completo" tamano="md" [verificado]="!!perfil()?.verificado" />
+        <app-avatar [nombre]="perfil()?.nombre_completo" tamano="md" [verificado]="!!perfil()?.verificado"
+                    [icono]="perfil()?.avatar_icono" [svgId]="perfil()?.avatar_svg_id" [color]="perfil()?.avatar_color" [marco]="perfil()?.avatar_marco" />
       </div>
       <a routerLink="/editar-perfil" [ngClass]="ui.btnSecundario" class="!px-3 !py-1.5 !text-xs">
         <app-icon nombre="pencil" clase="w-3.5 h-3.5" /> Editar
@@ -101,7 +102,8 @@
 
           <article *ngFor="let l of produccion()" [ngClass]="ui.card" class="p-4">
             <div class="flex items-start gap-3">
-              <app-avatar [nombre]="l.contraparte?.nombre_completo" [verificado]="!!l.contraparte?.verificado" />
+              <app-avatar [nombre]="l.contraparte?.nombre_completo" [verificado]="!!l.contraparte?.verificado"
+                          [icono]="l.contraparte?.avatar_icono" [svgId]="l.contraparte?.avatar_svg_id" [color]="l.contraparte?.avatar_color" [marco]="l.contraparte?.avatar_marco" />
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
                   <h2 class="truncate text-sm font-bold">{{ l.descripcion_corte || l.publicacion?.titulo }}</h2>
@@ -118,7 +120,7 @@
               <button type="button" (click)="whatsapp(l.contraparte?.telefono, l.contraparte?.nombre_completo, l.descripcion_corte)" [ngClass]="ui.btnSecundario">
                 <app-icon nombre="chat" clase="w-4 h-4" /> WhatsApp
               </button>
-              <a [routerLink]="['/dejar-evaluacion', l.contraparte?.id]" [ngClass]="ui.btnSecundario">
+              <a [routerLink]="['/evaluar', l.contraparte?.id]" [ngClass]="ui.btnSecundario">
                 <app-icon nombre="star" clase="w-4 h-4" /> Calificar
               </a>
               <button *ngIf="l.estado === 'Terminado'" type="button" (click)="confirmarRecepcion(l)" [ngClass]="ui.btnPrimario" class="ml-auto">
@@ -133,7 +135,7 @@
 
         <!-- =============================================== SOLICITUDES -->
         <section *ngIf="seccion() === 'solicitudes'">
-          <app-solicitudes-vinculo />
+          <app-solicitudes-vinculo (cambio)="cargar()" />
 
           <div *ngIf="pendientes() === 0 && propuestasEnviadas().length === 0" [ngClass]="ui.vacio">
             <app-icon nombre="inbox" clase="mx-auto h-8 w-8 text-stone-400" />
@@ -146,7 +148,8 @@
             <ul class="space-y-2">
               <li *ngFor="let s of solicitudesLotes()" [ngClass]="ui.card" class="p-4">
                 <div class="flex items-start gap-3">
-                  <app-avatar [nombre]="s.contraparte?.nombre_completo" [verificado]="!!s.contraparte?.verificado" />
+                  <app-avatar [nombre]="s.contraparte?.nombre_completo" [verificado]="!!s.contraparte?.verificado"
+                              [icono]="s.contraparte?.avatar_icono" [svgId]="s.contraparte?.avatar_svg_id" [color]="s.contraparte?.avatar_color" [marco]="s.contraparte?.avatar_marco" />
                   <div class="min-w-0 flex-1">
                     <p class="text-sm font-bold">{{ s.contraparte?.nombre_completo }}</p>
                     <p class="text-xs text-slate-500">Lote: {{ s.publicacion?.titulo }} · {{ s.contraparte?.zona_ubicacion || 'São Paulo' }}</p>
@@ -170,7 +173,8 @@
             <ul class="space-y-2">
               <li *ngFor="let c of candidatos()" [ngClass]="ui.card" class="p-4">
                 <div class="flex items-start gap-3">
-                  <app-avatar [nombre]="c.contraparte?.nombre_completo" [verificado]="!!c.contraparte?.verificado" />
+                  <app-avatar [nombre]="c.contraparte?.nombre_completo" [verificado]="!!c.contraparte?.verificado"
+                              [icono]="c.contraparte?.avatar_icono" [svgId]="c.contraparte?.avatar_svg_id" [color]="c.contraparte?.avatar_color" [marco]="c.contraparte?.avatar_marco" />
                   <div class="min-w-0 flex-1">
                     <p class="text-sm font-bold">{{ c.contraparte?.nombre_completo }}</p>
                     <p class="text-xs text-slate-500">Vacante: {{ c.publicacion?.titulo }}</p>
@@ -193,7 +197,8 @@
             <h2 class="mb-2 text-sm font-bold">Propuestas que enviaste a talleres</h2>
             <ul class="space-y-2">
               <li *ngFor="let p of propuestasEnviadas()" [ngClass]="ui.card" class="flex items-center gap-3 p-4">
-                <app-avatar [nombre]="p.contraparte?.nombre_completo" />
+                <app-avatar [nombre]="p.contraparte?.nombre_completo" [verificado]="!!p.contraparte?.verificado"
+                            [icono]="p.contraparte?.avatar_icono" [svgId]="p.contraparte?.avatar_svg_id" [color]="p.contraparte?.avatar_color" [marco]="p.contraparte?.avatar_marco" />
                 <div class="min-w-0 flex-1">
                   <p class="truncate text-sm font-bold">{{ p.descripcion_corte }}</p>
                   <p class="text-xs text-slate-500">{{ p.contraparte?.nombre_completo }} · {{ p.cantidad_piezas | number }} pzas · {{ moneda(p.pago_por_pieza) }}</p>
@@ -219,7 +224,8 @@
           <div *ngIf="equipoActivo().length > 0" class="grid gap-2 sm:grid-cols-2">
             <article *ngFor="let e of equipoActivo()" [ngClass]="ui.card" class="p-4">
               <div class="flex items-center gap-3">
-                <app-avatar [nombre]="e.funcionario?.nombre_completo" [verificado]="!!e.funcionario?.verificado" />
+                <app-avatar [nombre]="e.funcionario?.nombre_completo" [verificado]="!!e.funcionario?.verificado"
+                            [icono]="e.funcionario?.avatar_icono" [svgId]="e.funcionario?.avatar_svg_id" [color]="e.funcionario?.avatar_color" [marco]="e.funcionario?.avatar_marco" />
                 <div class="min-w-0 flex-1">
                   <p class="truncate text-sm font-bold">{{ e.funcionario?.nombre_completo }}</p>
                   <p class="truncate text-xs text-slate-500">{{ e.funcionario?.especialidad_principal }}</p>
@@ -302,7 +308,7 @@
             <app-icon nombre="megaphone" clase="mx-auto h-8 w-8 text-stone-400" />
             <p class="mt-3 text-sm font-semibold">No has publicado anuncios</p>
           </div>
-          <article *ngFor="let p of misPublicaciones()" [ngClass]="ui.card" class="flex items-center gap-3 p-4">
+          <article *ngFor="let p of misPublicaciones()" [ngClass]="ui.card" class="flex flex-wrap items-center gap-3 p-4">
             <div class="min-w-0 flex-1">
               <a [routerLink]="['/trabajo', p.id]" class="block truncate text-sm font-bold hover:underline">{{ p.titulo }}</a>
               <p class="text-xs text-slate-500">
@@ -310,6 +316,10 @@
                 <span *ngIf="p.cantidad_piezas > 0"> · {{ p.cantidad_piezas | number }} pzas · {{ moneda(p.pago_por_pieza) }}</span>
               </p>
             </div>
+            <a [routerLink]="['/trabajo', p.id]"
+               class="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-stone-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-teal-500 hover:bg-teal-50/60 hover:text-teal-800">
+              <app-icon nombre="eye" clase="w-3.5 h-3.5" /> Ver anuncio
+            </a>
             <button type="button" (click)="alternarAnuncio(p)" class="rounded-md px-2.5 py-1 text-xs font-semibold"
                     [ngClass]="p.estado === 'Activo' ? 'bg-teal-50 text-teal-800' : 'bg-amber-50 text-amber-800'">{{ p.estado }}</button>
             <button type="button" (click)="eliminarAnuncio(p.id)" aria-label="Eliminar anuncio" class="rounded-lg p-2 text-rose-600 hover:bg-rose-50"><app-icon nombre="trash" clase="w-4 h-4" /></button>

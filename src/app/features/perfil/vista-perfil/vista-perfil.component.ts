@@ -4,7 +4,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { EstadoVinculo, SocialService } from '../../../core/services/social.service';
-import { ROL_ETIQUETA, ROL_PANEL, TIPO_PUBLICACION, UI, abrirWhatsApp, moneda, uno } from '../../../core/utils/helpers';
+import { ROL_ETIQUETA, ROL_PANEL, TIPO_PUBLICACION, UI, abrirWhatsApp, mensajeAmigable, moneda, uno } from '../../../core/utils/helpers';
 import { calcularGamificacion, estiloPortada } from '../../../core/utils/gamificacion';
 
 import { GamificacionComponent } from '../../../shared/components/gamificacion/gamificacion.component';
@@ -17,7 +17,7 @@ type Seccion = 'resumen' | 'insignias' | 'anuncios' | 'resenas' | 'red';
 
 /** Sólo campos públicos: nunca documento, cnpj, cep ni correo. */
 const CAMPOS_PUBLICOS = `id, nombre_completo, rol, verificado, zona_ubicacion, especialidad_principal, bio_taller, lema,
-  color_portada, patron_portada, avatar_icono, avatar_color, insignias_destacadas, created_at,
+  color_portada, patron_portada, avatar_svg_id, avatar_icono, avatar_color, avatar_marco, insignias_destacadas, created_at,
   promedio_estrellas, total_evaluaciones, operaciones_cerradas, operaciones_sin_defectos, piezas_totales,
   seguidores_count, conexiones_count, equipo_count, cantidad_maquinas, cantidad_operarios, tipo_tienda,
   estado_laboral, maquinas_maneja, tiene_vehiculo, trabaja_en_casal, busca_alojamiento, alojamiento_propio,
@@ -212,7 +212,7 @@ export class VistaPerfilComponent implements OnInit, OnDestroy {
       this.siguiendo.set(!antes);
       this.stats.update(s => ({ ...s, seguidores: Math.max(0, s.seguidores + delta) }));
       this.perfil.update(p => ({ ...p, seguidores_count: Math.max(0, (p.seguidores_count || 0) + delta) }));
-    } catch (e: any) { this.notificar(e?.message ?? 'No se pudo actualizar.', 'error'); }
+    } catch (e: any) { this.notificar(mensajeAmigable(e, 'No se pudo actualizar.'), 'error'); }
     finally { this.procesando.set(false); }
   }
 
@@ -223,7 +223,7 @@ export class VistaPerfilComponent implements OnInit, OnDestroy {
       await this.social.solicitarVinculo(this.perfilId);
       this.vinculo.set({ estado: 'enviado' });
       this.notificar('Solicitud de conexión enviada.');
-    } catch (e: any) { this.notificar(e?.message ?? 'No se pudo enviar.', 'error'); }
+    } catch (e: any) { this.notificar(mensajeAmigable(e, 'No se pudo enviar.'), 'error'); }
     finally { this.procesando.set(false); }
   }
 
@@ -234,7 +234,7 @@ export class VistaPerfilComponent implements OnInit, OnDestroy {
       await this.social.responderVinculo(id, aceptar);
       await this.cargar(this.perfilId);
       this.notificar(aceptar ? 'Ahora están conectados.' : 'Solicitud rechazada.');
-    } catch (e: any) { this.notificar(e?.message ?? 'No se pudo responder.', 'error'); }
+    } catch (e: any) { this.notificar(mensajeAmigable(e, 'No se pudo responder.'), 'error'); }
   }
 
   /** Cancela una solicitud enviada o elimina una conexión existente. */
@@ -245,7 +245,7 @@ export class VistaPerfilComponent implements OnInit, OnDestroy {
     try {
       await this.social.eliminarVinculo(id);
       await this.cargar(this.perfilId);
-    } catch (e: any) { this.notificar(e?.message ?? 'No se pudo actualizar.', 'error'); }
+    } catch (e: any) { this.notificar(mensajeAmigable(e, 'No se pudo actualizar.'), 'error'); }
   }
 
   whatsapp() {

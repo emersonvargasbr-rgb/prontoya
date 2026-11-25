@@ -86,8 +86,8 @@
               <app-avatar *ngIf="!vip.es_promo"
                           [nombre]="vip.empresa"
                           [icono]="vip.icono"
+                          [svgId]="vip.svgId"
                           [color]="vip.color"
-                          [anillo]="vip.anillo"
                           [marco]="vip.marco"
                           tamano="md"
                           [verificado]="true" />
@@ -145,8 +145,8 @@
             <div class="flex items-center gap-1.5 pr-6">
               <app-avatar [nombre]="t.empresa"
                           [icono]="t.icono"
+                          [svgId]="t.svgId"
                           [color]="t.color"
-                          [anillo]="t.anillo"
                           [marco]="t.marco"
                           tamano="sm"
                           [verificado]="t.verificado" />

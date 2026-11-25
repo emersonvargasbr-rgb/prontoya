@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { SupabaseService } from '../../../core/services/supabase.service';
+import { mensajeAmigable } from '../../../core/utils/helpers';
 
 export interface PaisWhatsApp {
   codigo: string;
@@ -119,7 +120,7 @@ export class RegistroComponent {
       alert(`¡Registro exitoso! Bienvenido a CosturaPronta.${msgDoc}`);
       this.router.navigate(['/login']);
     } catch (error: any) {
-      this.mensajeError = error?.message || 'Hubo un error al crear la cuenta.';
+      this.mensajeError = mensajeAmigable(error, 'Hubo un error al crear la cuenta.');
     } finally {
       this.cargando = false;
     }

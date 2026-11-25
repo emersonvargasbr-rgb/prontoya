@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { SupabaseService } from '../../../core/services/supabase.service';
-import { UI, moneda, uno } from '../../../core/utils/helpers';
+import { UI, mensajeAmigable, moneda, uno } from '../../../core/utils/helpers';
+import { Ciclo, calcularPrecioCiclo, formatoPrecio } from '../../../core/utils/planes';
 import { IconComponent } from '../../../shared/components/icon.component';
 import { AvatarComponent } from '../../../shared/components/avatar.component';
 import { TabItem, TabsComponent } from '../../../shared/components/tabs.component';
@@ -22,7 +23,7 @@ interface Verificacion {
 
 /**
  * Gestión de suscripciones (sólo administradores).
- * Ruta sugerida:  /admin/suscripciones   (con adminGuard)
+ * Ruta: /admin/suscripciones (protegida con adminGuard)
  */
 @Component({
   selector: 'app-admin-suscripciones',
@@ -33,6 +34,7 @@ interface Verificacion {
 export class AdminSuscripcionesComponent implements OnInit {
   readonly ui = UI;
   readonly moneda = moneda;
+  readonly formatoPrecio = formatoPrecio;
 
   cargando = signal(true);
   aviso = signal<Aviso | null>(null);
@@ -43,11 +45,10 @@ export class AdminSuscripcionesComponent implements OnInit {
   /** id de la suscripción con una acción en curso, para bloquear doble clic */
   procesando = signal<string | null>(null);
   verificando = signal<string | null>(null);
-  rechazando = signal<string | null>(null);   // id con el formulario de rechazo abierto
+  rechazando = signal<string | null>(null);
   motivo = '';
   copiado = signal('');
 
-  // ---------------------------------------------------------------- derivados
   private filtradas = computed(() => {
     const q = this.busqueda().toLowerCase().trim();
     if (!q) return this.lista();
@@ -56,14 +57,18 @@ export class AdminSuscripcionesComponent implements OnInit {
         .some(v => (v ?? '').toLowerCase().includes(q)));
   });
 
-  pendientes = computed(() => this.filtradas().filter(s => s.estado === 'Pendiente').sort((a, b) => a.created_at.localeCompare(b.created_at)));
-  activas = computed(() => this.filtradas().filter(s => s.estado === 'Activa').sort((a, b) => a.expira_el.localeCompare(b.expira_el)));
+  pendientes = computed(() =>
+    this.filtradas().filter(s => s.estado === 'Pendiente').sort((a, b) => (a.created_at ?? '').localeCompare(b.created_at ?? ''))
+  );
+  activas = computed(() =>
+    this.filtradas().filter(s => s.estado === 'Activa').sort((a, b) => (a.expira_el ?? '').localeCompare(b.expira_el ?? ''))
+  );
   historial = computed(() => this.filtradas().filter(s => !['Pendiente', 'Activa'].includes(s.estado)));
 
   porVencer = computed(() => this.activas().filter(s => this.diasRestantes(s) <= 7).length);
 
   tabs = computed<TabItem[]>(() => [
-    { id: 'pendientes', txt: 'Por revisar', icono: 'inbox',   n: this.pendientes().length, alerta: true },
+    { id: 'pendientes', txt: 'Por revisar', icono: 'inbox',    n: this.pendientes().length, alerta: true },
     { id: 'activas',    txt: 'Activas',     icono: 'verified', n: this.activas().length },
     { id: 'historial',  txt: 'Historial',   icono: 'archive',  n: this.historial().length },
   ]);
@@ -74,14 +79,14 @@ export class AdminSuscripcionesComponent implements OnInit {
 
   async ngOnInit() { await this.cargar(); }
 
- async cargar() {
+  async cargar() {
     this.cargando.set(true);
     try {
       const { data, error } = await this.db
         .from('suscripciones')
         .select(`
           id, ciclo, estado, inicia_el, expira_el, metodo_pago, comprobante_url, referencia_pago, created_at,
-          perfil:perfil_id (id, nombre_completo, rol, telefono, correo, zona_ubicacion, verificado, plan, plan_vigente_hasta),
+          perfil:perfil_id (id, nombre_completo, rol, telefono, correo, zona_ubicacion, verificado, plan, plan_vigente_hasta, avatar_svg_id, avatar_icono, avatar_color, avatar_marco),
           plan:plan_id (id, nombre, grupo, mensual, anual)
         `)
         .order('created_at', { ascending: false })
@@ -98,17 +103,25 @@ export class AdminSuscripcionesComponent implements OnInit {
       );
     } catch (e: any) {
       console.error(e);
-      this.notificar(e?.message ?? 'No se pudieron cargar las suscripciones.', 'error');
+      this.notificar(mensajeAmigable(e, 'No se pudieron cargar las suscripciones.'), 'error');
     } finally {
       this.cargando.set(false);
     }
   }
+
+  montoSuscripcion(s: any): string {
+    const mensual = Number(s.plan?.mensual || 0);
+    if (!mensual) return formatoPrecio(0);
+    const ciclo = (s.ciclo || 'mensual') as Ciclo;
+    if (ciclo === 'anual' && s.plan?.anual) return formatoPrecio(Number(s.plan.anual));
+    return formatoPrecio(calcularPrecioCiclo(mensual, ciclo));
+  }
+
   diasRestantes(s: any): number {
+    if (!s.expira_el) return 0;
     return Math.ceil((new Date(s.expira_el).getTime() - Date.now()) / 86_400_000);
   }
 
-  // ------------------------------------------------------------- acciones
-  /** Compara el código con el historial de Binance (no aprueba nada, salvo que lo hayas activado en config_cobro). */
   async verificar(s: any) {
     if (this.verificando()) return;
     this.verificando.set(s.id);
@@ -147,16 +160,15 @@ export class AdminSuscripcionesComponent implements OnInit {
 
   async expirarVencidas() {
     const { data, error } = await this.db.rpc('expirar_suscripciones');
-    if (error) return this.notificar(error.message, 'error');
+    if (error) return this.notificar(mensajeAmigable(error, 'No se pudieron expirar las suscripciones.'), 'error');
     this.notificar(`${data ?? 0} suscripción(es) marcada(s) como expirada(s).`);
     await this.cargar();
   }
 
-  /** Los comprobantes están en un bucket privado: se abren con un enlace firmado de 5 minutos. */
   async verComprobante(s: any) {
     const ruta: string | null = s.comprobante_url;
     if (!ruta) return;
-    if (/^https?:\/\//.test(ruta)) { window.open(ruta, '_blank', 'noopener'); return; }   // comprobantes antiguos con URL pública
+    if (/^https?:\/\//.test(ruta)) { window.open(ruta, '_blank', 'noopener'); return; }
     const { data, error } = await this.db.storage.from('comprobantes').createSignedUrl(ruta, 300);
     if (error || !data?.signedUrl) return this.notificar('No se pudo abrir el comprobante.', 'error');
     window.open(data.signedUrl, '_blank', 'noopener');
@@ -170,17 +182,16 @@ export class AdminSuscripcionesComponent implements OnInit {
     } catch { /* sin permiso de portapapeles */ }
   }
 
-  // -------------------------------------------------------------- helpers
   private async ejecutar(id: string, accion: () => PromiseLike<{ error: any }>, ok: string) {
     if (this.procesando()) return;
     this.procesando.set(id);
     try {
       const { error } = await accion();
-      if (error) throw new Error(error.message);
+      if (error) throw error;
       this.notificar(ok);
       await this.cargar();
     } catch (e: any) {
-      this.notificar(e.message ?? 'No se pudo completar la acción.', 'error');
+      this.notificar(mensajeAmigable(e, 'No se pudo completar la acción.'), 'error');
     } finally {
       this.procesando.set(null);
     }

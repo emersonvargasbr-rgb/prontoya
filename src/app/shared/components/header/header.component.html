@@ -64,7 +64,7 @@
           <button type="button" (click)="alternarMenu()" id="boton-usuario" aria-haspopup="menu" [attr.aria-expanded]="menuAbierto()" aria-controls="menu-usuario"
                   class="flex items-center gap-2 rounded-lg p-1 pr-2 transition hover:bg-stone-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#183a28]">
             <ng-container *ngIf="sesion.usuario() as u">
-              <app-avatar [nombre]="u.nombre_completo" tamano="sm" [icono]="u.avatar_icono" [color]="u.avatar_color" />
+              <app-avatar [nombre]="u.nombre_completo" tamano="sm" [verificado]="!!u.verificado" [icono]="u.avatar_icono" [svgId]="u.avatar_svg_id" [color]="u.avatar_color" [marco]="u.avatar_marco" />
               <span class="hidden max-w-[10rem] truncate text-sm font-semibold text-slate-800 lg:block">{{ u.nombre_completo }}</span>
             </ng-container>
             <app-icon nombre="chevron-down" clase="w-4 h-4 text-slate-500 transition-transform" [class.rotate-180]="menuAbierto()" />

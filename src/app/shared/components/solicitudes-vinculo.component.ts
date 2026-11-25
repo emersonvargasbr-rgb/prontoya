@@ -5,20 +5,28 @@ import { IconComponent } from './icon.component';
 import { AvatarComponent } from './avatar.component';
 import { SocialService } from '../../core/services/social.service';
 import { SupabaseService } from '../../core/services/supabase.service';
-import { ROL_ETIQUETA, UI, uno } from '../../core/utils/helpers';
+import { ROL_ETIQUETA, UI, mensajeAmigable, uno } from '../../core/utils/helpers';
 
 @Component({
   selector: 'app-solicitudes-vinculo',
   standalone: true,
   imports: [CommonModule, RouterModule, IconComponent, AvatarComponent],
   template: `
+    <div *ngIf="error()" class="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-medium text-rose-700">
+      {{ error() }}
+    </div>
+
     <div *ngIf="items().length > 0" class="space-y-6 mb-6">
-      <!-- 1. Solicitudes de empleo / vacante -->
       <section *ngIf="solicitudesEmpleo().length > 0">
         <h2 class="mb-2 text-sm font-bold">Postulaciones y solicitudes de equipo</h2>
         <ul class="space-y-2">
           <li *ngFor="let s of solicitudesEmpleo()" [ngClass]="ui.card" class="flex flex-wrap items-center gap-3 p-3">
-            <app-avatar [nombre]="s.solicitante?.nombre_completo" [verificado]="!!s.solicitante?.verificado" />
+            <app-avatar [nombre]="s.solicitante?.nombre_completo"
+                        [icono]="s.solicitante?.avatar_icono"
+                        [svgId]="s.solicitante?.avatar_svg_id"
+                        [color]="s.solicitante?.avatar_color"
+                        [marco]="s.solicitante?.avatar_marco"
+                        [verificado]="!!s.solicitante?.verificado" />
             <a [routerLink]="['/perfil-usuario', s.solicitante?.id]" class="min-w-0 flex-1">
               <div class="flex items-center gap-2">
                 <p class="truncate text-sm font-bold hover:underline">{{ s.solicitante?.nombre_completo }}</p>
@@ -41,12 +49,16 @@ import { ROL_ETIQUETA, UI, uno } from '../../core/utils/helpers';
         </ul>
       </section>
 
-      <!-- 2. Conexiones directas / contactos externos (sin postulación previa) -->
       <section *ngIf="conexionesDirectas().length > 0">
         <h2 class="mb-2 text-sm font-bold">Conexiones directas y contactos externos</h2>
         <ul class="space-y-2">
           <li *ngFor="let s of conexionesDirectas()" [ngClass]="ui.card" class="flex flex-wrap items-center gap-3 p-3">
-            <app-avatar [nombre]="s.solicitante?.nombre_completo" [verificado]="!!s.solicitante?.verificado" />
+            <app-avatar [nombre]="s.solicitante?.nombre_completo"
+                        [icono]="s.solicitante?.avatar_icono"
+                        [svgId]="s.solicitante?.avatar_svg_id"
+                        [color]="s.solicitante?.avatar_color"
+                        [marco]="s.solicitante?.avatar_marco"
+                        [verificado]="!!s.solicitante?.verificado" />
             <a [routerLink]="['/perfil-usuario', s.solicitante?.id]" class="min-w-0 flex-1">
               <div class="flex items-center gap-2">
                 <p class="truncate text-sm font-bold hover:underline">{{ s.solicitante?.nombre_completo }}</p>
@@ -78,6 +90,7 @@ export class SolicitudesVinculoComponent implements OnInit {
   readonly ui = UI;
   readonly roles = ROL_ETIQUETA;
   items = signal<any[]>([]);
+  error = signal('');
   @Output() cambio = new EventEmitter<void>();
 
   solicitudesEmpleo = () =>
@@ -103,16 +116,19 @@ export class SolicitudesVinculoComponent implements OnInit {
   }
 
   async responder(s: any, aceptar: boolean) {
+    this.error.set('');
     try {
       await this.social.responderVinculo(s.id, aceptar);
       this.items.update(l => l.filter(x => x.id !== s.id));
       this.cambio.emit();
-    } catch (e) { console.error(e); }
+    } catch (e: any) {
+      this.error.set(mensajeAmigable(e, 'No se pudo actualizar la solicitud.'));
+    }
   }
 
   async aceptarYAgregarEquipo(s: any) {
+    this.error.set('');
     try {
-      await this.social.responderVinculo(s.id, true);
       const { data: { user } } = await this.db.auth.getUser();
       const funcionarioId = s.solicitante?.id ?? s.solicitante_id;
 
@@ -126,8 +142,12 @@ export class SolicitudesVinculoComponent implements OnInit {
         if (error) throw error;
       }
 
+      await this.social.responderVinculo(s.id, true);
       this.items.update(l => l.filter(x => x.id !== s.id));
       this.cambio.emit();
-    } catch (e) { console.error(e); }
+    } catch (e: any) {
+      console.error(e);
+      this.error.set(mensajeAmigable(e, 'No pudimos sumar al operario a tu equipo.'));
+    }
   }
 }

@@ -1,2 +1,16 @@
 /* You can add global styles to this file, and also import other style files */
 @import "tailwindcss";
+
+@keyframes pulso-oro {
+  0%, 100% {
+    box-shadow: 0 0 0 2px #f59e0b, 0 0 12px rgba(245, 158, 11, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 3px #fbbf24, 0 0 18px rgba(251, 191, 36, 0.75);
+  }
+}
+
+.marco-gold {
+  animation: pulso-oro 2.4s ease-in-out infinite;
+  border: 2px solid #f59e0b;
+}

@@ -88,7 +88,7 @@ export class OnboardingComponent implements OnInit {
       if (error) throw error;
 
       alert('¡Perfil configurado con éxito!');
-      this.router.navigate(['/feed-trabajos']); // O al panel que corresponda
+      this.router.navigate(['/feed']);
 
     } catch (error: any) {
       this.mensajeError = 'Error al guardar los datos. Intenta de nuevo.';

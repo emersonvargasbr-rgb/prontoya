@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { SupabaseService } from '../../../core/services/supabase.service';
-import { ROL_ETIQUETA, ROL_PANEL, UI } from '../../../core/utils/helpers';
+import { ROL_ETIQUETA, ROL_PANEL, UI, mensajeAmigable } from '../../../core/utils/helpers';
 import { ETIQUETAS_EVALUACION, Rol, calcularGamificacion } from '../../../core/utils/gamificacion';
 import { Aviso, ToastComponent } from '../../../shared/components/toast.component';
 import { AvatarComponent } from '../../../shared/components/avatar.component';
@@ -64,7 +64,7 @@ export class DejarEvaluacionComponent implements OnInit {
     try {
       const [perfil, yo, permiso, previa] = await Promise.all([
         this.db.from('perfiles')
-          .select('id, nombre_completo, rol, verificado, zona_ubicacion, avatar_icono, avatar_color, promedio_estrellas, total_evaluaciones')
+          .select('id, nombre_completo, rol, verificado, zona_ubicacion, avatar_svg_id, avatar_icono, avatar_color, avatar_marco, promedio_estrellas, total_evaluaciones')
           .eq('id', this.evaluadoId).maybeSingle(),
         this.db.from('perfiles').select('rol').eq('id', user.id).maybeSingle(),
         this.db.rpc('puede_evaluar', { a: this.usuarioActualId, b: this.evaluadoId }),
@@ -139,7 +139,7 @@ export class DejarEvaluacionComponent implements OnInit {
       setTimeout(() => this.volver(), 1100);
     } catch (e: any) {
       console.error(e);
-      this.notificar(e?.message ?? 'No se pudo enviar. Intenta de nuevo.', 'error');
+      this.notificar(mensajeAmigable(e, 'No se pudo enviar. Intenta de nuevo.'), 'error');
     } finally {
       this.enviando.set(false);
     }
@@ -149,7 +149,7 @@ export class DejarEvaluacionComponent implements OnInit {
     const id = this.evaluacionId();
     if (!id || !confirm('Eliminar tu reseña?')) return;
     const { error } = await this.db.from('evaluaciones').delete().eq('id', id);
-    if (error) return this.notificar(error.message, 'error');
+    if (error) return this.notificar(mensajeAmigable(error, 'No se pudo eliminar la reseña.'), 'error');
     this.notificar('Reseña eliminada.');
     setTimeout(() => this.volver(), 900);
   }

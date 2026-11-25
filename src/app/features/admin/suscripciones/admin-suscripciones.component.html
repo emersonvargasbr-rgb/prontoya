@@ -53,7 +53,12 @@
 
         <article *ngFor="let s of pendientes()" [ngClass]="ui.card" class="space-y-4 p-4">
           <div class="flex flex-wrap items-start gap-3">
-            <app-avatar [nombre]="s.perfil?.nombre_completo" [verificado]="!!s.perfil?.verificado" />
+            <app-avatar [nombre]="s.perfil?.nombre_completo"
+                        [icono]="s.perfil?.avatar_icono"
+                        [svgId]="s.perfil?.avatar_svg_id"
+                        [color]="s.perfil?.avatar_color"
+                        [marco]="s.perfil?.avatar_marco"
+                        [verificado]="!!s.perfil?.verificado" />
             <div class="min-w-0 flex-1">
               <a [routerLink]="['/perfil-usuario', s.perfil?.id]" class="text-sm font-bold hover:underline">{{ s.perfil?.nombre_completo }}</a>
               <p class="text-xs text-slate-500">
@@ -65,9 +70,14 @@
             <div class="text-right">
               <p class="text-sm font-bold">{{ s.plan?.nombre }} <span class="font-normal text-slate-500">· {{ s.ciclo }}</span></p>
               <p class="text-sm font-bold text-teal-800">
-                {{ (s.ciclo === 'anual' ? s.plan?.anual : s.plan?.mensual) ?? 0 }}
+                {{ montoSuscripcion(s) }}
               </p>
             </div>
+          </div>
+
+          <div *ngIf="s.verificacion as v" class="flex items-start gap-2 rounded-lg border p-3 text-xs" [ngClass]="claseVerificacion(v)">
+            <app-icon [nombre]="iconoVerificacion(v)" clase="w-4 h-4 shrink-0 mt-0.5" />
+            <p class="font-medium">{{ v.mensaje }}</p>
           </div>
 
           <dl class="grid gap-2 rounded-lg bg-stone-50 p-3 text-sm sm:grid-cols-2">
@@ -137,7 +147,12 @@
         </div>
 
         <article *ngFor="let s of activas()" [ngClass]="ui.card" class="flex flex-wrap items-center gap-3 p-4">
-          <app-avatar [nombre]="s.perfil?.nombre_completo" [verificado]="true" />
+          <app-avatar [nombre]="s.perfil?.nombre_completo"
+                      [icono]="s.perfil?.avatar_icono"
+                      [svgId]="s.perfil?.avatar_svg_id"
+                      [color]="s.perfil?.avatar_color"
+                      [marco]="s.perfil?.avatar_marco"
+                      [verificado]="true" />
           <div class="min-w-0 flex-1">
             <a [routerLink]="['/perfil-usuario', s.perfil?.id]" class="text-sm font-bold hover:underline">{{ s.perfil?.nombre_completo }}</a>
             <p class="text-xs text-slate-500">{{ s.plan?.nombre }} · {{ s.ciclo }} · desde {{ s.inicia_el | date:'dd/MM/yyyy' }}</p>

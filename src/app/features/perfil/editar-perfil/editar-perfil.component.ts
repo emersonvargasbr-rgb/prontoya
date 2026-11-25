@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { SupabaseService } from '../../../core/services/supabase.service';
 
-import { MAQUINAS, ROL_ETIQUETA, ROL_PANEL, UI, ZONAS } from '../../../core/utils/helpers';
+import { MAQUINAS, ROL_ETIQUETA, ROL_PANEL, UI, ZONAS, mensajeAmigable } from '../../../core/utils/helpers';
 import {
   AVATARES_ILUSTRADOS,
   AVATAR_ICONOS,
@@ -155,6 +155,7 @@ export class EditarPerfilComponent implements OnInit {
     out.color_portada = out.color_portada || '#134e4a';
     out.color_texto_portada = '#ffffff';
     out.patron_portada = out.patron_portada || 'liso';
+    out.avatar_icono = out.avatar_icono || src.avatar_svg_id || null;
     out.avatar_marco = out.avatar_marco || 'nivel';
     out.insignias_destacadas = [...(out.insignias_destacadas ?? [])];
     out.maquinas_maneja = [...(out.maquinas_maneja ?? [])];
@@ -325,7 +326,7 @@ export class EditarPerfilComponent implements OnInit {
       setTimeout(() => this.router.navigate([ROL_PANEL[this.rol()] ?? '/feed']), 900);
     } catch (e: any) {
       console.error(e);
-      this.notificar(e?.message ?? 'No se pudo guardar. Intenta de nuevo.', 'error');
+      this.notificar(mensajeAmigable(e, 'No se pudo guardar. Intenta de nuevo.'), 'error');
     } finally {
       this.guardando.set(false);
     }

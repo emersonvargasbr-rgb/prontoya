@@ -7,7 +7,7 @@ import { ROL_PANEL } from '../utils/helpers';
 import { calcularGamificacion } from '../utils/gamificacion';
 
 /** Campos justos para pintar el menú de usuario y calcular su nivel. */
-const CAMPOS = `id, nombre_completo, rol, verificado, avatar_icono, avatar_color, bio_taller, lema, zona_ubicacion,
+const CAMPOS = `id, nombre_completo, rol, verificado, avatar_svg_id, avatar_icono, avatar_color, avatar_marco, bio_taller, lema, zona_ubicacion,
   especialidad_principal, maquinas_maneja, modalidad_trabajo, cantidad_maquinas, cantidad_operarios, tipo_tienda,
   operaciones_cerradas, operaciones_sin_defectos, piezas_totales, promedio_estrellas, total_evaluaciones,
   seguidores_count, conexiones_count, equipo_count, created_at, plan, plan_vigente_hasta`;

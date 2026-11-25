@@ -40,6 +40,17 @@
     <!-- ================================================== FORMULARIO -->
     <form *ngIf="!idCreado" (ngSubmit)="onSubmit()" #pubForm="ngForm" class="space-y-5">
 
+      <div *ngIf="!limiteAnuncios().ok" role="alert" class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
+        <p class="flex items-center gap-2 font-medium">
+          <app-icon nombre="alert" clase="w-4 h-4 shrink-0" />
+          {{ limiteAnuncios().motivo }}
+        </p>
+        <div class="flex gap-2">
+          <button type="button" (click)="cancelarYVolver()" [ngClass]="ui.btnSecundario" class="!px-2.5 !py-1 !text-xs">Mis anuncios</button>
+          <a routerLink="/planes" [ngClass]="ui.btnOscuro" class="!px-2.5 !py-1 !text-xs">Mejorar plan</a>
+        </div>
+      </div>
+
       <div *ngIf="mensajeError()" role="alert" class="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-700">
         <app-icon nombre="alert" clase="w-4 h-4 shrink-0" /> {{ mensajeError() }}
       </div>
@@ -62,9 +73,9 @@
 
         <!-- Título (todos) -->
         <label [ngClass]="ui.etiqueta">
-          {{ tipo === 'busco_oficina' ? 'Prenda y lote' : (tipo === 'busco_corte' ? 'Título del servicio' : (tipo === 'busco_funcionario' ? 'Prenda principal' : 'Título de tu anuncio')) }}
+          {{ tipo === 'busco_oficina' ? 'Prenda y lote' : (tipo === 'busco_corte' ? 'Título del servicio' : (tipo === 'busco_funcionario' ? 'Título de la vacante / oficio' : 'Título de tu anuncio')) }}
           <input type="text" [(ngModel)]="publicacion.titulo" name="titulo" required [ngClass]="ui.inputGrande"
-                 [placeholder]="tipo === 'busco_oficina' ? 'Ej: Lote 2000 vestidos canelados' : (tipo === 'busco_corte' ? 'Ej: Taller disponible para remeras' : (tipo === 'busco_funcionario' ? 'Ej: Regatas, vestidos' : 'Ej: Costurera con 8 años en malla'))">
+                 [placeholder]="tipo === 'busco_oficina' ? 'Ej: Lote 2000 vestidos canelados' : (tipo === 'busco_corte' ? 'Ej: Taller de sublimación y costura para remeras' : (tipo === 'busco_funcionario' ? 'Ej: Ojalero / botonero o cocinero para turno de taller' : 'Ej: Ojalero / costurero con experiencia en malla y plana'))">
         </label>
 
         <!-- Lote de tienda -->
@@ -78,46 +89,62 @@
         <!-- Taller libre -->
         <ng-container *ngIf="tipo === 'busco_corte'">
           <div class="grid gap-3 sm:grid-cols-2">
-            <label [ngClass]="ui.etiqueta">Especialidad del taller
+            <label [ngClass]="ui.etiqueta">Especialidad del taller o rubro
               <select [(ngModel)]="publicacion.especialidad_taller" name="especialidad" [ngClass]="ui.inputGrande">
-                <option>Costura y Confeccion Completa</option><option>Oficina de Corte</option><option>Caseadeira y Botoneira</option>
-                <option>Estampado y Sublimacion</option><option>Acabados y Plancha</option><option>Empaque y Etiquetado</option>
-              </select></label>
-            <label [ngClass]="ui.etiqueta">Tipo de tejido
+                <option *ngFor="let esp of especialidadesTaller" [value]="esp">{{ esp }}</option>
+              </select>
+            </label>
+            <label [ngClass]="ui.etiqueta">Tipo de tejido o material
               <select [(ngModel)]="publicacion.tipo_tejido" name="tejido" [ngClass]="ui.inputGrande">
-                <option>Malla (Malharia)</option><option>Tejido Plano</option><option>Ambos</option>
-              </select></label>
+                <option *ngFor="let tej of tiposTejido" [value]="tej">{{ tej }}</option>
+              </select>
+            </label>
             <label [ngClass]="ui.etiqueta">Modalidad de servicio
               <select [(ngModel)]="publicacion.modalidad_trabajo" name="modalidad" [ngClass]="ui.inputGrande">
-                <option value="Feirinha">Solo feirinha (lotes rápidos)</option><option value="Firma">Solo firma (producción continua)</option><option value="Ambos">Ambos</option>
-              </select></label>
+                <option value="Feirinha">Solo feirinha (lotes rápidos)</option>
+                <option value="Firma">Solo firma (producción continua)</option>
+                <option value="Ambos">Ambos</option>
+              </select>
+            </label>
             <label [ngClass]="ui.etiqueta">Capacidad por día o lote
-              <input type="text" [(ngModel)]="publicacion.capacidad_produccion" name="capacidad" required placeholder="Ej: 500 piezas por día" [ngClass]="ui.inputGrande"></label>
+              <input type="text" [(ngModel)]="publicacion.capacidad_produccion" name="capacidad" required placeholder="Ej: 500 piezas por día o 300 estampas" [ngClass]="ui.inputGrande">
+            </label>
           </div>
         </ng-container>
 
         <!-- Vacante y disponibilidad -->
         <ng-container *ngIf="tipo === 'busco_funcionario' || tipo === 'busco_trabajo'">
           <div class="grid gap-3 sm:grid-cols-2">
-            <label [ngClass]="ui.etiqueta">{{ tipo === 'busco_funcionario' ? 'Puesto requerido' : 'Tu especialidad' }}
+            <label [ngClass]="ui.etiqueta">{{ tipo === 'busco_funcionario' ? 'Puesto o oficio requerido' : 'Tu puesto / oficio principal' }}
               <select [(ngModel)]="publicacion.puesto_trabajo" name="puesto" [ngClass]="ui.inputGrande">
-                <option>Costurero(a) Overlock/Reta</option><option>Costurero(a) Galoneira</option><option>Casal de Costura</option>
-                <option>Planchador / Acabados</option><option>Empaque y Ventas</option>
-              </select></label>
+                <option *ngFor="let oficio of puestosYOficios" [value]="oficio">{{ oficio }}</option>
+              </select>
+            </label>
             <label [ngClass]="ui.etiqueta">{{ tipo === 'busco_funcionario' ? 'Alojamiento' : 'Alojamiento que necesitas' }}
               <select [(ngModel)]="publicacion.modalidad_alojamiento" name="alojamiento" [ngClass]="ui.inputGrande">
-                <option value="cama_fuera">Cama fuera (turno diario)</option><option value="cama_dentro">Cama dentro (vive en el taller)</option><option value="opcional">A convenir</option>
-              </select></label>
+                <option value="cama_fuera">Cama fuera (turno diario)</option>
+                <option value="cama_dentro">Cama dentro (vive en el taller)</option>
+                <option value="opcional">A convenir</option>
+              </select>
+            </label>
             <label [ngClass]="ui.etiqueta">{{ tipo === 'busco_funcionario' ? 'Personal buscado' : 'Cómo trabajas' }}
               <select [(ngModel)]="publicacion.modalidad_contratacion" name="contratacion" [ngClass]="ui.inputGrande">
-                <option value="individual">Individual</option><option value="casal">Casal (pareja de costura)</option><option value="equipo">Grupo o equipo completo</option>
-              </select></label>
+                <option value="individual">Individual</option>
+                <option value="casal">Casal (pareja)</option>
+                <option value="equipo">Grupo o equipo completo</option>
+              </select>
+            </label>
             <label [ngClass]="ui.etiqueta">{{ tipo === 'busco_funcionario' ? 'Hijos que admites' : 'Hijos que viven contigo' }}
               <select [(ngModel)]="publicacion.cantidad_hijos_permitidos" name="hijos" [ngClass]="ui.inputGrande">
                 <option [ngValue]="0">{{ tipo === 'busco_funcionario' ? 'Solo sin hijos' : 'Ninguno' }}</option>
-                <option [ngValue]="1">1</option><option [ngValue]="2">2</option><option [ngValue]="3">3</option>
-                <option [ngValue]="4">4</option><option [ngValue]="5">5</option><option [ngValue]="6">6 o más</option>
-              </select></label>
+                <option [ngValue]="1">1</option>
+                <option [ngValue]="2">2</option>
+                <option [ngValue]="3">3</option>
+                <option [ngValue]="4">4</option>
+                <option [ngValue]="5">5</option>
+                <option [ngValue]="6">6 o más</option>
+              </select>
+            </label>
           </div>
 
           <div class="grid gap-3 sm:grid-cols-2">
@@ -128,11 +155,11 @@
                 <option value="salario_mensual">Mensual</option>
               </select>
             </label>
-            
+
             <label [ngClass]="ui.etiqueta">
-              {{ publicacion.modalidad_pago === 'por_pieza' ? 'Pago por pieza (R$, máx. 50)' : 'Salario estimado (R$)' }}
-              <input type="number" min="0" [max]="publicacion.modalidad_pago === 'por_pieza' ? 50 : 10000" step="0.01" 
-                     [(ngModel)]="publicacion.pago_por_pieza" name="pagoFunc" [required]="tipo === 'busco_funcionario'" 
+              {{ publicacion.modalidad_pago === 'por_pieza' ? 'Pago por pieza (R$, máx. 50)' : 'Pago / salario estimado (R$)' }}
+              <input type="number" min="0" [max]="publicacion.modalidad_pago === 'por_pieza' ? 50 : 25000" step="0.01"
+                     [(ngModel)]="publicacion.pago_por_pieza" name="pagoFunc" [required]="tipo === 'busco_funcionario'"
                      [placeholder]="publicacion.modalidad_pago === 'por_pieza' ? '1.50' : '2000'" [ngClass]="ui.inputGrande">
             </label>
           </div>
@@ -154,17 +181,19 @@
           <label [ngClass]="ui.etiqueta">Zona o barrio
             <select [(ngModel)]="publicacion.zona_ubicacion" name="zona" required [ngClass]="ui.inputGrande">
               <option *ngFor="let z of zonas" [value]="z">{{ z }}</option>
-            </select></label>
+            </select>
+          </label>
           <label *ngIf="tipo === 'busco_oficina' || tipo === 'busco_corte'" [ngClass]="ui.etiqueta">Logística de transporte
             <select [(ngModel)]="publicacion.logistica_entrega" name="logistica" [ngClass]="ui.inputGrande">
               <option value="oficina_retira">El taller retira la carga</option>
               <option value="tienda_entrega">La tienda entrega en el taller</option>
               <option value="acuerdo_mutuo">A combinar</option>
-            </select></label>
+            </select>
+          </label>
         </div>
       </div>
 
-      <!-- Máquinas -->
+      <!-- Máquinas / Equipos -->
       <fieldset [ngClass]="ui.card" class="p-4">
         <legend class="sr-only">{{ etiquetaMaquinas }}</legend>
         <p class="mb-2 text-sm font-bold">{{ etiquetaMaquinas }}</p>
@@ -182,7 +211,7 @@
         <label class="flex cursor-pointer items-start gap-3" [class.opacity-60]="!vipDisponible()">
           <input type="checkbox" [(ngModel)]="publicacion.destacado" name="destacado" [disabled]="!vipDisponible()" class="mt-1 h-4 w-4 shrink-0 accent-teal-700">
           <span>
-            <span class="flex items-center gap-1.5 text-sm font-bold"><app-icon nombre="star"clase="w-4 h-4 text-amber-500" /> Anuncio VIP (destacado)</span>
+            <span class="flex items-center gap-1.5 text-sm font-bold"><app-icon nombre="star" clase="w-4 h-4 text-amber-500" /> Anuncio VIP (destacado)</span>
             <span class="mt-0.5 block text-xs text-slate-500">Aparece arriba en el feed.
               <ng-container *ngIf="vipTope() === null">Tu plan incluye anuncios VIP ilimitados.</ng-container>
               <ng-container *ngIf="vipTope() !== null">Este mes usaste {{ vipUsados() }} de {{ vipTope() }}.</ng-container>
@@ -196,12 +225,12 @@
 
       <!-- Notas -->
       <label [ngClass]="ui.etiqueta">Notas adicionales (opcional)
-        <textarea [(ngModel)]="publicacion.descripcion" name="descripcion" rows="3" placeholder="Empaque, hilos especiales, horarios..." [ngClass]="ui.inputGrande"></textarea>
+        <textarea [(ngModel)]="publicacion.descripcion" name="descripcion" rows="3" placeholder="Empaque, hilos especiales, horarios, cocina o medidas..." [ngClass]="ui.inputGrande"></textarea>
       </label>
 
       <div class="flex gap-3">
         <button type="button" (click)="cancelarYVolver()" [ngClass]="ui.btnSecundario" class="w-1/3 !py-3">Cancelar</button>
-        <button type="submit" [disabled]="!pubForm.form.valid || cargando()" [ngClass]="ui.btnPrimario" class="w-2/3 !py-3">
+        <button type="submit" [disabled]="!pubForm.form.valid || cargando() || !limiteAnuncios().ok" [ngClass]="ui.btnPrimario" class="w-2/3 !py-3">
           {{ cargando() ? 'Publicando...' : 'Publicar anuncio' }}
         </button>
       </div>

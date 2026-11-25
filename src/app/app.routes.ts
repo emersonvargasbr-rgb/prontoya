@@ -4,7 +4,7 @@ import { RegistroComponent } from './features/auth/registro/registro.component';
 import { PanelTiendaComponent } from './features/dashboard/panel-tienda/panel-tienda.component';
 import { roleGuard } from './core/guards/role-guard';
 import { authGuard } from './core/guards/auth-guard';
-import { adminGuard } from './core/guards/admin-guard'; // <--- Importar guard
+import { adminGuard } from './core/guards/admin-guard';
 import { PanelOficinaComponent } from './features/dashboard/panel-oficina/panel-oficina.component';
 import { PanelFuncionarioComponent } from './features/dashboard/panel-funcionario/panel-funcionario.component';
 import { VistaPerfilComponent } from './features/perfil/vista-perfil/vista-perfil.component';
@@ -17,6 +17,10 @@ import { MainLayoutComponent } from './layout/main-layout/main-layout.component'
 import { PlanesComponent } from './features/planes/planes.component';
 import { CheckoutSuscripcionComponent } from './features/planes/checkout-suscripcion.component';
 import { AdminSuscripcionesComponent } from './features/admin/suscripciones/admin-suscripciones.component';
+import { VerificarDocumentoComponent } from './features/perfil/verificar-documento/verificar-documento.component';
+import { MisIngresosComponent } from './features/perfil/mis-ingresos/mis-ingresos.component';
+import { LotesActivosComponent } from './features/gestion/lotes-activos/lotes-activos.component';
+import { HistorialLotesComponent } from './features/gestion/historial-lotes/historial-lotes.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -46,7 +50,6 @@ export const routes: Routes = [
       },
       { path: 'suscripcion', redirectTo: 'planes', pathMatch: 'full' },
 
-      // RUTA DE ADMINISTRACIÓN DE SUSCRIPCIONES
       {
         path: 'admin/suscripciones',
         component: AdminSuscripcionesComponent,
@@ -64,7 +67,32 @@ export const routes: Routes = [
         canActivate: [authGuard],
       },
       {
+        path: 'verificar-documento',
+        component: VerificarDocumentoComponent,
+        canActivate: [authGuard],
+      },
+      {
+        path: 'mis-ingresos',
+        component: MisIngresosComponent,
+        canActivate: [authGuard],
+      },
+      {
+        path: 'lotes-activos',
+        component: LotesActivosComponent,
+        canActivate: [authGuard],
+      },
+      {
+        path: 'historial-lotes',
+        component: HistorialLotesComponent,
+        canActivate: [authGuard],
+      },
+      {
         path: 'evaluar/:id',
+        component: DejarEvaluacionComponent,
+        canActivate: [authGuard],
+      },
+      {
+        path: 'dejar-evaluacion/:id',
         component: DejarEvaluacionComponent,
         canActivate: [authGuard],
       },

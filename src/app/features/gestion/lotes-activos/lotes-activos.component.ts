@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { SupabaseService } from '../../../core/services/supabase.service';
 
-import { ROL_PANEL, UI, abrirWhatsApp, claseEstado, moneda } from '../../../core/utils/helpers';
+import { ROL_PANEL, UI, abrirWhatsApp, claseEstado, mensajeAmigable, moneda } from '../../../core/utils/helpers';
 import { Aviso, ToastComponent } from '../../../shared/components/toast.component';
 import { AvatarComponent } from '../../../shared/components/avatar.component';
 import { IconComponent } from '../../../shared/components/icon.component';
@@ -95,7 +95,7 @@ export class LotesActivosComponent implements OnInit {
       await this.cargar();
     } catch (e: any) {
       console.error(e);
-      this.notificar(e?.message ?? 'No se pudo completar la acción.', 'error');
+      this.notificar(mensajeAmigable(e, 'No se pudo completar la acción.'), 'error');
     } finally {
       this.procesando.set(null);
     }

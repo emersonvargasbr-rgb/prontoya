@@ -47,7 +47,8 @@
     <li *ngFor="let l of lotes()" class="flex flex-col gap-4 p-5 transition hover:bg-stone-50/60 md:flex-row md:items-center md:justify-between">
 
       <div class="flex min-w-0 items-start gap-3">
-        <app-avatar [nombre]="l.contraparte?.nombre_completo" [verificado]="!!l.contraparte?.verificado" />
+        <app-avatar [nombre]="l.contraparte?.nombre_completo" [verificado]="!!l.contraparte?.verificado"
+                    [icono]="l.contraparte?.avatar_icono" [svgId]="l.contraparte?.avatar_svg_id" [color]="l.contraparte?.avatar_color" [marco]="l.contraparte?.avatar_marco" />
         <div class="min-w-0">
           <div class="flex flex-wrap items-center gap-2">
             <h3 class="truncate text-sm font-bold">{{ l.descripcion_corte }}</h3>

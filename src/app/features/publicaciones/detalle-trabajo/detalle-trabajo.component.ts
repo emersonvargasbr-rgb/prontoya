@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { EstadoVinculo, SocialService } from '../../../core/services/social.service';
-import { ROL_PANEL, TIPO_PUBLICACION, UI, abrirWhatsApp, claseEstado, moneda, uno } from '../../../core/utils/helpers';
+import { ROL_PANEL, TIPO_PUBLICACION, UI, abrirWhatsApp, claseEstado, mensajeAmigable, moneda, uno } from '../../../core/utils/helpers';
 import { Aviso, ToastComponent } from '../../../shared/components/toast.component';
 import { AvatarComponent } from '../../../shared/components/avatar.component';
 import { IconComponent } from '../../../shared/components/icon.component';
@@ -181,7 +181,7 @@ export class DetalleTrabajoComponent implements OnInit {
     try {
       if (this.siguiendo()) await this.social.dejarDeSeguir(id); else await this.social.seguir(id);
       this.siguiendo.update(v => !v);
-    } catch (e: any) { this.notificar(e?.message ?? 'No se pudo actualizar.', 'error'); }
+    } catch (e: any) { this.notificar(mensajeAmigable(e, 'No se pudo actualizar.'), 'error'); }
   }
 
   async conectar() {
@@ -191,7 +191,7 @@ export class DetalleTrabajoComponent implements OnInit {
       await this.social.solicitarVinculo(id);
       this.vinculo.set({ estado: 'enviado' });
       this.notificar('Solicitud de conexión enviada.');
-    } catch (e: any) { this.notificar(e?.message ?? 'No se pudo enviar.', 'error'); }
+    } catch (e: any) { this.notificar(mensajeAmigable(e, 'No se pudo enviar.'), 'error'); }
   }
 
   // ================================================================ NEGOCIO
@@ -259,7 +259,7 @@ export class DetalleTrabajoComponent implements OnInit {
       return true;
     } catch (e: any) {
       console.error(e);
-      this.notificar(e?.message ?? 'No se pudo enviar. Intenta de nuevo.', 'error');
+      this.notificar(mensajeAmigable(e, 'No se pudo enviar. Intenta de nuevo.'), 'error');
       return false;
     } finally {
       this.enviando.set(false);

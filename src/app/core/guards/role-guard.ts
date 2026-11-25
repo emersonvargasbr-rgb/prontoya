@@ -21,8 +21,7 @@ export const roleGuard: CanActivateFn = async (route, state) => {
   if (perfil && perfil.rol === expectedRole) {
     return true; // El rol coincide, déjalo pasar
   } else {
-    // Si intenta hacer trampa, mándalo al inicio
-    router.navigate(['/']); 
+    router.navigate(['/feed']);
     return false;
   }
 };

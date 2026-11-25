@@ -60,11 +60,50 @@ export const ROL_PANEL: Record<string, string> = {
 };
 
 export const TIPO_PUBLICACION: Record<string, { txt: string; icono: string; clase: string }> = {
-  busco_oficina:     { txt: 'Lote de tienda',      icono: 'store',     clase: 'bg-sky-50 text-sky-800' },     // <-- Cambiado de 'bag' a 'store' (para la tienda/oficina)
-  busco_corte:       { txt: 'Taller disponible',    icono: 'scissors',  clase: 'bg-teal-50 text-teal-800' },   // <-- 'scissors' para la tijera de corte
-  busco_funcionario: { txt: 'Vacante',              icono: 'user',      clase: 'bg-amber-50 text-amber-800' }, // <-- 'user' para la personita del funcionario
+  busco_oficina:     { txt: 'Lote de tienda',      icono: 'store',     clase: 'bg-sky-50 text-sky-800' },
+  busco_corte:       { txt: 'Taller disponible',    icono: 'scissors',  clase: 'bg-teal-50 text-teal-800' },
+  busco_funcionario: { txt: 'Vacante',              icono: 'user',      clase: 'bg-amber-50 text-amber-800' },
   busco_trabajo:     { txt: 'Operario disponible',  icono: 'briefcase', clase: 'bg-violet-50 text-violet-800' },
 };
+
+/** Traduce errores técnicos de Supabase/PostgreSQL/red en mensajes claros para el usuario. */
+export function mensajeAmigable(err: any, defecto = 'Ocurrió un error inesperado. Inténtalo de nuevo.'): string {
+  const raw = String(err?.message ?? err?.details ?? err ?? '').toLowerCase();
+  const code = String(err?.code ?? '');
+
+  if (code === '23503' || raw.includes('foreign key') || raw.includes('violates foreign key')) {
+    if (raw.includes('postulaciones') || raw.includes('lote') || raw.includes('publicacion')) {
+      return 'Este anuncio ya tiene postulaciones o trabajos vinculados, por lo que no se puede eliminar. Si no quieres recibir más interesados, páusalo.';
+    }
+    return 'No se puede completar esta acción porque este registro ya está asociado a otro movimiento.';
+  }
+
+  if (code === '23505' || raw.includes('duplicate key') || raw.includes('unique')) {
+    return 'Este registro ya existe o ya fue enviado anteriormente.';
+  }
+
+  if (code === '23514' || raw.includes('check constraint')) {
+    return 'Uno de los valores ingresados no cumple las reglas permitidas.';
+  }
+
+  if (code === '42501' || raw.includes('permission denied') || raw.includes('row-level security')) {
+    return 'No tienes permiso para realizar esta acción en este momento o alcanzaste el límite de tu plan.';
+  }
+
+  if (code === 'P0001' && err?.message) {
+    return String(err.message);
+  }
+
+  if (raw.includes('failed to fetch') || raw.includes('network') || raw.includes('err_internet')) {
+    return 'Parece que hay un problema de conexión. Revisa tu internet e inténtalo de nuevo.';
+  }
+
+  if (err?.message && !raw.includes('pgrst') && !raw.includes('column ') && !raw.includes('relation ')) {
+    return String(err.message);
+  }
+
+  return defecto;
+}
 
 /** Clases Tailwind reutilizables (literales completos para que Tailwind las detecte). */
 export const UI = {

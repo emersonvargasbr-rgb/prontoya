@@ -185,7 +185,7 @@ export class FeedTrabajosComponent implements OnInit, OnDestroy {
         .select(`id, creador_id, tipo_publicacion, titulo, descripcion, cantidad_piezas, pago_por_pieza,
           modalidad_pago, maquinas_requeridas, especialidad_taller, tipo_tejido, modalidad_alojamiento,
           puesto_trabajo, zona_ubicacion, created_at, es_vip, destacado,
-          creador:creador_id (id, nombre_completo, verificado, zona_ubicacion, promedio_estrellas, avatar_icono, avatar_color, avatar_marco)`)
+          creador:creador_id (id, nombre_completo, verificado, zona_ubicacion, promedio_estrellas, avatar_svg_id, avatar_icono, avatar_color, avatar_marco)`)
         .eq('estado', 'Activo')
         .gte('created_at', limiteVigencia)
         .order('created_at', { ascending: false })
@@ -208,7 +208,8 @@ export class FeedTrabajosComponent implements OnInit, OnDestroy {
           empresa: c?.nombre_completo || 'Anunciante',
           verificado: !!c?.verificado,
           rating: c?.promedio_estrellas ?? 0,
-          icono: c?.avatar_icono ?? null,
+          icono: c?.avatar_icono || c?.avatar_svg_id || null,
+          svgId: c?.avatar_svg_id ?? null,
           color: c?.avatar_color ?? null,
           marco: c?.avatar_marco ?? null,
         };

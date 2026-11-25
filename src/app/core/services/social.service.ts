@@ -81,7 +81,7 @@ export class SocialService {
   async solicitudesRecibidas() {
     const yo = await this.uid();
     const { data, error } = await this.db.from('vinculos')
-      .select('id, created_at, solicitante:solicitante_id (id, nombre_completo, rol, zona_ubicacion, verificado)')
+      .select('id, created_at, solicitante:solicitante_id (id, nombre_completo, rol, zona_ubicacion, verificado, especialidad_principal, telefono, avatar_svg_id, avatar_icono, avatar_color, avatar_marco)')
       .eq('destinatario_id', yo).eq('estado', 'Pendiente')
       .order('created_at', { ascending: false });
     if (error) throw error;
@@ -91,8 +91,8 @@ export class SocialService {
   async misVinculos(perfilId: string) {
     const { data, error } = await this.db.from('vinculos')
       .select(`id,
-        solicitante:solicitante_id (id, nombre_completo, rol, verificado),
-        destinatario:destinatario_id (id, nombre_completo, rol, verificado)`)
+        solicitante:solicitante_id (id, nombre_completo, rol, verificado, avatar_svg_id, avatar_icono, avatar_color, avatar_marco),
+        destinatario:destinatario_id (id, nombre_completo, rol, verificado, avatar_svg_id, avatar_icono, avatar_color, avatar_marco)`)
       .eq('estado', 'Aceptado')
       .or(`solicitante_id.eq.${perfilId},destinatario_id.eq.${perfilId}`);
     if (error) throw error;

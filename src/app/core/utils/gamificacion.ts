@@ -268,24 +268,24 @@ export const AVATAR_ICONOS: ItemCosmetico[] = [];
 export const AVATAR_ILUSTRACIONES: ItemCosmetico[] = [
   {
     id: 'avatar-pato',
-    nombre: 'Silueta 2',
+    nombre: 'Pato',
     nivelMin: 1,
   },
   {
     id: 'avatar-huella',
-    nombre: 'Silueta 3',
+    nombre: 'Huella',
     nivelMin: 2,
     seguidoresMin: 10,
   },
   {
     id: 'avatar-sapo',
-    nombre: 'Silueta 4',
+    nombre: 'Sapo',
     nivelMin: 2,
     pistaDidactica: 'Incluida en plan Pro',
   },
   {
     id: 'avatar-cututu',
-    nombre: 'Huella',
+    nombre: 'Cututu',
     nivelMin: 3,
     pistaDidactica: 'Colección Gold',
   },

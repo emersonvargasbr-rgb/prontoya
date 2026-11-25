@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IconComponent } from './icon.component';
+import { ICONOS_DISPONIBLES, IconComponent } from './icon.component';
 
 export const AVATAR_PALETAS = [
   { id: 'teal',   nombre: 'Verde',    clase: 'bg-teal-100 text-teal-800' },
@@ -28,13 +28,18 @@ const TAMANOS = {
             [style.backgroundColor]="colorHex || null"
             [style.color]="colorHex ? '#ffffff' : null"
             class="inline-flex items-center justify-center overflow-hidden rounded-full font-semibold select-none relative">
-        
+
         <!-- Si es imagen ilustrada por archivo SVG externo -->
-        <img *ngIf="esImagen; else renderIcono" [src]="rutaImagen" alt="" class="h-full w-full object-cover">
-        
-        <!-- Si usa el sistema de iconos SVG del diccionario (Animales / UI) -->
-        <ng-template #renderIcono>
-          <app-icon [nombre]="icono || 'animal-burro-cara'" clase="absolute inset-0 m-auto w-3/5 h-3/5" />
+        <img *ngIf="esImagen; else renderIconoOIniciales" [src]="rutaImagen" alt="" class="h-full w-full object-cover">
+
+        <!-- Si usa el diccionario de iconos SVG o fallback a iniciales -->
+        <ng-template #renderIconoOIniciales>
+          <app-icon *ngIf="iconoValido; else renderIniciales"
+                    [nombre]="iconoEfectivo!"
+                    clase="absolute inset-0 m-auto w-3/5 h-3/5" />
+          <ng-template #renderIniciales>
+            <span class="font-bold tracking-tight uppercase">{{ iniciales }}</span>
+          </ng-template>
         </ng-template>
 
       </span>
@@ -51,28 +56,42 @@ export class AvatarComponent {
   @Input() tamano: keyof typeof TAMANOS = 'md';
   @Input() verificado = false;
   @Input() icono?: string | null;
+  @Input() svgId?: string | null;     // Compatibilidad con `avatar_svg_id`
   @Input() color?: string | null;     // Puede ser ID de paleta o un HEX plano
   @Input() anillo?: string | null;    // Clase ring-* del nivel
   @Input() marco?: string | null;     // 'gold' para marco dorado animado de planes élite
 
   get tam() { return TAMANOS[this.tamano] || TAMANOS.md; }
 
-  get esImagen(): boolean { return !!this.icono && this.icono.startsWith('img:'); }
-  get rutaImagen(): string { return `assets/avatars/${(this.icono ?? '').slice(4)}.svg`; }
+  get iconoEfectivo(): string | null {
+    const val = (this.icono || this.svgId || '').trim();
+    return val || null;
+  }
+
+  get esImagen(): boolean { return !!this.iconoEfectivo && this.iconoEfectivo.startsWith('img:'); }
+  get rutaImagen(): string { return `assets/avatars/${(this.iconoEfectivo ?? '').slice(4)}.svg`; }
+  get iconoValido(): boolean {
+    const id = this.iconoEfectivo;
+    return !!id && !id.startsWith('img:') && id in ICONOS_DISPONIBLES;
+  }
+
+  get iniciales(): string {
+    const partes = (this.nombre ?? '').trim().split(/\s+/).filter(Boolean);
+    if (partes.length === 0) return 'CP';
+    if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+    return (partes[0][0] + partes[1][0]).toUpperCase();
+  }
 
   get colorHex(): string | null {
-    // Si mandan un código hexadecimal directo
     if (this.color && this.color.startsWith('#')) return this.color;
     return null;
   }
 
   get paletaFondo(): string {
     if (this.colorHex) return '';
-    // Buscar si el color coincide con una paleta predefinida
     const elegida = AVATAR_PALETAS.find(p => p.id === this.color);
     if (elegida) return elegida.clase;
 
-    // Si no hay color definido, generar hash basado en el nombre
     let h = 0;
     for (const c of this.nombre ?? '') h = (h * 31 + c.charCodeAt(0)) >>> 0;
     return AVATAR_PALETAS[h % AVATAR_PALETAS.length].clase;

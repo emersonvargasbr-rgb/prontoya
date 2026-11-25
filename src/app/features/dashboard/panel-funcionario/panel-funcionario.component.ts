@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { SocialService } from '../../../core/services/social.service';
-import { UI, abrirWhatsApp, claseEstado, moneda, uno } from '../../../core/utils/helpers';
+import { PlanService } from '../../../core/services/plan.service';
+import { UI, abrirWhatsApp, claseEstado, mensajeAmigable, moneda, uno } from '../../../core/utils/helpers';
+import { esPlanPagoId, nombreDePlan, planVigente } from '../../../core/utils/planes';
 import { IconComponent } from '../../../shared/components/icon.component';
 import { AvatarComponent } from '../../../shared/components/avatar.component';
 import { TabItem, TabsComponent } from '../../../shared/components/tabs.component';
@@ -85,37 +87,20 @@ export class PanelFuncionarioComponent implements OnInit {
   postulacionesPendientes = computed(() => this.postulaciones().filter(p => p.estado === 'Pendiente').length);
 
   planIdEfectivo = computed(() => {
-    const planSub = (this.suscripcionActiva()?.plan_id ?? '').toLowerCase().trim();
+    const sub = this.suscripcionActiva();
     const p = this.perfil();
-    const planPerfil = (p?.plan ?? p?.plan_id ?? '').toLowerCase().trim();
-
-    if (planSub && !['free', 'gratis', 'basico', 'basic'].includes(planSub)) {
+    const planSub = (sub?.plan_id ?? '').toLowerCase().trim();
+    if (sub && esPlanPagoId(planSub) && (!sub.expira_el || new Date(sub.expira_el).getTime() > Date.now())) {
       return planSub;
     }
-    if (p?.plan_vigente_hasta && new Date(p.plan_vigente_hasta) < new Date()) {
-      return 'free';
-    }
-    return planPerfil || 'free';
+    return planVigente(p?.plan ?? p?.plan_id, p?.plan_vigente_hasta) ?? 'free';
   });
 
-  esPlanPro = computed(() => {
-    const id = this.planIdEfectivo();
-    return !['', 'free', 'gratis', 'basico', 'basic'].includes(id);
-  });
+  esPlanPro = computed(() => esPlanPagoId(this.planIdEfectivo()) || this.plan.registroManual());
 
   nombrePlanActual = computed(() => {
-    const mapa: Record<string, string> = {
-      free: 'Plan Gratis',
-      gratis: 'Plan Gratis',
-      basico: 'Plan Gratis',
-      basic: 'Plan Gratis',
-      pro: 'Plan Pro',
-      operario_pro: 'Operario Pro',
-      gold: 'Plan Gold',
-      elite: 'Plan Elite',
-    };
     const id = this.planIdEfectivo();
-    return mapa[id] ?? id.toUpperCase();
+    return id === 'free' ? 'Plan Gratis' : nombreDePlan(id);
   });
 
   gamificacion = computed(() => {
@@ -216,7 +201,8 @@ export class PanelFuncionarioComponent implements OnInit {
   constructor(
     private supabaseService: SupabaseService,
     private social: SocialService,
-    private router: Router
+    private router: Router,
+    readonly plan: PlanService,
   ) {}
 
   private get db() {
@@ -260,7 +246,7 @@ export class PanelFuncionarioComponent implements OnInit {
         this.cargarSuscripcionActiva(id),
         this.db
           .from('asignaciones_funcionarios')
-          .select('*, empleador:empleador_id (id, nombre_completo, telefono, zona_ubicacion, rol)')
+          .select('*, empleador:empleador_id (id, nombre_completo, telefono, zona_ubicacion, rol, verificado, avatar_svg_id, avatar_icono, avatar_color, avatar_marco)')
           .eq('funcionario_id', id)
           .order('fecha_inicio', { ascending: false })
           .limit(200),
@@ -268,7 +254,7 @@ export class PanelFuncionarioComponent implements OnInit {
           .from('postulaciones_lotes')
           .select(`id, estado, created_at,
             publicacion:publicacion_id (id, titulo, tipo_publicacion,
-              creador:creador_id (id, nombre_completo, zona_ubicacion, telefono, verificado))`)
+              creador:creador_id (id, nombre_completo, zona_ubicacion, telefono, verificado, avatar_svg_id, avatar_icono, avatar_color, avatar_marco))`)
           .eq('taller_id', id)
           .order('created_at', { ascending: false }),
         this.db
@@ -278,7 +264,7 @@ export class PanelFuncionarioComponent implements OnInit {
           .order('created_at', { ascending: false }),
         this.db
           .from('empleados')
-          .select('id, fecha_ingreso, empleador:empleador_id (id, nombre_completo, telefono, zona_ubicacion, rol)')
+          .select('id, fecha_ingreso, empleador:empleador_id (id, nombre_completo, telefono, zona_ubicacion, rol, verificado, avatar_svg_id, avatar_icono, avatar_color, avatar_marco)')
           .eq('funcionario_id', id)
           .eq('estado', 'Activo'),
         this.db
@@ -288,6 +274,7 @@ export class PanelFuncionarioComponent implements OnInit {
           .order('created_at', { ascending: false }),
         this.social.contar(id),
       ]);
+      await this.plan.cargar();
 
       [perf, asig, post, pubs, emp, evals].forEach(
         r => r.error && console.error('Error cargando dato del panel de operario:', r.error)
@@ -328,7 +315,7 @@ export class PanelFuncionarioComponent implements OnInit {
     if (error) {
       console.error('Error cambiando estado laboral:', error);
       return this.notificar(
-        this.mensajeAmigable(error, 'No pudimos actualizar tu disponibilidad. Intenta de nuevo.'),
+        mensajeAmigable(error, 'No pudimos actualizar tu disponibilidad. Intenta de nuevo.'),
         'error'
       );
     }
@@ -371,7 +358,7 @@ export class PanelFuncionarioComponent implements OnInit {
     if (error) {
       console.error('Error retirando postulación:', error);
       return this.notificar(
-        this.mensajeAmigable(error, 'No se pudo retirar la postulación porque ya tiene respuesta.'),
+        mensajeAmigable(error, 'No se pudo retirar la postulación porque ya tiene respuesta.'),
         'error'
       );
     }
@@ -390,7 +377,7 @@ export class PanelFuncionarioComponent implements OnInit {
     if (error) {
       console.error('Error cambiando estado del anuncio:', error);
       return this.notificar(
-        this.mensajeAmigable(error, 'No pudimos cambiar el estado del anuncio.'),
+        mensajeAmigable(error, 'No pudimos cambiar el estado del anuncio.'),
         'error'
       );
     }
@@ -410,7 +397,7 @@ export class PanelFuncionarioComponent implements OnInit {
     if (error) {
       console.error('Error eliminando anuncio:', error);
       return this.notificar(
-        this.mensajeAmigable(
+        mensajeAmigable(
           error,
           'Este anuncio ya tiene postulaciones o registros vinculados, por lo que no se puede eliminar. Puedes pausarlo.'
         ),
@@ -435,37 +422,11 @@ export class PanelFuncionarioComponent implements OnInit {
 
     if (error) {
       console.error('Error actualizando asignación:', error);
-      return this.notificar(this.mensajeAmigable(error, msgError), 'error');
+      return this.notificar(mensajeAmigable(error, msgError), 'error');
     }
 
     this.notificar(ok);
     await this.cargar();
-  }
-
-  private mensajeAmigable(err: any, defecto: string): string {
-    const raw = String(err?.message ?? err?.details ?? err ?? '').toLowerCase();
-    const code = String(err?.code ?? '');
-
-    if (code === '23503' || raw.includes('foreign key') || raw.includes('violates foreign key')) {
-      if (raw.includes('postulaciones') || raw.includes('lote') || raw.includes('publicacion')) {
-        return 'Este anuncio ya tiene postulaciones o trabajos asociados, por lo que no se puede eliminar. Si quieres ocultarlo, páusalo.';
-      }
-      return 'No se puede completar esta acción porque este registro ya está en uso.';
-    }
-
-    if (code === '23505' || raw.includes('duplicate key') || raw.includes('unique')) {
-      return 'Este registro ya existe.';
-    }
-
-    if (code === '42501' || raw.includes('permission denied') || raw.includes('row-level security')) {
-      return 'No tienes permiso para realizar esta acción en este momento.';
-    }
-
-    if (raw.includes('failed to fetch') || raw.includes('network')) {
-      return 'Parece que hay un problema de conexión. Revisa tu internet e inténtalo de nuevo.';
-    }
-
-    return defecto;
   }
 
   notificar(texto: string, tipo: 'ok' | 'error' = 'ok') {

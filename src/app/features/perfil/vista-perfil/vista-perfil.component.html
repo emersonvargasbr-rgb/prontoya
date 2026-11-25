@@ -28,7 +28,7 @@
           <div class="-mt-10 flex items-end justify-between gap-3">
             <div class="rounded-full bg-white p-1">
               <app-avatar [nombre]="p.nombre_completo" tamano="xl" [verificado]="!!p.verificado"
-                          [icono]="p.avatar_icono" [color]="p.avatar_color" [anillo]="g()?.claseAnillo ?? ''" />
+                          [icono]="p.avatar_icono" [svgId]="p.avatar_svg_id" [color]="p.avatar_color" [marco]="p.avatar_marco" [anillo]="g()?.claseAnillo ?? ''" />
             </div>
             <div class="flex gap-2 pb-1">
               <a *ngIf="esMio()" routerLink="/editar-perfil" [ngClass]="ui.btnSecundario" class="!px-3 !py-1.5 !text-xs"><app-icon nombre="pencil" clase="w-3.5 h-3.5" /> Editar perfil</a>
@@ -185,7 +185,8 @@
           <p class="mt-3 text-sm font-semibold">Todavía sin conexiones</p>
         </div>
         <a *ngFor="let c of conexiones()" [routerLink]="['/perfil-usuario', c.perfil?.id]" [ngClass]="ui.card" class="flex items-center gap-3 p-3 transition hover:border-stone-300">
-          <app-avatar [nombre]="c.perfil?.nombre_completo" [verificado]="!!c.perfil?.verificado" />
+          <app-avatar [nombre]="c.perfil?.nombre_completo" [verificado]="!!c.perfil?.verificado"
+                      [icono]="c.perfil?.avatar_icono" [svgId]="c.perfil?.avatar_svg_id" [color]="c.perfil?.avatar_color" [marco]="c.perfil?.avatar_marco" />
           <div class="min-w-0">
             <p class="truncate text-sm font-bold">{{ c.perfil?.nombre_completo }}</p>
             <p class="text-xs text-slate-500">{{ roles[c.perfil?.rol]?.txt }}</p>

@@ -1,24 +1,22 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { SupabaseService } from '../../core/services/supabase.service';
-import { UI, moneda } from '../../core/utils/helpers';
+import { CotizacionSuscripcion, PlanService } from '../../core/services/plan.service';
+import { UI, mensajeAmigable, moneda } from '../../core/utils/helpers';
+import { Ciclo, ETIQUETA_CICLO, PLANES, PlanId, nombreDePlan } from '../../core/utils/planes';
 import { IconComponent } from '../../shared/components/icon.component';
-
-interface Cotizacion {
-  plan: string; nombre: string; ciclo: string;
-  monto_brl_centavos: number; monto_usdt: number; tasa: number;
-  receptor_binance_id: string | null; receptor_nombre: string | null;
-}
 
 const TIPOS_OK = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'];
 const MAX_BYTES = 5 * 1024 * 1024;
+const CICLOS_VALIDOS: Ciclo[] = ['mensual', 'trimestral', 'anual'];
 
 /**
  * Checkout de suscripción por Binance Pay.
- *  - El precio y el receptor los calcula el SERVIDOR (cotizar_suscripcion): el navegador ya no decide cuánto se paga.
- *  - La solicitud entra por solicitar_suscripcion(): el usuario no escribe en la tabla `suscripciones`.
+ *  - El precio y el receptor se obtienen vía `PlanService.cotizarSuscripcion` (backend `cotizar_suscripcion`).
+ *  - Soporta ciclos mensual (1 mes), trimestral (3 meses) y anual (12 meses).
+ *  - La solicitud entra por `solicitar_suscripcion()`.
  *  - El comprobante se sube a la carpeta privada <tu-id>/ del bucket "comprobantes".
  */
 @Component({
@@ -44,29 +42,48 @@ const MAX_BYTES = 5 * 1024 * 1024;
 
         <!-- ================================================== ENVIADO -->
         <section *ngIf="enviado()" [ngClass]="ui.card" class="space-y-3 p-6 text-center" role="status">
-          <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-teal-50 text-teal-700"><app-icon nombre="check" clase="w-6 h-6" /></span>
+          <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-teal-50 text-teal-700">
+            <app-icon nombre="check" clase="w-6 h-6" />
+          </span>
           <h2 class="text-base font-bold">Pago enviado para revisión</h2>
-          <p class="text-sm text-slate-600">Revisaremos tu código y activaremos el plan {{ cot()?.nombre }} en cuanto lo confirmemos. Normalmente tarda pocas horas.</p>
+          <p class="text-sm text-slate-600">
+            Revisaremos tu código y activaremos el plan <strong>{{ cot()?.nombre }}</strong> ({{ etiquetaCiclo[ciclo()] }}) en cuanto lo confirmemos.
+          </p>
           <a routerLink="/planes" [ngClass]="ui.btnPrimario" class="w-full">Volver a planes</a>
         </section>
 
         <!-- ================================================== FORMULARIO -->
         <div *ngIf="!cargando() && !enviado() && cot() as c" [ngClass]="ui.card" class="space-y-6 p-6">
 
+          <!-- Selector rápido de ciclo -->
+          <div class="grid grid-cols-3 gap-1.5 rounded-xl bg-stone-100 p-1" role="group" aria-label="Ciclo de pago">
+            <button *ngFor="let op of ciclosDisponibles" type="button" (click)="cambiarCiclo(op)"
+                    class="rounded-lg py-1.5 text-xs font-semibold transition"
+                    [ngClass]="ciclo() === op ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'">
+              {{ op === 'mensual' ? '1 mes' : (op === 'trimestral' ? '3 meses (-5%)' : '12 meses (-7%)') }}
+            </button>
+          </div>
+
           <div class="border-b border-stone-100 pb-4">
             <p class="text-xs font-semibold text-amber-700">Plan seleccionado · pago en cripto</p>
-            <h2 class="mt-1 text-lg font-bold">{{ c.nombre }} <span class="text-sm font-normal text-slate-500">({{ c.ciclo }})</span></h2>
+            <h2 class="mt-1 text-lg font-bold">{{ c.nombre }} <span class="text-sm font-normal text-slate-500">({{ etiquetaCiclo[c.ciclo] }})</span></h2>
             <p class="mt-2 text-3xl font-bold">{{ c.monto_usdt | number:'1.2-2' }} <span class="text-sm font-normal text-slate-500">USDT</span></p>
-            <p class="mt-0.5 text-xs text-slate-500">Equivale a {{ moneda(c.monto_brl_centavos) }} (1 USDT = R$ {{ c.tasa | number:'1.2-2' }})</p>
-            <p *ngIf="c.ciclo === 'anual'" class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-teal-700"><app-icon nombre="check" clase="w-3.5 h-3.5" /> Incluye el descuento por pago anual</p>
+            <p class="mt-0.5 text-xs text-slate-500">Equivale a {{ moneda(c.monto_brl_centavos / 100) }} (1 USDT = R$ {{ c.tasa | number:'1.2-2' }})</p>
+            <p *ngIf="c.descuento_pct > 0" class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-teal-700">
+              <app-icon nombre="check" clase="w-3.5 h-3.5" /> Incluye {{ c.descuento_pct }}% de descuento por pago {{ c.ciclo }}
+            </p>
           </div>
 
           <div class="space-y-2 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
-            <h3 class="flex items-center gap-2 text-sm font-bold text-amber-900"><app-icon nombre="coin" clase="w-4 h-4 text-amber-600" /> Paga con Binance Pay</h3>
+            <h3 class="flex items-center gap-2 text-sm font-bold text-amber-900">
+              <app-icon nombre="coin" clase="w-4 h-4 text-amber-600" /> Paga con Binance Pay
+            </h3>
             <p class="text-xs text-slate-600">Envía exactamente <strong>{{ c.monto_usdt | number:'1.2-2' }} USDT</strong> (o USDC) a este destinatario:</p>
             <div class="flex items-center justify-between gap-2 rounded-lg border border-amber-300 bg-white p-3">
-              <p class="break-all font-mono text-sm font-semibold">{{ c.receptor_binance_id || 'Destinatario no configurado' }}</p>
-              <button *ngIf="c.receptor_binance_id" type="button" (click)="copiar(c.receptor_binance_id!)" [ngClass]="ui.btnSecundario" class="!px-2.5 !py-1 !text-xs">{{ copiado() ? 'Copiado' : 'Copiar' }}</button>
+              <p class="break-all font-mono text-sm font-semibold">{{ c.receptor_binance_id || 'Solicitar ID de pago a soporte o usar correo oficial' }}</p>
+              <button *ngIf="c.receptor_binance_id" type="button" (click)="copiar(c.receptor_binance_id!)" [ngClass]="ui.btnSecundario" class="!px-2.5 !py-1 !text-xs">
+                {{ copiado() ? 'Copiado' : 'Copiar' }}
+              </button>
             </div>
             <details class="text-xs text-slate-600">
               <summary class="cursor-pointer font-semibold">Cómo hacerlo paso a paso</summary>
@@ -81,10 +98,14 @@ const MAX_BYTES = 5 * 1024 * 1024;
 
           <div class="space-y-4">
             <label [ngClass]="ui.etiqueta">ID de orden / código de transacción de Binance
-              <input type="text" [(ngModel)]="codigo" name="codigo" autocomplete="off" spellcheck="false" placeholder="Lo ves en el recibo de Binance" [ngClass]="ui.inputGrande" class="font-mono"></label>
+              <input type="text" [(ngModel)]="codigo" name="codigo" autocomplete="off" spellcheck="false"
+                     placeholder="Lo ves en el recibo de Binance" [ngClass]="ui.inputGrande" class="font-mono">
+            </label>
 
             <label [ngClass]="ui.etiqueta">Tu Binance ID o correo de Binance <span class="font-normal text-slate-400">(recomendado)</span>
-              <input type="text" [(ngModel)]="pagador" name="pagador" autocomplete="off" placeholder="Nos permite comprobar que el pago es tuyo" [ngClass]="ui.inputGrande"></label>
+              <input type="text" [(ngModel)]="pagador" name="pagador" autocomplete="off"
+                     placeholder="Nos permite comprobar que el pago es tuyo" [ngClass]="ui.inputGrande">
+            </label>
 
             <div>
               <label [ngClass]="ui.etiqueta" for="comprobante">Captura del comprobante <span class="font-normal text-slate-400">(imagen o PDF, máx. 5 MB)</span></label>
@@ -97,10 +118,10 @@ const MAX_BYTES = 5 * 1024 * 1024;
               <app-icon nombre="alert" clase="w-4 h-4 shrink-0 mt-0.5" /> {{ error() }}
             </p>
 
-            <button type="button" (click)="enviar()" [disabled]="enviando()" [ngClass]="ui.btnOscuro" class="w-full !py-3">
-              {{ enviando() ? 'Enviando...' : 'Enviar pago de ' + (c.monto_usdt | number:'1.2-2') + ' USDT' }}
+            <button type="button" (click)="abrirConfirmacion()" [disabled]="enviando()" [ngClass]="ui.btnOscuro" class="w-full !py-3">
+              {{ enviando() ? 'Enviando...' : 'Revisar y confirmar pago de ' + (c.monto_usdt | number:'1.2-2') + ' USDT' }}
             </button>
-            <p class="text-center text-[11px] text-slate-400">Tu comprobante es privado: sólo lo ve el equipo de CosturaPronta.</p>
+            <p class="text-center text-[11px] text-slate-400">Tu comprobante es privado: sólo lo ve el equipo de administración.</p>
           </div>
         </div>
 
@@ -110,8 +131,8 @@ const MAX_BYTES = 5 * 1024 * 1024;
           <ul [ngClass]="ui.card" class="divide-y divide-stone-100">
             <li *ngFor="let s of misSolicitudes()" class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
               <div class="min-w-0">
-                <p class="font-semibold">{{ s.plan_id }} · {{ s.ciclo }}</p>
-                <p class="text-xs text-slate-500">{{ s.created_at | date:'dd/MM/yyyy HH:mm' }}<span *ngIf="s.estado === 'Rechazada' && s.motivo_rechazo"> · {{ s.motivo_rechazo }}</span></p>
+                <p class="font-semibold">{{ nombrePlan(s.plan_id) }} · {{ s.ciclo }}</p>
+                <p class="text-xs text-slate-500">{{ s.created_at | date:'dd/MM/yyyy HH:mm' }}<span *ngIf="s.referencia_pago"> · <span class="font-mono">{{ s.referencia_pago }}</span></span></p>
               </div>
               <span class="rounded-md px-2 py-0.5 text-[11px] font-semibold"
                     [ngClass]="s.estado === 'Activa' ? 'bg-teal-50 text-teal-800' : (s.estado === 'Pendiente' ? 'bg-amber-50 text-amber-800' : (s.estado === 'Rechazada' ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-600'))">{{ s.estado }}</span>
@@ -119,31 +140,67 @@ const MAX_BYTES = 5 * 1024 * 1024;
           </ul>
         </section>
       </div>
+
+      <!-- MODAL DE CONFIRMACIÓN DE PAGO -->
+      <div *ngIf="mostrarConfirmacion() && cot() as c"
+           class="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 p-4 sm:items-center"
+           role="dialog" aria-modal="true" aria-labelledby="titulo-conf-pago">
+        <div class="w-full max-w-md space-y-4 rounded-2xl bg-white p-6 shadow-xl">
+          <div class="flex items-start justify-between gap-3">
+            <h3 id="titulo-conf-pago" class="text-base font-bold text-slate-900">Confirmar envío de pago</h3>
+            <button type="button" (click)="mostrarConfirmacion.set(false)" aria-label="Cerrar" [ngClass]="ui.btnSecundario" class="!px-2 !py-1.5">
+              <app-icon nombre="x" clase="w-4 h-4" />
+            </button>
+          </div>
+          <dl class="space-y-2 rounded-xl bg-stone-50 p-4 text-xs">
+            <div class="flex justify-between"><dt class="text-slate-500">Plan</dt><dd class="font-bold">{{ c.nombre }}</dd></div>
+            <div class="flex justify-between"><dt class="text-slate-500">Ciclo</dt><dd class="font-bold">{{ etiquetaCiclo[c.ciclo] }}</dd></div>
+            <div class="flex justify-between"><dt class="text-slate-500">Monto</dt><dd class="font-bold text-teal-800">{{ c.monto_usdt | number:'1.2-2' }} USDT ({{ moneda(c.monto_brl_centavos / 100) }})</dd></div>
+            <div class="flex justify-between"><dt class="text-slate-500">Referencia</dt><dd class="font-mono font-bold">{{ codigo.trim() }}</dd></div>
+            <div class="flex justify-between" *ngIf="archivo()"><dt class="text-slate-500">Comprobante</dt><dd class="truncate max-w-[12rem] font-semibold">{{ archivo()!.name }}</dd></div>
+          </dl>
+          <div class="flex gap-2">
+            <button type="button" (click)="mostrarConfirmacion.set(false)" [ngClass]="ui.btnSecundario" class="flex-1">Revisar</button>
+            <button type="button" (click)="enviar()" [disabled]="enviando()" [ngClass]="ui.btnPrimario" class="flex-1">
+              {{ enviando() ? 'Confirmando...' : 'Confirmar y enviar' }}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   `,
 })
 export class CheckoutSuscripcionComponent implements OnInit {
   readonly ui = UI;
   readonly moneda = moneda;
+  readonly nombrePlan = nombreDePlan;
+  readonly etiquetaCiclo = ETIQUETA_CICLO;
+  readonly ciclosDisponibles = CICLOS_VALIDOS;
 
-  planId = signal('');
-  ciclo = signal<'mensual' | 'anual'>('mensual');
+  planId = signal<PlanId>('pro');
+  ciclo = signal<Ciclo>('trimestral');
 
   cargando = signal(true);
   enviando = signal(false);
   enviado = signal(false);
+  mostrarConfirmacion = signal(false);
   error = signal('');
   errorCotizacion = signal('');
   copiado = signal(false);
 
-  cot = signal<Cotizacion | null>(null);
+  cot = signal<CotizacionSuscripcion | null>(null);
   misSolicitudes = signal<any[]>([]);
   archivo = signal<File | null>(null);
 
   codigo = '';
   pagador = '';
 
-  constructor(private route: ActivatedRoute, private router: Router, private supabaseService: SupabaseService) {}
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private supabaseService: SupabaseService,
+    private planService: PlanService,
+  ) {}
 
   private get db() { return this.supabaseService.supabase; }
 
@@ -152,32 +209,60 @@ export class CheckoutSuscripcionComponent implements OnInit {
     if (!session?.user) { this.router.navigate(['/login']); return; }
 
     const q = this.route.snapshot.queryParamMap;
-    this.planId.set(q.get('plan') ?? '');
-    this.ciclo.set(q.get('ciclo') === 'anual' ? 'anual' : 'mensual');
+    const planParam = (q.get('plan') ?? '').toLowerCase().trim() as PlanId;
+    const planValido = PLANES.some(p => p.id === planParam) ? planParam : 'pro';
+    const cicloParam = (q.get('ciclo') ?? '').toLowerCase().trim() as Ciclo;
+    const cicloValido = CICLOS_VALIDOS.includes(cicloParam) ? cicloParam : 'trimestral';
 
-    await Promise.all([this.cotizar(), this.cargarSolicitudes()]);
+    this.planId.set(planValido);
+    this.ciclo.set(cicloValido);
+
+    await Promise.all([this.cotizar(), this.cargarSolicitudes(session.user.id)]);
     this.cargando.set(false);
   }
 
-  /** El precio sale del servidor. Lo que llegue por la URL (monto) se ignora a propósito. */
-  private async cotizar() {
-    const { data, error } = await this.db.rpc('cotizar_suscripcion', { p_plan: this.planId(), p_ciclo: this.ciclo() });
-    if (error) { this.errorCotizacion.set(error.message || 'No se pudo calcular el precio del plan.'); return; }
-    this.cot.set(data as Cotizacion);
+  async cambiarCiclo(nuevo: Ciclo) {
+    if (this.ciclo() === nuevo) return;
+    this.ciclo.set(nuevo);
+    this.errorCotizacion.set('');
+    await this.cotizar();
   }
 
-  private async cargarSolicitudes() {
-    const { data } = await this.db.from('suscripciones')
-      .select('id, plan_id, ciclo, estado, created_at, motivo_rechazo')
-      .order('created_at', { ascending: false }).limit(5);
-    this.misSolicitudes.set(data ?? []);
+  /** El precio sale del servidor (`cotizar_suscripcion`). Lo que llegue por la URL se ignora. */
+  private async cotizar() {
+    try {
+      const data = await this.planService.cotizarSuscripcion(this.planId(), this.ciclo());
+      this.cot.set(data);
+    } catch (e: any) {
+      this.errorCotizacion.set(mensajeAmigable(e, 'No se pudo calcular el precio del plan.'));
+    }
+  }
+
+  private async cargarSolicitudes(userId: string) {
+    const { data, error } = await this.db
+      .from('suscripciones')
+      .select('id, plan_id, ciclo, estado, created_at, referencia_pago')
+      .eq('perfil_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(5);
+    if (!error) {
+      this.misSolicitudes.set(data ?? []);
+    }
   }
 
   alElegirArchivo(ev: Event) {
     const f = (ev.target as HTMLInputElement).files?.[0] ?? null;
     this.error.set('');
-    if (f && !TIPOS_OK.includes(f.type)) { this.error.set('El comprobante debe ser una imagen (PNG, JPG, WEBP) o un PDF.'); this.archivo.set(null); return; }
-    if (f && f.size > MAX_BYTES) { this.error.set('El archivo supera los 5 MB.'); this.archivo.set(null); return; }
+    if (f && !TIPOS_OK.includes(f.type)) {
+      this.error.set('El comprobante debe ser una imagen (PNG, JPG, WEBP) o un PDF.');
+      this.archivo.set(null);
+      return;
+    }
+    if (f && f.size > MAX_BYTES) {
+      this.error.set('El archivo supera los 5 MB.');
+      this.archivo.set(null);
+      return;
+    }
     this.archivo.set(f);
   }
 
@@ -189,17 +274,28 @@ export class CheckoutSuscripcionComponent implements OnInit {
     } catch { /* sin permiso de portapapeles */ }
   }
 
+  abrirConfirmacion() {
+    this.error.set('');
+    if (this.codigo.trim().length < 6) {
+      this.error.set('Ingresa el código de transacción de Binance (mínimo 6 caracteres).');
+      return;
+    }
+    this.mostrarConfirmacion.set(true);
+  }
+
   async enviar() {
     this.error.set('');
     const codigo = this.codigo.trim();
-    if (codigo.length < 6) { this.error.set('Ingresa el código de transacción de Binance.'); return; }
+    if (codigo.length < 6) {
+      this.error.set('Ingresa el código de transacción de Binance.');
+      return;
+    }
 
     this.enviando.set(true);
     try {
       const { data: { user } } = await this.db.auth.getUser();
       if (!user) throw new Error('Debes iniciar sesión.');
 
-      // 1) comprobante a TU carpeta privada (<id>/archivo)
       let ruta: string | null = null;
       const f = this.archivo();
       if (f) {
@@ -209,19 +305,25 @@ export class CheckoutSuscripcionComponent implements OnInit {
         if (errSubida) throw new Error('No se pudo subir el comprobante: ' + errSubida.message);
       }
 
-      // 2) solicitud: el servidor valida plan, rol, formato y código repetido, y fija el monto
-      const { error } = await this.db.rpc('solicitar_suscripcion', {
-        p_plan: this.planId(), p_ciclo: this.ciclo(), p_referencia: codigo, p_comprobante: ruta, p_pagador: this.pagador.trim() || null,
-      });
-      if (error) {
-        if (ruta) await this.db.storage.from('comprobantes').remove([ruta]);   // no dejar archivos huérfanos
-        throw new Error(error.message);
+      try {
+        await this.planService.solicitarSuscripcion({
+          plan: this.planId(),
+          ciclo: this.ciclo(),
+          referencia: codigo,
+          comprobante: ruta,
+          pagador: this.pagador.trim() || null,
+        });
+      } catch (rpcErr: any) {
+        if (ruta) await this.db.storage.from('comprobantes').remove([ruta]);
+        throw rpcErr;
       }
 
+      this.mostrarConfirmacion.set(false);
       this.enviado.set(true);
-      await this.cargarSolicitudes();
+      await this.cargarSolicitudes(user.id);
     } catch (e: any) {
-      this.error.set(e?.message ?? 'Ocurrió un error al registrar el pago.');
+      this.mostrarConfirmacion.set(false);
+      this.error.set(mensajeAmigable(e, 'Ocurrió un error al registrar el pago.'));
     } finally {
       this.enviando.set(false);
     }

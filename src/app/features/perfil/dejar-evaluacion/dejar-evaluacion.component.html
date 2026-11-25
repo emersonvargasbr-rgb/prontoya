@@ -27,7 +27,8 @@
 
       <!-- A quién calificas -->
       <section [ngClass]="ui.card" class="flex items-center gap-3 p-4">
-        <app-avatar [nombre]="p.nombre_completo" tamano="lg" [verificado]="!!p.verificado" [icono]="p.avatar_icono" [color]="p.avatar_color" [anillo]="g()?.claseAnillo ?? ''" />
+        <app-avatar [nombre]="p.nombre_completo" tamano="lg" [verificado]="!!p.verificado"
+                    [icono]="p.avatar_icono" [svgId]="p.avatar_svg_id" [color]="p.avatar_color" [marco]="p.avatar_marco" [anillo]="g()?.claseAnillo ?? ''" />
         <div class="min-w-0 flex-1">
           <p class="truncate text-base font-bold">{{ p.nombre_completo }}</p>
           <p class="text-xs text-slate-500">{{ roles[p.rol]?.txt }}<span *ngIf="p.zona_ubicacion"> · {{ p.zona_ubicacion }}</span></p>

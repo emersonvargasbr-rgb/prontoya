@@ -4,7 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { SocialService } from '../../../core/services/social.service';
-import { UI, abrirWhatsApp, claseEstado, moneda, uno } from '../../../core/utils/helpers';
+import { PlanService } from '../../../core/services/plan.service';
+import { UI, abrirWhatsApp, claseEstado, mensajeAmigable, moneda, uno } from '../../../core/utils/helpers';
+import { esPlanPagoId, nombreDePlan, planVigente } from '../../../core/utils/planes';
 import { IconComponent } from '../../../shared/components/icon.component';
 import { AvatarComponent } from '../../../shared/components/avatar.component';
 import { TabItem, TabsComponent } from '../../../shared/components/tabs.component';
@@ -19,7 +21,7 @@ export interface SuscripcionActiva {
   estado: string | null;
 }
 
-const PERFIL_MIN = 'id, nombre_completo, rol, telefono, zona_ubicacion, verificado, promedio_estrellas';
+const PERFIL_MIN = 'id, nombre_completo, rol, telefono, zona_ubicacion, verificado, promedio_estrellas, avatar_svg_id, avatar_icono, avatar_color, avatar_marco';
 
 @Component({
   selector: 'app-panel-tienda',
@@ -96,33 +98,20 @@ export class PanelTiendaComponent implements OnInit {
 
   /** Identificador efectivo del plan priorizando suscripción activa vigente sobre el perfil. */
   planIdEfectivo = computed(() => {
-    const planSub = (this.suscripcionActiva()?.plan_id ?? '').toLowerCase().trim();
-    const planPerfil = (this.perfil()?.plan ?? this.perfil()?.plan_id ?? '').toLowerCase().trim();
-
-    if (planSub && !['free', 'gratis', 'basico', 'basic'].includes(planSub)) {
+    const sub = this.suscripcionActiva();
+    const p = this.perfil();
+    const planSub = (sub?.plan_id ?? '').toLowerCase().trim();
+    if (sub && esPlanPagoId(planSub) && (!sub.expira_el || new Date(sub.expira_el).getTime() > Date.now())) {
       return planSub;
     }
-    return planPerfil || 'free';
+    return planVigente(p?.plan ?? p?.plan_id, p?.plan_vigente_hasta) ?? 'free';
   });
 
-  esPlanPago = computed(() => {
-    const id = this.planIdEfectivo();
-    return !['', 'free', 'gratis', 'basico', 'basic'].includes(id);
-  });
+  esPlanPago = computed(() => esPlanPagoId(this.planIdEfectivo()));
 
   nombrePlanActual = computed(() => {
-    const mapa: Record<string, string> = {
-      free: 'Plan Gratis',
-      gratis: 'Plan Gratis',
-      basico: 'Plan Gratis',
-      basic: 'Plan Gratis',
-      pro: 'Plan Pro',
-      operario_pro: 'Operario Pro',
-      gold: 'Plan Gold',
-      elite: 'Plan Elite',
-    };
     const id = this.planIdEfectivo();
-    return mapa[id] ?? id.toUpperCase();
+    return id === 'free' ? 'Plan Gratis' : nombreDePlan(id);
   });
 
   tabs = computed<TabItem[]>(() => [
@@ -136,7 +125,8 @@ export class PanelTiendaComponent implements OnInit {
   constructor(
     private supabaseService: SupabaseService,
     private social: SocialService,
-    private router: Router
+    private router: Router,
+    readonly plan: PlanService,
   ) {}
 
   private get db() {
@@ -201,17 +191,18 @@ export class PanelTiendaComponent implements OnInit {
         this.db
           .from('empleados')
           .select(`id, estado, fecha_ingreso,
-            funcionario:funcionario_id (id, nombre_completo, telefono, especialidad_principal, promedio_estrellas, verificado, maquinas_maneja)`)
+            funcionario:funcionario_id (id, nombre_completo, telefono, especialidad_principal, promedio_estrellas, verificado, maquinas_maneja, avatar_svg_id, avatar_icono, avatar_color, avatar_marco)`)
           .eq('empleador_id', id)
           .order('fecha_ingreso', { ascending: false }),
         this.db
           .from('asignaciones_funcionarios')
-          .select('*, funcionario:funcionario_id (id, nombre_completo, telefono)')
+          .select('*, funcionario:funcionario_id (id, nombre_completo, telefono, avatar_svg_id, avatar_icono, avatar_color, avatar_marco)')
           .eq('empleador_id', id)
           .order('fecha_inicio', { ascending: false })
           .limit(300),
         this.social.contar(id),
       ]);
+      await Promise.all([this.plan.cargar(), this.plan.cargarUso(id)]);
 
       [perf, pubs, lotes, hist, emp, asig].forEach(r => r.error && console.error('Error en consulta del panel:', r.error));
 
@@ -271,7 +262,7 @@ export class PanelTiendaComponent implements OnInit {
     if (error) {
       console.error('Error al retirar propuesta:', error);
       return this.notificar(
-        this.mensajeAmigable(error, 'No se pudo retirar la propuesta porque ya tiene movimiento.'),
+        mensajeAmigable(error, 'No se pudo retirar la propuesta porque ya tiene movimiento.'),
         'error'
       );
     }
@@ -281,6 +272,11 @@ export class PanelTiendaComponent implements OnInit {
   }
 
   async aprobarCandidato(c: any) {
+    const check = this.plan.puedeAgregarOperario();
+    if (!check.ok) {
+      return this.notificar(check.motivo || 'Alcanzaste el límite de operarios de tu plan.', 'error');
+    }
+
     const nombre = c.contraparte?.nombre_completo || 'este operario';
     if (!confirm(`¿Sumar a ${nombre} a tu equipo?`)) return;
 
@@ -310,7 +306,7 @@ export class PanelTiendaComponent implements OnInit {
     } catch (e: any) {
       console.error('Error al incorporar candidato:', e);
       this.notificar(
-        this.mensajeAmigable(e, 'No pudimos sumar al operario a tu equipo. Intenta de nuevo.'),
+        mensajeAmigable(e, 'No pudimos sumar al operario a tu equipo. Intenta de nuevo.'),
         'error'
       );
     }
@@ -375,7 +371,7 @@ export class PanelTiendaComponent implements OnInit {
     } catch (e: any) {
       console.error('Error al confirmar recepción:', e);
       this.notificar(
-        this.mensajeAmigable(e, 'No pudimos cerrar el lote en este momento. Intenta de nuevo.'),
+        mensajeAmigable(e, 'No pudimos cerrar el lote en este momento. Intenta de nuevo.'),
         'error'
       );
     }
@@ -418,7 +414,7 @@ export class PanelTiendaComponent implements OnInit {
     } catch (e: any) {
       console.error('Error al asignar corte:', e);
       this.notificar(
-        this.mensajeAmigable(e, 'No pudimos asignar el corte. Revisa los datos e intenta de nuevo.'),
+        mensajeAmigable(e, 'No pudimos asignar el corte. Revisa los datos e intenta de nuevo.'),
         'error'
       );
     }
@@ -516,7 +512,7 @@ export class PanelTiendaComponent implements OnInit {
     if (error) {
       console.error('Error al eliminar anuncio:', error);
       return this.notificar(
-        this.mensajeAmigable(
+        mensajeAmigable(
           error,
           'No se puede eliminar este anuncio porque ya tiene postulaciones o trabajos vinculados. Puedes pausarlo en su lugar.'
         ),
@@ -529,32 +525,6 @@ export class PanelTiendaComponent implements OnInit {
   }
 
   // ==================================================================== HELPERS
-  private mensajeAmigable(err: any, defecto: string): string {
-    const raw = String(err?.message ?? err?.details ?? err ?? '').toLowerCase();
-    const code = String(err?.code ?? '');
-
-    if (code === '23503' || raw.includes('foreign key') || raw.includes('violates foreign key')) {
-      if (raw.includes('postulaciones') || raw.includes('lote') || raw.includes('publicacion')) {
-        return 'Este anuncio ya tiene postulaciones o trabajos vinculados, por lo que no se puede eliminar. Si no quieres recibir más interesados, páusalo.';
-      }
-      return 'No se puede completar esta acción porque este registro ya está asociado a otro movimiento.';
-    }
-
-    if (code === '23505' || raw.includes('duplicate key') || raw.includes('unique')) {
-      return 'Este registro ya existe.';
-    }
-
-    if (code === '42501' || raw.includes('permission denied') || raw.includes('row-level security')) {
-      return 'No tienes permiso para realizar esta acción en este momento.';
-    }
-
-    if (raw.includes('failed to fetch') || raw.includes('network')) {
-      return 'Parece que hay un problema de conexión. Revisa tu internet e inténtalo de nuevo.';
-    }
-
-    return defecto;
-  }
-
   private async actualizar(
     tabla: string,
     id: string,
@@ -569,7 +539,7 @@ export class PanelTiendaComponent implements OnInit {
       await this.cargar();
     } catch (e: any) {
       console.error(`Error actualizando ${tabla}:`, e);
-      this.notificar(this.mensajeAmigable(e, msgError), 'error');
+      this.notificar(mensajeAmigable(e, msgError), 'error');
     }
   }
 
