@@ -1,40 +1,14 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { SupabaseService } from '../../../core/services/supabase.service';
 import { SesionService } from '../../../core/services/sesion.service';
+
 import { ROL_PANEL, UI, mensajeAmigable } from '../../../core/utils/helpers';
 import { IconComponent } from '../../../shared/components/icon.component';
 import { Aviso, ToastComponent } from '../../../shared/components/toast.component';
-
-function validarCpf(cpf: string): boolean {
-  const n = cpf.replace(/\D/g, '');
-  if (n.length !== 11 || /^(\d)\1{10}$/.test(n)) return false;
-  let soma = 0;
-  for (let i = 0; i < 9; i++) soma += Number(n[i]) * (10 - i);
-  let d1 = (soma * 10) % 11;
-  if (d1 === 10) d1 = 0;
-  if (d1 !== Number(n[9])) return false;
-  soma = 0;
-  for (let i = 0; i < 10; i++) soma += Number(n[i]) * (11 - i);
-  let d2 = (soma * 10) % 11;
-  if (d2 === 10) d2 = 0;
-  return d2 === Number(n[10]);
-}
-
-function validarCnpj(cnpj: string): boolean {
-  const n = cnpj.replace(/\D/g, '');
-  if (n.length !== 14 || /^(\d)\1{13}$/.test(n)) return false;
-  const calc = (base: string, pesos: number[]) => {
-    const soma = base.split('').reduce((acc, ch, i) => acc + Number(ch) * pesos[i], 0);
-    const resto = soma % 11;
-    return resto < 2 ? 0 : 11 - resto;
-  };
-  const d1 = calc(n.slice(0, 12), [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
-  const d2 = calc(n.slice(0, 13), [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
-  return d1 === Number(n[12]) && d2 === Number(n[13]);
-}
+import { BrasilApi } from '../../../core/services/brasil-api';
 
 @Component({
   selector: 'app-verificar-documento',
@@ -65,7 +39,12 @@ function validarCnpj(cnpj: string): boolean {
               <p class="font-bold">
                 {{ estaVerificado() ? 'Tu ' + tipoDoc() + ' está verificado' : 'Estado actual: ' + etiquetaEstado(p.estado_documento) }}
               </p>
-              <p class="opacity-90" *ngIf="p.documento">Documento registrado: <strong class="font-mono">{{ p.documento }}</strong></p>
+              <p class="opacity-90" *ngIf="p.documento">
+                Documento registrado: <strong class="font-mono">{{ brasilApi.formatearDocumento(p.documento) }}</strong>
+              </p>
+              <p class="opacity-90" *ngIf="infoEmpresa()">
+                {{ infoEmpresa() }}
+              </p>
             </div>
           </div>
 
@@ -73,12 +52,17 @@ function validarCnpj(cnpj: string): boolean {
             <label [ngClass]="ui.etiqueta">
               {{ esEmpresa() ? 'Número de CNPJ (14 dígitos)' : 'Número de CPF (11 dígitos)' }}
               <input type="text" [(ngModel)]="documento" name="documento" required maxlength="18"
+                     (blur)="formatearEnInput()"
                      [placeholder]="esEmpresa() ? '00.000.000/0000-00' : '000.000.000-00'"
                      [ngClass]="ui.inputGrande" class="font-mono">
             </label>
 
             <p class="text-xs text-slate-500">
-              Validamos el formato y dígitos verificadores de tu {{ tipoDoc() }} y comprobamos que no esté duplicado en otra cuenta.
+              {{
+                esEmpresa()
+                  ? 'Validamos el CNPJ, comprobamos que no esté duplicado y consultamos su situación en BrasilAPI.'
+                  : 'Validamos el formato y dígitos verificadores de tu CPF y comprobamos que no esté duplicado en otra cuenta.'
+              }}
             </p>
 
             <p *ngIf="error()" role="alert" class="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs font-medium text-rose-700">
@@ -103,6 +87,7 @@ function validarCnpj(cnpj: string): boolean {
 })
 export class VerificarDocumentoComponent implements OnInit {
   readonly ui = UI;
+  readonly brasilApi = inject(BrasilApi);
 
   cargando = signal(true);
   guardando = signal(false);
@@ -110,6 +95,7 @@ export class VerificarDocumentoComponent implements OnInit {
   rutaVolver = signal('/editar-perfil');
   aviso = signal<Aviso | null>(null);
   error = signal('');
+  infoEmpresa = signal('');
   documento = '';
 
   esEmpresa = computed(() => ['tienda', 'oficina'].includes(this.perfil()?.rol));
@@ -131,16 +117,24 @@ export class VerificarDocumentoComponent implements OnInit {
 
     const { data } = await this.db
       .from('perfiles')
-      .select('id, rol, documento, cnpj, verificado, estado_documento')
+      .select('id, rol, documento, cnpj, verificado, documento_verificado, documento_tipo, estado_documento')
       .eq('id', user.id)
       .maybeSingle();
 
     this.perfil.set(data);
-    this.documento = data?.cnpj || data?.documento || '';
+    const docInicial = data?.cnpj || data?.documento || '';
+    this.documento = docInicial ? this.brasilApi.formatearDocumento(docInicial) : '';
 
     const volver = this.route.snapshot.queryParamMap.get('volver');
     this.rutaVolver.set(volver || ROL_PANEL[data?.rol ?? ''] || '/editar-perfil');
     this.cargando.set(false);
+  }
+
+  formatearEnInput() {
+    const limpio = this.brasilApi.limpiarDocumento(this.documento);
+    if (limpio.length === 11 || limpio.length === 14) {
+      this.documento = this.brasilApi.formatearDocumento(limpio);
+    }
   }
 
   etiquetaEstado(estado: string | null | undefined): string {
@@ -154,14 +148,16 @@ export class VerificarDocumentoComponent implements OnInit {
 
   async enviar() {
     this.error.set('');
-    const digitos = this.documento.replace(/\D/g, '');
+    this.infoEmpresa.set('');
+
+    const digitos = this.brasilApi.limpiarDocumento(this.documento);
     const esEmp = this.esEmpresa();
 
-    if (esEmp && !validarCnpj(digitos)) {
+    if (esEmp && !this.brasilApi.validarCnpj(digitos)) {
       this.error.set('El CNPJ ingresado no es válido. Revisa los 14 dígitos.');
       return;
     }
-    if (!esEmp && !validarCpf(digitos)) {
+    if (!esEmp && !this.brasilApi.validarCpf(digitos)) {
       this.error.set('El CPF ingresado no es válido. Revisa los 11 dígitos.');
       return;
     }
@@ -183,18 +179,48 @@ export class VerificarDocumentoComponent implements OnInit {
         return;
       }
 
+      let verificadoCnpj = false;
+      let estadoDoc: 'verificado' | 'pendiente' = 'pendiente';
+      let mensajeExito = `${this.tipoDoc()} registrado correctamente para verificación.`;
+
+      if (esEmp) {
+        const consulta = await this.brasilApi.consultarDocumento(digitos);
+        const situacion = (consulta.situacion ?? '').toUpperCase();
+
+        if (situacion && situacion !== 'ATIVA' && !situacion.includes('SIN CONSULTA')) {
+          this.error.set(`El CNPJ figura con situación "${consulta.situacion}". No puede verificarse como activo.`);
+          return;
+        }
+
+        if (consulta.razonSocial) {
+          this.infoEmpresa.set(
+            `${consulta.razonSocial}${consulta.situacion ? ` · ${consulta.situacion}` : ''}`
+          );
+        }
+
+        if (situacion === 'ATIVA') {
+          verificadoCnpj = true;
+          estadoDoc = 'verificado';
+          mensajeExito = 'CNPJ verificado en la base pública.';
+        }
+      }
+
       const cambios: Record<string, unknown> = {
         documento: digitos,
-        estado_documento: 'pendiente',
+        documento_tipo: esEmp ? 'cnpj' : 'cpf',
+        documento_verificado: verificadoCnpj,
+        verificado: verificadoCnpj ? true : !!p.verificado,
+        estado_documento: estadoDoc,
       };
       if (esEmp) cambios['cnpj'] = digitos;
 
       const { error } = await this.db.from('perfiles').update(cambios).eq('id', p.id);
       if (error) throw error;
 
+      this.documento = this.brasilApi.formatearDocumento(digitos);
       this.perfil.update(curr => ({ ...curr, ...cambios }));
       await this.sesion.recargar();
-      this.notificar(`${this.tipoDoc()} registrado correctamente para verificación.`);
+      this.notificar(mensajeExito);
       setTimeout(() => this.router.navigate([this.rutaVolver()]), 1000);
     } catch (e: any) {
       this.error.set(mensajeAmigable(e, `No pudimos guardar tu ${this.tipoDoc()}. Intenta nuevamente.`));

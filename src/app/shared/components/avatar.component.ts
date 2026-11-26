@@ -36,7 +36,7 @@ const TAMANOS = {
         <ng-template #renderIconoOIniciales>
           <app-icon *ngIf="iconoValido; else renderIniciales"
                     [nombre]="iconoEfectivo!"
-                    clase="absolute inset-0 m-auto w-3/5 h-3/5" />
+                    [clase]="claseSvgInterior" />
           <ng-template #renderIniciales>
             <span class="font-bold tracking-tight uppercase">{{ iniciales }}</span>
           </ng-template>
@@ -66,6 +66,14 @@ export class AvatarComponent {
   get iconoEfectivo(): string | null {
     const val = (this.icono || this.svgId || '').trim();
     return val || null;
+  }
+
+  /** Los avatares ilustrados (100x100) ocupan el 82% del círculo; los íconos de línea (24x24) el 60% */
+  get claseSvgInterior(): string {
+    const esIlustracion = !!this.iconoEfectivo && this.iconoEfectivo.startsWith('avatar-');
+    return esIlustracion
+      ? 'absolute inset-0 m-auto w-[82%] h-[82%]'
+      : 'absolute inset-0 m-auto w-3/5 h-3/5';
   }
 
   get esImagen(): boolean { return !!this.iconoEfectivo && this.iconoEfectivo.startsWith('img:'); }

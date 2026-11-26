@@ -21,6 +21,7 @@ import { VerificarDocumentoComponent } from './features/perfil/verificar-documen
 import { MisIngresosComponent } from './features/perfil/mis-ingresos/mis-ingresos.component';
 import { LotesActivosComponent } from './features/gestion/lotes-activos/lotes-activos.component';
 import { HistorialLotesComponent } from './features/gestion/historial-lotes/historial-lotes.component';
+import { VoladorasComponent } from './features/voladoras/voladoras.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -34,6 +35,12 @@ export const routes: Routes = [
 
       { path: 'feed', component: FeedTrabajosComponent },
       { path: 'trabajo/:id', component: DetalleTrabajoComponent },
+
+      {
+        path: 'voladoras',
+        component: VoladorasComponent,
+        canActivate: [authGuard],
+      },
 
       { path: 'perfil/:id', component: VistaPerfilComponent },
       { path: 'perfil-usuario/:id', component: VistaPerfilComponent },

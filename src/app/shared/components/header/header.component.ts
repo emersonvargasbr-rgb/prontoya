@@ -8,9 +8,9 @@ import { IconComponent } from '../icon.component';
 import { ROL_ETIQUETA, UI } from '../../../core/utils/helpers';
 import { SesionService } from '../../../core/services/sesion.service';
 
-
 /** Si tu ruta del perfil público se llama distinto, cámbiala aquí. */
 const RUTA_PERFIL = '/perfil-usuario';
+const RUTA_VOLADORAS = '/voladoras';
 
 @Component({
   selector: 'app-header',
@@ -22,6 +22,7 @@ export class HeaderComponent implements OnInit {
   readonly ui = UI;
   readonly roles = ROL_ETIQUETA;
   readonly rutaPerfil = RUTA_PERFIL;
+  readonly rutaVoladoras = RUTA_VOLADORAS;
 
   readonly sesion = inject(SesionService);
   private router = inject(Router);

@@ -40,16 +40,18 @@
       <!-- ===================================================== CON SESIÓN -->
       <ng-container *ngIf="sesion.logueado()">
 
+        <!-- Botón azul para anunciar / ver Voladoras (fin de semana)
         <a
-          routerLink="/crear-publicacion"
-          [ngClass]="ui.btnPrimario"
-          class="inline-flex items-center justify-center p-2.5 md:px-4 md:py-2 !bg-[#183a28] !text-white hover:!bg-[#214f37] focus-visible:!outline-[#183a28]"
-          aria-label="Publicar anuncio"
+          [routerLink]="rutaVoladoras"
+          title="Anunciar o ver Voladoras de sábado tarde y domingo"
+          aria-label="Anunciar voladoras"
+          class="inline-flex items-center justify-center rounded-xl bg-blue-600 p-2.5 text-sm font-bold text-white shadow-2xs transition hover:bg-blue-700 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 md:px-4 md:py-2"
         >
-          <app-icon nombre="plus" clase="w-4 h-4" />
-          <span class="hidden md:inline ml-2">Publicar</span>
+          <app-icon nombre="plus" clase="h-4 w-4 shrink-0" />
+          <span class="ml-2 hidden md:inline">Anunciar voladora</span>
+          <span class="ml-1.5 hidden sm:inline md:hidden">Voladoras</span>
         </a>
-
+-->
         <!-- Pendientes -->
         <a [routerLink]="sesion.rutaPanel()" class="relative rounded-lg p-2 text-slate-600 transition hover:bg-stone-100 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#183a28]"
            [attr.aria-label]="sesion.pendientes() ? sesion.pendientes() + ' solicitudes pendientes' : 'Sin solicitudes pendientes'">

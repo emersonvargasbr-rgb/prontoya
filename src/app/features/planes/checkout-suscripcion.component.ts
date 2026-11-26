@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -11,14 +11,8 @@ import { IconComponent } from '../../shared/components/icon.component';
 const TIPOS_OK = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'];
 const MAX_BYTES = 5 * 1024 * 1024;
 const CICLOS_VALIDOS: Ciclo[] = ['mensual', 'trimestral', 'anual'];
+const QR_BINANCE_URL = '/pagospronto.png';
 
-/**
- * Checkout de suscripción por Binance Pay.
- *  - El precio y el receptor se obtienen vía `PlanService.cotizarSuscripcion` (backend `cotizar_suscripcion`).
- *  - Soporta ciclos mensual (1 mes), trimestral (3 meses) y anual (12 meses).
- *  - La solicitud entra por `solicitar_suscripcion()`.
- *  - El comprobante se sube a la carpeta privada <tu-id>/ del bucket "comprobantes".
- */
 @Component({
   selector: 'app-checkout-suscripcion',
   standalone: true,
@@ -74,24 +68,34 @@ const CICLOS_VALIDOS: Ciclo[] = ['mensual', 'trimestral', 'anual'];
             </p>
           </div>
 
-          <div class="space-y-2 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+          <div class="space-y-3 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
             <h3 class="flex items-center gap-2 text-sm font-bold text-amber-900">
               <app-icon nombre="coin" clase="w-4 h-4 text-amber-600" /> Paga con Binance Pay
             </h3>
             <p class="text-xs text-slate-600">Envía exactamente <strong>{{ c.monto_usdt | number:'1.2-2' }} USDT</strong> (o USDC) a este destinatario:</p>
+
             <div class="flex items-center justify-between gap-2 rounded-lg border border-amber-300 bg-white p-3">
-              <p class="break-all font-mono text-sm font-semibold">{{ c.receptor_binance_id || 'Solicitar ID de pago a soporte o usar correo oficial' }}</p>
+              <p class="break-all font-mono text-sm font-semibold">
+                {{ c.receptor_binance_id || 'Configura receptor_binance_id en config_cobro o contacta a soporte' }}
+              </p>
               <button *ngIf="c.receptor_binance_id" type="button" (click)="copiar(c.receptor_binance_id!)" [ngClass]="ui.btnSecundario" class="!px-2.5 !py-1 !text-xs">
                 {{ copiado() ? 'Copiado' : 'Copiar' }}
               </button>
             </div>
+
+            <div *ngIf="qrVisible()" class="flex flex-col items-center gap-1.5 rounded-lg border border-amber-200/80 bg-white p-3 text-center">
+              <img [src]="qrUrl" (error)="qrVisible.set(false)" alt="Código QR de cobro Binance Pay"
+                   class="h-40 w-40 rounded-lg object-contain" />
+              <p class="text-[11px] text-slate-500">Escanea el código QR desde Binance Pay o envía al ID indicado.</p>
+            </div>
+
             <details class="text-xs text-slate-600">
               <summary class="cursor-pointer font-semibold">Cómo hacerlo paso a paso</summary>
               <ol class="mt-2 list-decimal space-y-1 pl-5">
-                <li>En la app de Binance entra a <strong>Pay</strong> y elige <strong>Enviar</strong>.</li>
-                <li>Selecciona el envío por ID de Binance Pay o correo y pega el destinatario.</li>
-                <li>Escribe el monto exacto en USDT y confirma.</li>
-                <li>Abre el detalle de la operación y copia el <strong>ID de la orden</strong>. Es el código que pedimos abajo.</li>
+                <li>En la app de Binance entra a <strong>Pay</strong> y elige <strong>Enviar</strong> o escanea el <strong>QR</strong>.</li>
+                <li>Verifica que el destinatario coincida y envía el monto exacto en <strong>USDT</strong>.</li>
+                <li>Abre el detalle de la operación y copia el <strong>ID de la orden</strong>.</li>
+                <li>Pégalo abajo junto con tu comprobante para confirmar tu suscripción.</li>
               </ol>
             </details>
           </div>
@@ -135,7 +139,7 @@ const CICLOS_VALIDOS: Ciclo[] = ['mensual', 'trimestral', 'anual'];
                 <p class="text-xs text-slate-500">{{ s.created_at | date:'dd/MM/yyyy HH:mm' }}<span *ngIf="s.referencia_pago"> · <span class="font-mono">{{ s.referencia_pago }}</span></span></p>
               </div>
               <span class="rounded-md px-2 py-0.5 text-[11px] font-semibold"
-                    [ngClass]="s.estado === 'Activa' ? 'bg-teal-50 text-teal-800' : (s.estado === 'Pendiente' ? 'bg-amber-50 text-amber-800' : (s.estado === 'Rechazada' ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-600'))">{{ s.estado }}</span>
+                    [ngClass]="estadoClase(s.estado)">{{ s.estado }}</span>
             </li>
           </ul>
         </section>
@@ -176,6 +180,7 @@ export class CheckoutSuscripcionComponent implements OnInit {
   readonly nombrePlan = nombreDePlan;
   readonly etiquetaCiclo = ETIQUETA_CICLO;
   readonly ciclosDisponibles = CICLOS_VALIDOS;
+  readonly qrUrl = QR_BINANCE_URL;
 
   planId = signal<PlanId>('pro');
   ciclo = signal<Ciclo>('trimestral');
@@ -187,6 +192,7 @@ export class CheckoutSuscripcionComponent implements OnInit {
   error = signal('');
   errorCotizacion = signal('');
   copiado = signal(false);
+  qrVisible = signal(true);
 
   cot = signal<CotizacionSuscripcion | null>(null);
   misSolicitudes = signal<any[]>([]);
@@ -203,6 +209,14 @@ export class CheckoutSuscripcionComponent implements OnInit {
   ) {}
 
   private get db() { return this.supabaseService.supabase; }
+
+  estadoClase(estado: unknown): string {
+    const e = (typeof estado === 'string' ? estado : '').trim().toLowerCase();
+    if (e === 'activa' || e === 'aprobada') return 'bg-teal-50 text-teal-800';
+    if (e === 'pendiente') return 'bg-amber-50 text-amber-800';
+    if (e === 'rechazada') return 'bg-rose-50 text-rose-700';
+    return 'bg-slate-100 text-slate-600';
+  }
 
   async ngOnInit() {
     const { data: { session } } = await this.db.auth.getSession();
@@ -228,7 +242,6 @@ export class CheckoutSuscripcionComponent implements OnInit {
     await this.cotizar();
   }
 
-  /** El precio sale del servidor (`cotizar_suscripcion`). Lo que llegue por la URL se ignora. */
   private async cotizar() {
     try {
       const data = await this.planService.cotizarSuscripcion(this.planId(), this.ciclo());

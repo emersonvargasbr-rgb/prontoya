@@ -49,7 +49,6 @@ export class PlanService {
   readonly cargado = signal(false);
   readonly uso = signal<UsoPlan>({ anunciosActivos: 0, vipUsadosMes: 0, operariosActivos: 0 });
 
-  // Usamos el helper importado con otro alias para evitar autorreferencia recursiva
   readonly rangoCosmeticos = computed<number>(() => calcularRango(this.limites()));
   readonly erpCompleto = computed<boolean>(() => !!this.limites().erp_completo);
   readonly registroManual = computed<boolean>(() => !!this.limites().registro_manual);
@@ -92,7 +91,6 @@ export class PlanService {
     return l;
   }
 
-  /** Carga el consumo actual de anuncios activos, anuncios VIP del mes y operarios activos. */
   async cargarUso(userId?: string): Promise<UsoPlan> {
     let uid = userId;
     if (!uid) {
@@ -191,12 +189,6 @@ export class PlanService {
     return { ok: true, usados, tope };
   }
 
-  /**
-   * Cotiza una suscripción contra la función `cotizar_suscripcion` en Supabase.
-   * Soporta ciclos 'mensual', 'trimestral' (3 meses) y 'anual' (12 meses).
-   * Si la RPC aún no está publicada en el esquema remoto (PGRST202), calcula
-   * la cotización sincronizada con la tabla `planes` y el catálogo local.
-   */
   async cotizarSuscripcion(planId: string, ciclo: Ciclo): Promise<CotizacionSuscripcion> {
     const planLimpio = (planId || '').toLowerCase().trim() as PlanId;
     const planCatalogo = PLANES.find(p => p.id === planLimpio);
@@ -265,7 +257,6 @@ export class PlanService {
     };
   }
 
-  /** Envía la solicitud de suscripción mediante la RPC segura del servidor. */
   async solicitarSuscripcion(params: {
     plan: string;
     ciclo: Ciclo;

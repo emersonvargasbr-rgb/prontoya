@@ -1,0 +1,258 @@
+<div class="mx-auto max-w-5xl space-y-4 px-3 py-4 sm:px-6 sm:py-6">
+
+  <!-- Barra superior limpia -->
+  <div class="flex items-center justify-between gap-3">
+    <div class="flex items-center gap-2.5">
+      <h1 class="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">Voladoras</h1>
+      <span *ngIf="!esPlanPago()" class="rounded-full bg-stone-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-600">
+        {{ postulacionesRealizadas() }}/3 free
+      </span>
+    </div>
+
+    <button
+      type="button"
+      (click)="mostrarFormulario.set(!mostrarFormulario())"
+      class="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-2xs transition hover:bg-blue-700 active:scale-95 sm:px-4 sm:text-sm">
+      <span>{{ mostrarFormulario() ? '✕' : '+' }}</span>
+      <span>{{ mostrarFormulario() ? 'Cerrar' : 'Publicar voladora' }}</span>
+    </button>
+  </div>
+
+  <!-- Alertas puntuales -->
+  <p *ngIf="mensajeError()" role="alert" class="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-medium text-rose-700">
+    {{ mensajeError() }}
+  </p>
+  <p *ngIf="mensajeExito()" role="status" class="rounded-xl border border-blue-200 bg-blue-50 px-3.5 py-2.5 text-xs font-medium text-blue-900">
+    {{ mensajeExito() }}
+  </p>
+
+  <!-- Formulario compacto -->
+  <form
+    *ngIf="mostrarFormulario()"
+    (ngSubmit)="crearVoladora()"
+    class="space-y-3 rounded-2xl border border-blue-200 bg-white p-4 shadow-2xs">
+
+    <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+      <input
+        type="text"
+        [(ngModel)]="voladora.titulo"
+        name="titulo"
+        required
+        placeholder="Título (ej: Acabados domingo)"
+        class="rounded-lg border border-stone-300 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none sm:col-span-2 sm:text-sm" />
+
+      <select
+        [(ngModel)]="voladora.rubro"
+        name="rubro"
+        class="rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-blue-500 focus:outline-none sm:text-sm">
+        <option *ngFor="let r of rubrosDisponibles" [value]="r">{{ r }}</option>
+      </select>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+      <div>
+        <input
+          type="text"
+          [ngModel]="voladora.cep"
+          (ngModelChange)="onCepInput($event)"
+          (blur)="buscarPorCep(voladora.cep)"
+          name="cep"
+          required
+          maxlength="9"
+          placeholder="CEP (03005000)"
+          class="w-full rounded-lg border border-stone-300 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none sm:text-sm" />
+        <span *ngIf="buscandoCep()" class="mt-0.5 block text-[10px] text-blue-600">Buscando CEP...</span>
+        <span *ngIf="errorCep()" class="mt-0.5 block text-[10px] text-rose-600">{{ errorCep() }}</span>
+      </div>
+
+      <input
+        type="text"
+        [(ngModel)]="voladora.bairro"
+        name="bairro"
+        placeholder="Barrio"
+        class="rounded-lg border border-stone-300 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none sm:text-sm" />
+
+      <input
+        type="number"
+        min="1"
+        step="0.01"
+        [(ngModel)]="voladora.pago_monto"
+        name="pago_monto"
+        required
+        placeholder="Pago R$"
+        class="rounded-lg border border-stone-300 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none sm:text-sm" />
+
+      <input
+        type="text"
+        [(ngModel)]="voladora.horario"
+        name="horario"
+        placeholder="Horario (13h–19h)"
+        class="rounded-lg border border-stone-300 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none sm:text-sm" />
+    </div>
+
+    <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+      <input
+        type="text"
+        [(ngModel)]="voladora.logradouro"
+        name="logradouro"
+        placeholder="Calle / Logradouro"
+        class="rounded-lg border border-stone-300 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none sm:text-sm" />
+
+      <input
+        type="text"
+        [(ngModel)]="voladora.numero"
+        name="numero"
+        placeholder="Número (privado)"
+        class="rounded-lg border border-stone-300 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none sm:text-sm" />
+
+      <input
+        type="text"
+        [(ngModel)]="voladora.punto_referencia"
+        name="punto_referencia"
+        placeholder="Referencia (ej: Metro Brás)"
+        class="rounded-lg border border-stone-300 px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none sm:text-sm" />
+    </div>
+
+    <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+      <div class="flex flex-wrap gap-3 text-xs font-medium text-slate-700">
+        <label class="inline-flex cursor-pointer items-center gap-1.5">
+          <input type="checkbox" [(ngModel)]="sabadoTarde" name="sabadoTarde" class="h-3.5 w-3.5 accent-blue-600" />
+          Sáb tarde
+        </label>
+        <label class="inline-flex cursor-pointer items-center gap-1.5">
+          <input type="checkbox" [(ngModel)]="domingoDia" name="domingoDia" class="h-3.5 w-3.5 accent-blue-600" />
+          Domingo
+        </label>
+        <label class="inline-flex cursor-pointer items-center gap-1.5">
+          <input type="checkbox" [(ngModel)]="voladora.pago_en_el_acto" name="pago_en_el_acto" class="h-3.5 w-3.5 accent-blue-600" />
+          Pago en el acto
+        </label>
+        <label class="inline-flex cursor-pointer items-center gap-1.5">
+          <input type="checkbox" [(ngModel)]="voladora.incluye_transporte" name="incluye_transporte" class="h-3.5 w-3.5 accent-blue-600" />
+          Transporte
+        </label>
+      </div>
+
+      <button
+        type="submit"
+        [disabled]="guardando()"
+        class="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-50 sm:text-sm">
+        {{ guardando() ? 'Guardando...' : 'Publicar' }}
+      </button>
+    </div>
+  </form>
+
+  <!-- Filtro simple por día -->
+  <div class="flex items-center gap-1.5">
+    <button
+      type="button"
+      (click)="filtroDia = 'todos'"
+      [class]="filtroDia === 'todos'
+        ? 'rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white'
+        : 'rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-stone-200 hover:bg-stone-50'">
+      Todos
+    </button>
+    <button
+      type="button"
+      (click)="filtroDia = 'sabado_tarde'"
+      [class]="filtroDia === 'sabado_tarde'
+        ? 'rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white'
+        : 'rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-stone-200 hover:bg-stone-50'">
+      Sáb tarde
+    </button>
+    <button
+      type="button"
+      (click)="filtroDia = 'domingo'"
+      [class]="filtroDia === 'domingo'
+        ? 'rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white'
+        : 'rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-stone-200 hover:bg-stone-50'">
+      Domingo
+    </button>
+  </div>
+
+  <!-- Estados -->
+  <div *ngIf="cargando()" class="py-8 text-center text-xs text-slate-500">
+    Cargando...
+  </div>
+
+  <div *ngIf="!cargando() && voladorasFiltradas().length === 0" class="rounded-2xl border border-stone-200 bg-white py-8 text-center text-xs text-slate-500">
+    Sin voladoras disponibles.
+  </div>
+
+  <!-- Grilla de 2 tarjetas compactas por fila -->
+  <div *ngIf="!cargando() && voladorasFiltradas().length > 0" class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+    <article
+      *ngFor="let item of voladorasFiltradas()"
+      class="flex flex-col justify-between rounded-2xl border border-stone-200 bg-white p-3.5 transition hover:border-blue-300">
+
+      <div>
+        <div class="flex items-start justify-between gap-2">
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="rounded bg-blue-600 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">
+                Voladora
+              </span>
+              <span class="truncate text-[11px] font-semibold text-blue-700">
+                {{ item.rubro }}
+              </span>
+            </div>
+            <h2 class="mt-1 truncate text-sm font-bold text-slate-900">{{ item.titulo }}</h2>
+          </div>
+
+          <div class="shrink-0 text-right">
+            <p class="text-sm font-extrabold text-slate-900">R$ {{ item.pago_monto | number:'1.0-2' }}</p>
+            <p class="text-[10px] font-medium text-slate-500">{{ item.pago_en_el_acto ? 'En el acto' : 'A combinar' }}</p>
+          </div>
+        </div>
+
+        <p class="mt-1.5 truncate text-[11px] text-slate-500">
+          {{ item.bairro || item.cidade }} · CEP {{ formatearCep(item.cep) }}
+          <span *ngIf="item.horario"> · {{ item.horario }}</span>
+        </p>
+
+        <div class="mt-2 flex flex-wrap gap-1">
+          <span
+            *ngFor="let d of item.dias_disponibles"
+            class="rounded bg-stone-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
+            {{ d === 'sabado_tarde' ? 'Sáb tarde' : 'Domingo' }}
+          </span>
+          <span *ngIf="item.incluye_transporte" class="rounded bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+            Transporte
+          </span>
+        </div>
+      </div>
+
+      <div class="mt-3 flex items-center justify-between gap-2 border-t border-stone-100 pt-2.5">
+        <button
+          type="button"
+          (click)="compartirTurnoWhatsApp(item)"
+          class="rounded-lg border border-stone-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:bg-stone-50">
+          WhatsApp
+        </button>
+
+        <button
+          *ngIf="item.creador_id === usuarioId"
+          type="button"
+          (click)="eliminarVoladora(item)"
+          [disabled]="eliminandoId() === item.id"
+          class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-[11px] font-bold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50">
+          {{ eliminandoId() === item.id ? 'Eliminando...' : 'Eliminar' }}
+        </button>
+
+        <button
+          *ngIf="item.creador_id !== usuarioId"
+          type="button"
+          (click)="postularVoladora(item)"
+          [disabled]="!puedePostularFree() || postulandoId() === item.id || idsPostulados().has(item.id)"
+          class="rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+          <ng-container *ngIf="idsPostulados().has(item.id)">Postulado ✓</ng-container>
+          <ng-container *ngIf="!idsPostulados().has(item.id) && postulandoId() === item.id">...</ng-container>
+          <ng-container *ngIf="!idsPostulados().has(item.id) && postulandoId() !== item.id">
+            {{ puedePostularFree() ? 'Postularme' : 'Límite (3)' }}
+          </ng-container>
+        </button>
+      </div>
+    </article>
+  </div>
+
+</div>

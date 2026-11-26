@@ -22,6 +22,8 @@ import {
 } from '../../core/utils/planes';
 import { IconComponent } from '../../shared/components/icon.component';
 
+const CICLOS_ACTIVOS: Ciclo[] = ['mensual', 'trimestral', 'anual'];
+
 @Component({
   selector: 'app-planes',
   standalone: true,
@@ -38,6 +40,7 @@ export class PlanesComponent implements OnInit {
   readonly etiquetaCiclo = ETIQUETA_CICLO;
   readonly descuentos = DESCUENTO_CICLO;
   readonly mesesCiclo = MESES_CICLO;
+  readonly ciclos = CICLOS_ACTIVOS;
 
   cargando = signal(true);
   cotizando = signal(false);
@@ -57,7 +60,10 @@ export class PlanesComponent implements OnInit {
   planActual = computed(() => this.estadoPlan().planId);
   vigenteHasta = computed(() => this.estadoPlan().vigenteHasta);
 
-  docVerificado = computed(() => !!this.perfil()?.documento_verificado || !!this.perfil()?.verificado);
+  docVerificado = computed(() =>
+    ['verificado', 'aprobado'].includes(String(this.perfil()?.estado_documento ?? '').toLowerCase()) ||
+    !!this.perfil()?.verificado,
+  );
 
   constructor(
     private supabaseService: SupabaseService,
@@ -82,7 +88,7 @@ export class PlanesComponent implements OnInit {
     const [perfilRes, subsRes] = await Promise.all([
       this.db
         .from('perfiles')
-        .select('id, rol, verificado, documento_verificado, plan, plan_vigente_hasta')
+        .select('id, rol, verificado, estado_documento, plan, plan_vigente_hasta')
         .eq('id', id)
         .maybeSingle(),
       this.db
@@ -106,6 +112,7 @@ export class PlanesComponent implements OnInit {
   }
 
   cambiarCiclo(nuevo: Ciclo) {
+    if (!CICLOS_ACTIVOS.includes(nuevo)) return;
     this.ciclo.set(nuevo);
     if (this.planSeleccionado()) {
       this.abrirCotizacion(this.planSeleccionado()!);

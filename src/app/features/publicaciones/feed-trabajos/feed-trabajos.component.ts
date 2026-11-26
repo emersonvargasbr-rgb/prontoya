@@ -15,7 +15,7 @@ const TIPOS_POR_ROL: Record<string, string[]> = {
 };
 const TODOS = ['busco_oficina', 'busco_corte', 'busco_funcionario', 'busco_trabajo'];
 const TAMANO_PAGINA = 20;
-const DIAS_VIGENCIA = 3;
+const DIAS_VIGENCIA = 7;
 
 @Component({
   selector: 'app-feed-trabajos',

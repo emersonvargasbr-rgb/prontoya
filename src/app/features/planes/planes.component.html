@@ -35,7 +35,8 @@
         </div>
 
         <!-- Uso de límites del plan actual -->
-        <dl class="grid grid-cols-2 gap-2 border-t border-stone-200/70 pt-3 text-xs sm:grid-cols-3">
+        <dl class="grid gap-2 border-t border-stone-200/70 pt-3 text-xs"
+            [ngClass]="grupo() === 'empresa' ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'">
           <div class="rounded-lg bg-white/80 px-3 py-2 border border-stone-200/70">
             <dt class="text-[11px] text-slate-500">Anuncios activos</dt>
             <dd class="font-bold text-slate-900">
@@ -61,7 +62,7 @@
       <div *ngIf="!docVerificado()" class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50/70 p-4">
         <p class="flex items-center gap-2 text-sm font-medium text-amber-900">
           <app-icon nombre="shield" clase="w-5 h-5 shrink-0" />
-          Recuerda verificar tu {{ perfil()?.rol === 'funcionario' ? 'CPF' : 'CNPJ' }} para obtener el sello completo de confianza.
+          Recuerda verificar tu {{ grupo() === 'operario' ? 'CPF' : 'CNPJ' }} para obtener el sello completo de confianza.
         </p>
         <a routerLink="/verificar-documento" [queryParams]="{ volver: '/planes' }" [ngClass]="ui.btnSecundario" class="!text-xs">Verificar documento</a>
       </div>
@@ -164,8 +165,8 @@
 
       <!-- Selector rápido de ciclo dentro de la cotización -->
       <div class="grid grid-cols-3 gap-1.5 rounded-xl bg-stone-100 p-1">
-        <button *ngFor="let c of ['mensual', 'trimestral', 'anual']" type="button"
-                (click)="cambiarCiclo($any(c))"
+        <button *ngFor="let c of ciclos" type="button"
+                (click)="cambiarCiclo(c)"
                 class="rounded-lg py-1.5 text-xs font-semibold transition"
                 [ngClass]="ciclo() === c ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'">
           {{ c === 'mensual' ? '1 mes' : (c === 'trimestral' ? '3 meses' : '12 meses') }}
