@@ -7,10 +7,7 @@
     <aside class="mb-6 lg:mb-0 lg:sticky lg:top-6 lg:self-start">
       <div class="overflow-hidden p-5 rounded-2xl border border-stone-200/80 bg-white shadow-sm" [ngClass]="ui.card">
         <div class="flex items-center justify-between">
-          <div class="rounded-full ring-2 ring-stone-200">
-            <app-avatar [nombre]="perfil()?.nombre_completo" tamano="md" [verificado]="!!perfil()?.verificado"
-                        [icono]="perfil()?.avatar_icono" [svgId]="perfil()?.avatar_svg_id" [color]="perfil()?.avatar_color" [marco]="perfil()?.avatar_marco" />
-          </div>
+
           <a routerLink="/editar-perfil" [ngClass]="ui.btnSecundario" class="!px-3 !py-1.5 !text-xs">
             <app-icon nombre="pencil" clase="w-3.5 h-3.5" /> Editar
           </a>

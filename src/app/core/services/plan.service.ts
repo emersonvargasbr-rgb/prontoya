@@ -2,12 +2,10 @@ import { Injectable, computed, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import {
   Ciclo,
-  DESCUENTO_CICLO,
   Limites,
   MESES_CICLO,
   PLANES,
   PlanId,
-  calcularPrecioCiclo,
   rangoCosmeticos as calcularRango,
 } from '../utils/planes';
 
@@ -33,15 +31,59 @@ export interface CotizacionSuscripcion {
   ciclo: Ciclo;
   meses: number;
   descuento_pct: number;
-  monto_brl_centavos: number;
   monto_usdt: number;
-  tasa: number;
   receptor_binance_id: string | null;
   receptor_nombre: string | null;
   origen: 'servidor' | 'catalogo';
 }
 
-const TASA_USDT_RESPALDO = 5.8;
+const DESCUENTOS_USDT: Record<Ciclo, number> = {
+  mensual: 0,
+  trimestral: 11,
+  anual: 22,
+};
+
+/**
+ * Precio base mensual en USDT/USDC (terminación .99):
+ * - Operarios: plan único (3.99/mes -> 10.65 trimestral -> 37.35 anual)
+ * - Tiendas / Oficinas: planes escalonados
+ */
+const PRECIO_MENSUAL_USDT: Record<string, number> = {
+  // === OPERARIOS / EMPLEADOS (PLAN ÚNICO) ===
+  operario: 3.99,
+  operario_pro: 3.99,
+
+  // === TIENDAS / OFICINAS / TALLERES ===
+  basico: 7.99,
+  taller: 9.99,
+  pro: 9.99,
+  gold: 14.99,
+  empresa: 24.99,
+  enterprise: 24.99,
+};
+
+function redondearDosDecimales(valor: number): number {
+  return Math.round((valor + Number.EPSILON) * 100) / 100;
+}
+
+function resolverTarifaUsdt(planId: string, ciclo: Ciclo): { monto: number; descuentoPct: number } {
+  const key = (planId || '').toLowerCase().trim();
+  const mensual = PRECIO_MENSUAL_USDT[key] ?? 9.99;
+  const meses = MESES_CICLO[ciclo] ?? 1;
+  const pct = DESCUENTOS_USDT[ciclo] ?? 0;
+
+  if (ciclo === 'mensual' || meses <= 1) {
+    return { monto: redondearDosDecimales(mensual), descuentoPct: 0 };
+  }
+
+  const factorDescuento = (100 - pct) / 100;
+  const total = mensual * meses * factorDescuento;
+
+  return {
+    monto: redondearDosDecimales(total),
+    descuentoPct: pct,
+  };
+}
 
 @Injectable({ providedIn: 'root' })
 export class PlanService {
@@ -196,6 +238,8 @@ export class PlanService {
       throw new Error('El plan seleccionado no es válido.');
     }
 
+    const { monto, descuentoPct } = resolverTarifaUsdt(planCatalogo.id, ciclo);
+
     const { data, error } = await this.db.rpc('cotizar_suscripcion', {
       p_plan: planCatalogo.id,
       p_ciclo: ciclo,
@@ -208,10 +252,8 @@ export class PlanService {
         nombre: c.nombre ?? planCatalogo.nombre,
         ciclo: (c.ciclo ?? ciclo) as Ciclo,
         meses: Number(c.meses ?? MESES_CICLO[ciclo]),
-        descuento_pct: Number(c.descuento_pct ?? Math.round((DESCUENTO_CICLO[ciclo] ?? 0) * 100)),
-        monto_brl_centavos: Number(c.monto_brl_centavos),
-        monto_usdt: Number(c.monto_usdt),
-        tasa: Number(c.tasa || TASA_USDT_RESPALDO),
+        descuento_pct: descuentoPct,
+        monto_usdt: monto,
         receptor_binance_id: c.receptor_binance_id ?? null,
         receptor_nombre: c.receptor_nombre ?? null,
         origen: 'servidor',
@@ -222,35 +264,13 @@ export class PlanService {
       throw new Error(error.message || 'No se pudo cotizar el plan.');
     }
 
-    const { data: planBd } = await this.db
-      .from('planes')
-      .select('id, nombre, mensual, trimestral, anual')
-      .eq('id', planCatalogo.id)
-      .maybeSingle();
-
-    const mensualCentavos = Number(planBd?.mensual || planCatalogo.mensual);
-    const trimestralCentavos = Number(planBd?.trimestral || planCatalogo.trimestral || calcularPrecioCiclo(mensualCentavos, 'trimestral'));
-    const anualCentavos = Number(planBd?.anual || planCatalogo.anual || calcularPrecioCiclo(mensualCentavos, 'anual'));
-
-    const montoBrlCentavos =
-      ciclo === 'trimestral'
-        ? trimestralCentavos
-        : ciclo === 'anual'
-          ? anualCentavos
-          : mensualCentavos;
-
-    const tasa = TASA_USDT_RESPALDO;
-    const montoUsdt = +((montoBrlCentavos / 100) / tasa).toFixed(2);
-
     return {
       plan: planCatalogo.id,
-      nombre: planBd?.nombre || planCatalogo.nombre,
+      nombre: planCatalogo.nombre,
       ciclo,
       meses: MESES_CICLO[ciclo],
-      descuento_pct: Math.round((DESCUENTO_CICLO[ciclo] ?? 0) * 100),
-      monto_brl_centavos: montoBrlCentavos,
-      monto_usdt: montoUsdt,
-      tasa,
+      descuento_pct: descuentoPct,
+      monto_usdt: monto,
       receptor_binance_id: null,
       receptor_nombre: 'CosturaPronta / ProntoYA',
       origen: 'catalogo',
@@ -277,5 +297,13 @@ export class PlanService {
 
   tope(valor: number | null | undefined): string {
     return valor === null ? 'ilimitados' : String(valor ?? 0);
+  }
+
+  precioEnUsdt(planId: string, ciclo: Ciclo): number {
+    return resolverTarifaUsdt(planId, ciclo).monto;
+  }
+
+  descuentoPorcentaje(ciclo: Ciclo): number {
+    return DESCUENTOS_USDT[ciclo] ?? 0;
   }
 }

@@ -1,10 +1,10 @@
-<div class="min-h-screen bg-stone-50 px-4 py-6 text-slate-900">
+<div class="min-h-screen bg-stone-50 px-0 py-4 text-slate-900">
   <app-toast [aviso]="aviso()" />
 
   <div class="mx-auto max-w-2xl space-y-4">
 
     <!-- ENCABEZADO SUPERIOR: Botón volver, etiqueta y botón compartir alineados en una sola fila -->
-    <div class="flex items-center justify-between gap-2">
+    <div class="flex items-center justify-between gap-1">
       <a routerLink="/feed" [ngClass]="ui.btnSecundario" class="!px-3 !py-1.5 !text-xs shrink-0">
         <app-icon nombre="arrow-left" clase="w-3.5 h-3.5" /> Volver al feed
       </a>
@@ -62,14 +62,14 @@
         </div>
 
         <!-- Botones de Acción inferiores con espacio completo y fluido -->
-        <div *ngIf="usuarioId && !esMio()" class="flex flex-wrap items-center gap-2 pt-1">
+        <div *ngIf="usuarioId && !esMio()" class="flex flex-wrap items-center gap-1 pt-1">
           <button type="button" (click)="alternarSeguir()" [ngClass]="siguiendo() ? ui.btnSecundario : ui.btnOscuro" class="!px-3 !py-1.5 !text-xs shrink-0">
-            <app-icon [nombre]="siguiendo() ? 'check' : 'plus'" clase="w-3.5 h-3.5" /> {{ siguiendo() ? 'Siguiendo' : 'Seguir' }}
+            <app-icon [nombre]="siguiendo() ? 'check' : 'plus'" clase="w-3 h-3" /> {{ siguiendo() ? 'Siguiendo' : 'Seguir' }}
           </button>
           
           <ng-container [ngSwitch]="vinculo().estado">
             <button *ngSwitchCase="'ninguno'" type="button" (click)="conectar()" [ngClass]="ui.btnSecundario" class="!px-3 !py-1.5 !text-xs shrink-0">
-              <app-icon nombre="user-plus" clase="w-3.5 h-3.5" /> Conectar
+              <app-icon nombre="user-plus" clase="w-3 h-3" /> Conectar
             </button>
             <span *ngSwitchCase="'enviado'" class="inline-flex items-center gap-1.5 px-2 text-xs text-slate-500 shrink-0"><app-icon nombre="clock" clase="w-3.5 h-3.5" /> Solicitud enviada</span>
             <a *ngSwitchCase="'recibido'" [routerLink]="['/perfil-usuario', autor()?.id]" [ngClass]="ui.btnSecundario" class="!px-3 !py-1.5 !text-xs shrink-0">Responder solicitud</a>
@@ -77,7 +77,7 @@
           </ng-container>
 
           <button *ngIf="telefono()" type="button" (click)="contactarWhatsApp()" [ngClass]="ui.btnPrimario" class="!px-3 !py-1.5 !text-xs shrink-0 ml-auto">
-            <app-icon nombre="chat" clase="w-3.5 h-3.5" /> WhatsApp
+            WhatsApp
           </button>
         </div>
 
@@ -159,13 +159,23 @@
           </div>
 
           <div *ngSwitchCase="'contactar_operario'" class="rounded-xl border border-violet-200 bg-violet-50/60 p-5">
-            <h3 class="text-sm font-bold text-violet-900">Operario disponible</h3>
-            <p class="mt-1 text-xs text-violet-800">Revisa su perfil y ponte en contacto.</p>
-            <div class="mt-3 flex flex-wrap gap-2">
-              <a [routerLink]="['/perfil-usuario', autor()?.id]" [ngClass]="ui.btnOscuro"><app-icon nombre="user" clase="w-4 h-4" /> Ver perfil</a>
-              <button *ngIf="telefono()" type="button" (click)="contactarWhatsApp()" [ngClass]="ui.btnPrimario"><app-icon nombre="chat" clase="w-4 h-4" /> WhatsApp</button>
-            </div>
-          </div>
+  <h3 class="text-sm font-bold text-violet-900">Operario disponible</h3>
+  <p class="mt-1 text-xs text-violet-800">Revisa su perfil y ponte en contacto.</p>
+  <div class="mt-3 flex items-center gap-2">
+    <a [routerLink]="['/perfil-usuario', autor()?.id]"
+       [ngClass]="ui.btnOscuro"
+       class="inline-flex flex-1 sm:flex-initial items-center justify-center gap-1.5 whitespace-nowrap !px-2.5 !py-1.5 !text-xs">
+      <app-icon nombre="user" clase="w-3.5 h-3.5 shrink-0" />
+      <span>Ver perfil</span>
+    </a>
+    <button *ngIf="telefono()" type="button" (click)="contactarWhatsApp()"
+            [ngClass]="ui.btnPrimario"
+            class="inline-flex flex-1 sm:flex-initial items-center justify-center gap-1.5 whitespace-nowrap !px-2.5 !py-1.5 !text-xs">
+      <app-icon nombre="chat" clase="w-3.5 h-3.5 shrink-0" />
+      <span>WhatsApp</span>
+    </button>
+  </div>
+</div>
 
           <p *ngSwitchDefault class="rounded-xl bg-stone-100 p-4 text-sm text-slate-600">
             Este anuncio está dirigido a otro tipo de perfil. Puedes seguir al anunciante para ver sus próximas publicaciones.

@@ -18,10 +18,10 @@ import { PlanesComponent } from './features/planes/planes.component';
 import { CheckoutSuscripcionComponent } from './features/planes/checkout-suscripcion.component';
 import { AdminSuscripcionesComponent } from './features/admin/suscripciones/admin-suscripciones.component';
 import { VerificarDocumentoComponent } from './features/perfil/verificar-documento/verificar-documento.component';
-import { MisIngresosComponent } from './features/perfil/mis-ingresos/mis-ingresos.component';
 import { LotesActivosComponent } from './features/gestion/lotes-activos/lotes-activos.component';
 import { HistorialLotesComponent } from './features/gestion/historial-lotes/historial-lotes.component';
 import { VoladorasComponent } from './features/voladoras/voladoras.component';
+import { CortesManualesComponent } from './features/perfil/mis-ingresos/mis-ingresos.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -80,7 +80,7 @@ export const routes: Routes = [
       },
       {
         path: 'mis-ingresos',
-        component: MisIngresosComponent,
+        component: CortesManualesComponent,
         canActivate: [authGuard],
       },
       {

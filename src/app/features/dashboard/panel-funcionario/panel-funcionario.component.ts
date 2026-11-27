@@ -13,7 +13,8 @@ import { Aviso, ToastComponent } from '../../../shared/components/toast.componen
 import { SolicitudesVinculoComponent } from '../../../shared/components/solicitudes-vinculo.component';
 
 import { ControlValesComponent } from '../../../shared/control-vales.component';
-import { CortesManualesComponent } from '../../../shared/components/cortes-manuales.component';
+import { CortesManualesComponent } from '../../perfil/mis-ingresos/mis-ingresos.component';
+
 
 type Seccion = 'resumen' | 'trabajos' | 'postulaciones' | 'anuncios' | 'insignias' | 'resenas' | 'finanzas';
 

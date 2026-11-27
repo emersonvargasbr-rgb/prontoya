@@ -15,8 +15,7 @@
     <header class="flex flex-col gap-4 rounded-3xl border border-stone-200/80 bg-white p-5 sm:p-6 shadow-sm">
   <div class="flex flex-wrap items-center justify-between gap-4">
     <div class="flex items-center gap-3.5">
-      <app-avatar [nombre]="perfil()?.nombre_completo" tamano="md" [verificado]="!!perfil()?.verificado"
-                  [icono]="perfil()?.avatar_icono" [svgId]="perfil()?.avatar_svg_id" [color]="perfil()?.avatar_color" [marco]="perfil()?.avatar_marco" />
+     
       <div>
         <div class="flex items-center gap-2">
           <h1 class="text-lg sm:text-xl font-bold tracking-tight text-slate-900">{{ perfil()?.nombre_completo || 'Mi oficina' }}</h1>
@@ -425,36 +424,36 @@
 
      <!-- =================================================== ANUNCIOS -->
 <section *ngIf="seccion() === 'anuncios'" class="space-y-3">
-  <div *ngIf="misPublicaciones().length === 0" class="rounded-3xl border border-dashed border-stone-300 bg-white p-10 text-center shadow-sm">
+  <div *ngIf="misPublicaciones().length === 0" class="rounded-3xl border border-dashed border-stone-300 bg-white p-8 sm:p-10 text-center shadow-sm">
     <app-icon nombre="megaphone" clase="mx-auto h-10 w-10 text-stone-400" />
     <p class="mt-3 text-base font-bold text-slate-800">No has publicado anuncios</p>
   </div>
 
-  <article *ngFor="let p of misPublicaciones()" class="flex flex-wrap items-center gap-3 rounded-2xl border border-stone-200/80 bg-white p-4 sm:p-5 shadow-sm">
-    <div class="min-w-0 flex-1">
-      <p class="truncate text-sm font-bold text-slate-900">{{ p.titulo }}</p>
-      <p class="text-xs text-stone-500 mt-0.5">
+  <article *ngFor="let p of misPublicaciones()" class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 rounded-2xl border border-stone-200/80 bg-white p-4 sm:p-5 shadow-sm">
+    <div class="w-full sm:min-w-0 sm:flex-1">
+      <p class="text-sm font-bold text-slate-900 break-words leading-snug">{{ p.titulo }}</p>
+      <p class="text-xs text-stone-500 mt-1 break-words">
         {{ p.tipo_publicacion === 'busco_funcionario' ? 'Vacante' : (p.tipo_publicacion === 'busco_corte' ? 'Taller disponible' : 'Lote') }}
         · {{ p.zona_ubicacion }}
       </p>
     </div>
 
-    <div class="flex items-center gap-2">
+    <div class="flex flex-wrap items-center justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-100 shrink-0">
       <a [routerLink]="['/trabajo', p.id]"
          class="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-stone-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-teal-500 hover:bg-teal-50/60 hover:text-teal-800">
-        <app-icon nombre="eye" clase="w-3.5 h-3.5" />
-        Ver anuncio
+        <app-icon nombre="eye" clase="w-3.5 h-3.5 shrink-0" />
+        <span>Ver anuncio</span>
       </a>
 
       <button type="button" (click)="alternarAnuncio(p)"
-              class="rounded-xl px-3 py-1.5 text-xs font-semibold transition"
+              class="rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer"
               [ngClass]="p.estado === 'Activo' ? 'bg-teal-50 text-teal-800 border border-teal-200' : 'bg-amber-50 text-amber-800 border border-amber-200'">
         {{ p.estado }}
       </button>
 
       <button type="button" (click)="eliminarAnuncio(p.id)" aria-label="Eliminar anuncio"
-              class="rounded-xl p-2 text-rose-600 hover:bg-rose-50 transition">
-        <app-icon nombre="trash" clase="w-4 h-4" />
+              class="rounded-xl p-2 text-rose-600 hover:bg-rose-50 transition cursor-pointer">
+        <app-icon nombre="trash" clase="w-4 h-4 shrink-0" />
       </button>
     </div>
   </article>

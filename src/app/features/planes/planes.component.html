@@ -112,13 +112,14 @@
           <p class="mt-2 text-xs text-slate-500">{{ p.resumen }}</p>
 
           <p class="mt-4 text-3xl font-bold">
-            {{ formatoPrecio(precioCiclo(p, ciclo())) }}
+            {{ precioCiclo(p, ciclo()) | number:'1.2-2' }}
             <span class="text-sm font-normal text-slate-500">
-              / {{ ciclo() === 'mensual' ? 'mes' : (ciclo() === 'trimestral' ? '3 meses' : 'año') }}
+              USDT / {{ ciclo() === 'mensual' ? 'mes' : (ciclo() === 'trimestral' ? '3 meses' : 'año') }}
             </span>
           </p>
-          <p *ngIf="ciclo() !== 'mensual'" class="mt-0.5 text-xs font-semibold text-teal-700">
-            Ahorras {{ formatoPrecio(ahorro(p, ciclo())) }} ({{ descuentos[ciclo()] * 100 }}% OFF)
+          <p class="mt-0.5 text-[11px] text-slate-400">Aceptamos USDT y USDC (1:1)</p>
+          <p *ngIf="ciclo() !== 'mensual' && ahorro(p, ciclo()) > 0" class="mt-0.5 text-xs font-semibold text-teal-700">
+            Ahorras {{ ahorro(p, ciclo()) | number:'1.2-2' }} USDT ({{ descuentos[ciclo()] * 100 }}% OFF)
           </p>
 
           <ul class="mt-4 space-y-2 text-sm text-slate-700">
@@ -180,15 +181,11 @@
           <span class="text-xs text-slate-500">Ciclo ({{ etiquetaCiclo[cot.ciclo] }})</span>
           <span class="text-xs font-semibold text-teal-700" *ngIf="cot.descuento_pct > 0">{{ cot.descuento_pct }}% de descuento</span>
         </div>
-        <div class="flex items-baseline justify-between">
-          <span class="text-sm font-medium text-slate-700">Total en reales</span>
-          <span class="text-xl font-bold text-slate-900">{{ moneda(cot.monto_brl_centavos / 100) }}</span>
-        </div>
         <div class="flex items-baseline justify-between border-t border-stone-200 pt-2">
           <span class="text-sm font-medium text-slate-700">Total a pagar (Binance Pay)</span>
-          <span class="text-lg font-extrabold text-teal-800">{{ cot.monto_usdt | number:'1.2-2' }} USDT</span>
+          <span class="text-xl font-extrabold text-teal-800">{{ cot.monto_usdt | number:'1.2-2' }} USDT / USDC</span>
         </div>
-        <p class="text-[11px] text-slate-500">Tasa de referencia: 1 USDT = R$ {{ cot.tasa | number:'1.2-2' }}</p>
+        <p class="text-[11px] text-slate-500">Pago directo en stablecoin (USDT o USDC) sin conversión bancaria.</p>
       </div>
 
       <div class="rounded-xl border border-stone-200 bg-white p-3 text-xs text-slate-600 space-y-1">

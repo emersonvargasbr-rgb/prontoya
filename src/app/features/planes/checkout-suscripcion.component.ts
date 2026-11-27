@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { CotizacionSuscripcion, PlanService } from '../../core/services/plan.service';
-import { UI, mensajeAmigable, moneda } from '../../core/utils/helpers';
+import { UI, mensajeAmigable } from '../../core/utils/helpers';
 import { Ciclo, ETIQUETA_CICLO, PLANES, PlanId, nombreDePlan } from '../../core/utils/planes';
 import { IconComponent } from '../../shared/components/icon.component';
 
@@ -59,10 +59,9 @@ const QR_BINANCE_URL = '/pagospronto.png';
           </div>
 
           <div class="border-b border-stone-100 pb-4">
-            <p class="text-xs font-semibold text-amber-700">Plan seleccionado · pago en cripto</p>
+            <p class="text-xs font-semibold text-amber-700">Plan seleccionado · solo USDT / USDC</p>
             <h2 class="mt-1 text-lg font-bold">{{ c.nombre }} <span class="text-sm font-normal text-slate-500">({{ etiquetaCiclo[c.ciclo] }})</span></h2>
-            <p class="mt-2 text-3xl font-bold">{{ c.monto_usdt | number:'1.2-2' }} <span class="text-sm font-normal text-slate-500">USDT</span></p>
-            <p class="mt-0.5 text-xs text-slate-500">Equivale a {{ moneda(c.monto_brl_centavos / 100) }} (1 USDT = R$ {{ c.tasa | number:'1.2-2' }})</p>
+            <p class="mt-2 text-3xl font-bold">{{ c.monto_usdt | number:'1.2-2' }} <span class="text-sm font-normal text-slate-500">USDT / USDC</span></p>
             <p *ngIf="c.descuento_pct > 0" class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-teal-700">
               <app-icon nombre="check" clase="w-3.5 h-3.5" /> Incluye {{ c.descuento_pct }}% de descuento por pago {{ c.ciclo }}
             </p>
@@ -70,9 +69,9 @@ const QR_BINANCE_URL = '/pagospronto.png';
 
           <div class="space-y-3 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
             <h3 class="flex items-center gap-2 text-sm font-bold text-amber-900">
-              <app-icon nombre="coin" clase="w-4 h-4 text-amber-600" /> Paga con Binance Pay
+              <app-icon nombre="coin" clase="w-4 h-4 text-amber-600" /> Paga con Binance Pay (USDT o USDC)
             </h3>
-            <p class="text-xs text-slate-600">Envía exactamente <strong>{{ c.monto_usdt | number:'1.2-2' }} USDT</strong> (o USDC) a este destinatario:</p>
+            <p class="text-xs text-slate-600">Envía exactamente <strong>{{ c.monto_usdt | number:'1.2-2' }} USDT</strong> o <strong>USDC</strong> a este destinatario:</p>
 
             <div class="flex items-center justify-between gap-2 rounded-lg border border-amber-300 bg-white p-3">
               <p class="break-all font-mono text-sm font-semibold">
@@ -93,7 +92,7 @@ const QR_BINANCE_URL = '/pagospronto.png';
               <summary class="cursor-pointer font-semibold">Cómo hacerlo paso a paso</summary>
               <ol class="mt-2 list-decimal space-y-1 pl-5">
                 <li>En la app de Binance entra a <strong>Pay</strong> y elige <strong>Enviar</strong> o escanea el <strong>QR</strong>.</li>
-                <li>Verifica que el destinatario coincida y envía el monto exacto en <strong>USDT</strong>.</li>
+                <li>Verifica que el destinatario coincida y envía el monto exacto en <strong>USDT</strong> o <strong>USDC</strong>.</li>
                 <li>Abre el detalle de la operación y copia el <strong>ID de la orden</strong>.</li>
                 <li>Pégalo abajo junto con tu comprobante para confirmar tu suscripción.</li>
               </ol>
@@ -123,7 +122,7 @@ const QR_BINANCE_URL = '/pagospronto.png';
             </p>
 
             <button type="button" (click)="abrirConfirmacion()" [disabled]="enviando()" [ngClass]="ui.btnOscuro" class="w-full !py-3">
-              {{ enviando() ? 'Enviando...' : 'Revisar y confirmar pago de ' + (c.monto_usdt | number:'1.2-2') + ' USDT' }}
+              {{ enviando() ? 'Enviando...' : 'Revisar y confirmar pago de ' + (c.monto_usdt | number:'1.2-2') + ' USDT / USDC' }}
             </button>
             <p class="text-center text-[11px] text-slate-400">Tu comprobante es privado: sólo lo ve el equipo de administración.</p>
           </div>
@@ -159,7 +158,7 @@ const QR_BINANCE_URL = '/pagospronto.png';
           <dl class="space-y-2 rounded-xl bg-stone-50 p-4 text-xs">
             <div class="flex justify-between"><dt class="text-slate-500">Plan</dt><dd class="font-bold">{{ c.nombre }}</dd></div>
             <div class="flex justify-between"><dt class="text-slate-500">Ciclo</dt><dd class="font-bold">{{ etiquetaCiclo[c.ciclo] }}</dd></div>
-            <div class="flex justify-between"><dt class="text-slate-500">Monto</dt><dd class="font-bold text-teal-800">{{ c.monto_usdt | number:'1.2-2' }} USDT ({{ moneda(c.monto_brl_centavos / 100) }})</dd></div>
+            <div class="flex justify-between"><dt class="text-slate-500">Monto</dt><dd class="font-bold text-teal-800">{{ c.monto_usdt | number:'1.2-2' }} USDT / USDC</dd></div>
             <div class="flex justify-between"><dt class="text-slate-500">Referencia</dt><dd class="font-mono font-bold">{{ codigo.trim() }}</dd></div>
             <div class="flex justify-between" *ngIf="archivo()"><dt class="text-slate-500">Comprobante</dt><dd class="truncate max-w-[12rem] font-semibold">{{ archivo()!.name }}</dd></div>
           </dl>
@@ -176,7 +175,6 @@ const QR_BINANCE_URL = '/pagospronto.png';
 })
 export class CheckoutSuscripcionComponent implements OnInit {
   readonly ui = UI;
-  readonly moneda = moneda;
   readonly nombrePlan = nombreDePlan;
   readonly etiquetaCiclo = ETIQUETA_CICLO;
   readonly ciclosDisponibles = CICLOS_VALIDOS;

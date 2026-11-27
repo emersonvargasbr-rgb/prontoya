@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { SupabaseService } from '../../core/services/supabase.service';
 import { CotizacionSuscripcion, PlanService } from '../../core/services/plan.service';
-import { UI, mensajeAmigable, moneda } from '../../core/utils/helpers';
+import { UI, mensajeAmigable } from '../../core/utils/helpers';
 import {
   Ciclo,
   DESCUENTO_CICLO,
@@ -12,12 +12,9 @@ import {
   MESES_CICLO,
   PLAN_ESTILO,
   Plan,
-  ahorroCiclo,
-  formatoPrecio,
   grupoDeRol,
   nombreDePlan,
   planesPara,
-  precio,
   resolverEstadoPlan,
 } from '../../core/utils/planes';
 import { IconComponent } from '../../shared/components/icon.component';
@@ -32,9 +29,7 @@ const CICLOS_ACTIVOS: Ciclo[] = ['mensual', 'trimestral', 'anual'];
 })
 export class PlanesComponent implements OnInit {
   readonly ui = UI;
-  readonly moneda = moneda;
   readonly estilo = PLAN_ESTILO;
-  readonly formatoPrecio = formatoPrecio;
   readonly nombreDePlan = nombreDePlan;
   readonly incluyeGratis = INCLUYE_GRATIS;
   readonly etiquetaCiclo = ETIQUETA_CICLO;
@@ -104,11 +99,15 @@ export class PlanesComponent implements OnInit {
   }
 
   precioCiclo(p: Plan, cicloActual: Ciclo): number {
-    return precio(p, cicloActual);
+    return this.planService.precioEnUsdt(p.id, cicloActual);
   }
 
   ahorro(p: Plan, cicloActual: Ciclo): number {
-    return ahorroCiclo(p, cicloActual);
+    const meses = MESES_CICLO[cicloActual] ?? 1;
+    if (meses <= 1) return 0;
+    const sinDescuento = this.planService.precioEnUsdt(p.id, 'mensual') * meses;
+    const conDescuento = this.planService.precioEnUsdt(p.id, cicloActual);
+    return Math.max(0, +(sinDescuento - conDescuento).toFixed(2));
   }
 
   cambiarCiclo(nuevo: Ciclo) {

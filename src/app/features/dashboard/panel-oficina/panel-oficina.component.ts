@@ -10,9 +10,9 @@ import { esPlanPagoId, nombreDePlan, planVigente } from '../../../core/utils/pla
 import { AvatarComponent } from '../../../shared/components/avatar.component';
 import { IconComponent } from '../../../shared/components/icon.component';
 import { SolicitudesVinculoComponent } from '../../../shared/components/solicitudes-vinculo.component';
-
 import { ControlLiquidacionCarritoComponent } from '../../../shared/control-liquidacion-carrito.component';
-import { CortesManualesComponent } from '../../../shared/components/cortes-manuales.component';
+import { CortesManualesComponent } from '../../perfil/mis-ingresos/mis-ingresos.component';
+
 
 type Seccion = 'produccion' | 'solicitudes' | 'equipo' | 'anuncios' | 'historial' | 'finanzas';
 
